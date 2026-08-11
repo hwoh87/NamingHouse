@@ -95,32 +95,60 @@ class NameGenerator(
     }
 
     /**
-     * 고정된 한글 이름에 대한 한자 조합 나열(한자 추천·감명 보조).
-     * 점수순 상위 [limit]개 조합을 돌려준다.
+     * 이미 정해진 한글 이름에 붙일 한자 조합을 점수순으로 나열한다(한자 추천 화면).
+     *
+     * 이름 후보 생성과 달리 여기서는 4격 전길을 강제하지 않는 편이 낫다 —
+     * 사용자가 이름을 이미 정해 온 상황이라 "결과 없음"보다 차선 조합이라도 보여주고
+     * 점수로 우열을 알려주는 쪽이 쓸모 있다. 호출부가 options 로 조일 수는 있다.
      */
     fun hanjaCombosFor(
         surname: String,
         surnameHanja: List<HanjaEntry>,
         givenName: String,
         saju: SajuSummary?,
-        options: GeneratorOptions = GeneratorOptions(),
-        limit: Int = 20,
+        options: GeneratorOptions = GeneratorOptions(requireAllGoodSuri = false),
+        limit: Int = 30,
     ): List<NameEvaluation> {
-        if (givenName.length != 2) return emptyList()
-        val surnameStrokes = surnameHanja.map { it.wonhoek }
-        val validPairs = goodStrokePairs(surnameStrokes, options.requireAllGoodSuri)
-        val c1 = candidatesOf(givenName[0].toString(), options)
-        val c2 = candidatesOf(givenName[1].toString(), options)
+        if (givenName.isEmpty() || givenName.length > 3) return emptyList()
+        val perSyllable = givenName.map { candidatesOf(it.toString(), options) }
+        if (perSyllable.any { it.isEmpty() }) return emptyList()
 
         val combos = ArrayList<NameEvaluation>()
-        for (h1 in c1) for (h2 in c2) {
-            if (options.requireAllGoodSuri && (h1.wonhoek to h2.wonhoek) !in validPairs) continue
-            combos.add(
-                NameEvaluator.evaluate(surname, givenName, surnameHanja, listOf(h1, h2), saju, options.school)
-            )
-            if (combos.size >= 400) break
+        forEachCombo(perSyllable, MAX_COMBOS) { picked ->
+            if (!options.requireAllGoodSuri ||
+                SuriCalculator.calculate(surnameHanja.map { it.wonhoek }, picked.map { it.wonhoek }).allGood
+            ) {
+                combos.add(
+                    NameEvaluator.evaluate(surname, givenName, surnameHanja, picked, saju, options.school)
+                )
+            }
         }
-        return combos.sortedByDescending { it.score }.take(limit)
+        return combos
+            .sortedWith(
+                compareByDescending<NameEvaluation> { it.score }
+                    .thenByDescending { e -> e.givenHanja.sumOf { it.nameFit } }
+            )
+            .take(limit)
+    }
+
+    /** 음절별 후보의 데카르트 곱을 [cap] 개까지 순회한다. */
+    private inline fun forEachCombo(
+        perSyllable: List<List<HanjaEntry>>,
+        cap: Int,
+        action: (List<HanjaEntry>) -> Unit,
+    ) {
+        val sizes = perSyllable.map { it.size }
+        val total = sizes.fold(1L) { acc, n -> acc * n }
+        val count = minOf(total, cap.toLong()).toInt()
+        val idx = IntArray(perSyllable.size)
+        repeat(count) {
+            action(perSyllable.mapIndexed { i, list -> list[idx[i]] })
+            // 자릿수 올림 — 마지막 음절부터 증가시킨다.
+            for (i in idx.indices.reversed()) {
+                if (++idx[i] < sizes[i]) break
+                idx[i] = 0
+            }
+        }
     }
 
     /** 4격 전부 길수가 되는 (이름1획, 이름2획) 조합 — 성 획수에 대해 사전계산 */
@@ -196,5 +224,8 @@ class NameGenerator(
 
     private companion object {
         const val MAX_STROKE = 30
+
+        /** 한자 조합 탐색 상한 — '지'처럼 후보가 많은 음절이 겹치면 곱이 수천을 넘는다. */
+        const val MAX_COMBOS = 1500
     }
 }

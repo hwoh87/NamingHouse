@@ -5,6 +5,7 @@ import com.naminghouse.engine.gen.GeneratorOptions
 import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
 import com.naminghouse.engine.hanja.HanjaDb
+import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.saju.SajuNamingService
 import com.samramanshang.manseryeok.orrery.model.BirthInput
 import com.samramanshang.manseryeok.orrery.model.Gender
@@ -139,13 +140,55 @@ class DataIntegrationTest {
     @Test
     fun `한자 조합 추천 - 고정 한글 이름`() {
         val generator = NameGenerator(db, pool)
+        val saju = SajuNamingService.analyze(BirthInput(2020, 5, 5, 8, 0, Gender.M))
         val combos = generator.hanjaCombosFor(
             surname = "김",
             surnameHanja = listOf(db.byChar.getValue('金')),
             givenName = "민준",
-            saju = SajuNamingService.analyze(BirthInput(2020, 5, 5, 8, 0, Gender.M)),
+            saju = saju,
         )
         assertTrue("민준 한자 조합이 나와야 함", combos.isNotEmpty())
-        assertTrue(combos.all { it.suri.allGood })
+        // 이름은 고정이므로 한글은 모두 같고 한자만 달라야 한다
+        assertTrue(combos.all { it.givenName == "민준" })
+        assertEquals(combos.size, combos.map { it.givenHanja.map(HanjaEntry::char) }.distinct().size)
+        combos.forEach { e ->
+            assertEquals(2, e.givenHanja.size)
+            e.givenHanja.forEach { h -> assertTrue("${h.char}: 벽자 금지", h.usableForNaming) }
+        }
+        // 점수 내림차순
+        assertEquals(combos.map { it.score }.sortedDescending(), combos.map { it.score })
+    }
+
+    @Test
+    fun `한자 조합 추천 - 외자와 세 글자 이름도 지원한다`() {
+        val generator = NameGenerator(db, pool)
+        val surnameKim = listOf(db.byChar.getValue('金'))
+
+        val single = generator.hanjaCombosFor("김", surnameKim, "훈", saju = null)
+        assertTrue("외자 '훈' 조합이 나와야 함", single.isNotEmpty())
+        assertTrue(single.all { it.givenHanja.size == 1 })
+
+        val triple = generator.hanjaCombosFor("김", surnameKim, "다현우", saju = null)
+        assertTrue("세 글자 '다현우' 조합이 나와야 함", triple.isNotEmpty())
+        assertTrue(triple.all { it.givenHanja.size == 3 })
+
+        // 지원 범위 밖
+        assertTrue(generator.hanjaCombosFor("김", surnameKim, "", saju = null).isEmpty())
+        assertTrue(generator.hanjaCombosFor("김", surnameKim, "가나다라", saju = null).isEmpty())
+    }
+
+    @Test
+    fun `한자 조합 추천 - 후보 많은 음절도 상한 안에서 끝난다`() {
+        val generator = NameGenerator(db, pool)
+        // '지'·'영' 은 쓸 수 있는 한자가 많아 데카르트 곱이 수백을 넘는다
+        val combos = generator.hanjaCombosFor(
+            surname = "이",
+            surnameHanja = listOf(db.byChar.getValue('李')),
+            givenName = "지영",
+            saju = null,
+            limit = 15,
+        )
+        assertTrue(combos.isNotEmpty())
+        assertTrue("limit 을 넘으면 안 됨 (현재 ${combos.size})", combos.size <= 15)
     }
 }

@@ -94,8 +94,8 @@ fun InputScreen(vm: NamingViewModel) {
             }
         }
 
-        // ── 감명 모드: 이름 입력
-        if (vm.mode == AppMode.EVALUATE) {
+        // ── 이름 입력 — 감명은 한자까지 직접 고르고, 한자 추천은 한글만 받는다
+        if (vm.mode == AppMode.EVALUATE || vm.mode == AppMode.HANJA) {
             SectionCard("이름") {
                 OutlinedTextField(
                     value = vm.givenName,
@@ -104,18 +104,26 @@ fun InputScreen(vm: NamingViewModel) {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    vm.givenName.forEachIndexed { i, ch ->
-                        HanjaSlotButton(
-                            syllable = ch,
-                            selected = vm.givenHanja.value.getOrNull(i),
-                            candidates = vm.givenNameCandidates(i),
-                            onSelect = { picked ->
-                                vm.givenHanja.value =
-                                    vm.givenHanja.value.toMutableList().also { it[i] = picked }
-                            },
-                        )
+                if (vm.mode == AppMode.EVALUATE) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        vm.givenName.forEachIndexed { i, ch ->
+                            HanjaSlotButton(
+                                syllable = ch,
+                                selected = vm.givenHanja.value.getOrNull(i),
+                                candidates = vm.givenNameCandidates(i),
+                                onSelect = { picked ->
+                                    vm.givenHanja.value =
+                                        vm.givenHanja.value.toMutableList().also { it[i] = picked }
+                                },
+                            )
+                        }
                     }
+                } else {
+                    Text(
+                        "이름에 붙일 한자 조합을 점수순으로 찾아 드립니다.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -149,7 +157,11 @@ fun InputScreen(vm: NamingViewModel) {
                 Switch(checked = vm.preBirth, onCheckedChange = { vm.preBirth = it })
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    if (vm.mode == AppMode.RECOMMEND) "출생 전 작명 (사주 없이 성명학만)" else "사주 없이 감명",
+                    when (vm.mode) {
+                        AppMode.RECOMMEND -> "출생 전 작명 (사주 없이 성명학만)"
+                        AppMode.HANJA -> "사주 없이 성명학만으로 고르기"
+                        AppMode.EVALUATE -> "사주 없이 감명"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -233,14 +245,26 @@ fun InputScreen(vm: NamingViewModel) {
         vm.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
         Button(
-            onClick = { if (vm.mode == AppMode.RECOMMEND) vm.runRecommend() else vm.runEvaluate() },
+            onClick = {
+                when (vm.mode) {
+                    AppMode.RECOMMEND -> vm.runRecommend()
+                    AppMode.HANJA -> vm.runHanjaRecommend()
+                    AppMode.EVALUATE -> vm.runEvaluate()
+                }
+            },
             enabled = !vm.busy && vm.hanjaDb != null,
             modifier = Modifier.fillMaxWidth().height(52.dp),
         ) {
             if (vm.busy) {
                 CircularProgressIndicator(Modifier.width(22.dp).height(22.dp), strokeWidth = 2.dp)
             } else {
-                Text(if (vm.mode == AppMode.RECOMMEND) "이름 추천 받기" else "이름 감명 보기")
+                Text(
+                    when (vm.mode) {
+                        AppMode.RECOMMEND -> "이름 추천 받기"
+                        AppMode.HANJA -> "한자 조합 찾기"
+                        AppMode.EVALUATE -> "이름 감명 보기"
+                    }
+                )
             }
         }
         Spacer(Modifier.height(24.dp))

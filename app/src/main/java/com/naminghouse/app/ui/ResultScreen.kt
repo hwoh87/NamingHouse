@@ -41,18 +41,26 @@ import androidx.compose.ui.unit.dp
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.ui.theme.WuxingColors
-import com.naminghouse.engine.gen.NameCandidate
+import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.saju.SajuSummary
 import com.samramanshang.manseryeok.orrery.model.Element
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultScreen(vm: NamingViewModel) {
-    var selected by remember { mutableStateOf<NameCandidate?>(null) }
+    var selected by remember { mutableStateOf<NameEvaluation?>(null) }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text(if (vm.mode == AppMode.RECOMMEND) "추천 결과" else "감명 결과") },
+            title = {
+                Text(
+                    when (vm.mode) {
+                        AppMode.RECOMMEND -> "추천 결과"
+                        AppMode.HANJA -> "한자 조합 추천"
+                        AppMode.EVALUATE -> "감명 결과"
+                    }
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = vm::backToInput) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
@@ -68,20 +76,47 @@ fun ResultScreen(vm: NamingViewModel) {
                 item { SajuCard(saju) }
             }
 
-            if (vm.mode == AppMode.RECOMMEND) {
-                item {
-                    Text(
-                        "추천 이름 ${vm.candidates.size}개 — 수리사격·발음오행·자원오행 기준",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            when (vm.mode) {
+                AppMode.RECOMMEND -> {
+                    item {
+                        Text(
+                            "추천 이름 ${vm.candidates.size}개 — 수리사격·발음오행·자원오행 기준",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    itemsIndexed(vm.candidates) { i, cand ->
+                        CandidateRow(
+                            rank = i + 1,
+                            eval = cand.evaluation,
+                            popular = cand.tier == 1,
+                            onClick = { selected = cand.evaluation },
+                        )
+                    }
+                    item { Spacer(Modifier.height(28.dp)) }
                 }
-                itemsIndexed(vm.candidates) { i, cand ->
-                    CandidateRow(rank = i + 1, cand = cand, onClick = { selected = cand })
+
+                AppMode.HANJA -> {
+                    item {
+                        Text(
+                            "'${vm.surname}${vm.givenName}' 에 쓸 수 있는 한자 조합 ${vm.hanjaCombos.size}개",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    itemsIndexed(vm.hanjaCombos) { i, eval ->
+                        CandidateRow(
+                            rank = i + 1,
+                            eval = eval,
+                            popular = false,
+                            emphasizeHanja = true,
+                            onClick = { selected = eval },
+                        )
+                    }
+                    item { Spacer(Modifier.height(28.dp)) }
                 }
-                item { Spacer(Modifier.height(28.dp)) }
-            } else {
-                vm.evaluation?.let { eval ->
+
+                AppMode.EVALUATE -> vm.evaluation?.let { eval ->
                     item { EvaluationDetail(eval, vm.saju) }
                     item { Spacer(Modifier.height(28.dp)) }
                 }
@@ -89,19 +124,28 @@ fun ResultScreen(vm: NamingViewModel) {
         }
     }
 
-    selected?.let { cand ->
+    selected?.let { eval ->
         ModalBottomSheet(onDismissRequest = { selected = null }) {
             Column(Modifier.padding(horizontal = 20.dp)) {
-                EvaluationDetail(cand.evaluation, vm.saju)
+                EvaluationDetail(eval, vm.saju)
                 Spacer(Modifier.height(32.dp))
             }
         }
     }
 }
 
+/**
+ * 결과 목록의 한 줄. 한자 추천 모드에선 한글 이름이 모두 같으므로
+ * [emphasizeHanja] 로 한자를 크게 보여 조합끼리 구분되게 한다.
+ */
 @Composable
-private fun CandidateRow(rank: Int, cand: NameCandidate, onClick: () -> Unit) {
-    val eval = cand.evaluation
+private fun CandidateRow(
+    rank: Int,
+    eval: NameEvaluation,
+    popular: Boolean,
+    emphasizeHanja: Boolean = false,
+    onClick: () -> Unit,
+) {
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -117,25 +161,33 @@ private fun CandidateRow(rank: Int, cand: NameCandidate, onClick: () -> Unit) {
                 modifier = Modifier.width(30.dp),
             )
             Column(Modifier.weight(1f)) {
+                val hangul = eval.surname + eval.givenName
+                val hanja = eval.givenHanja.joinToString("") { it.char.toString() }
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        eval.surname + cand.givenName,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        cand.hanja.joinToString("") { it.char.toString() },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (emphasizeHanja) {
+                        Text(hanja, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            eval.givenHanja.joinToString(" · ") { it.meaning.ifEmpty { "-" } },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Text(hangul, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            hanja,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
                     AxisChip("수리", eval.suriVerdict.label)
                     AxisChip("발음", eval.baleumVerdict.label)
                     AxisChip("자원", eval.jawonVerdict.label)
                     AxisChip("음양", eval.eumyangVerdict.label)
-                    if (cand.tier == 1) AxisChip("인기", "TOP")
+                    if (popular) AxisChip("인기", "TOP")
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

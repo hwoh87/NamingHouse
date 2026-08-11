@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 
 enum class AppMode(val label: String) {
     RECOMMEND("이름 추천"),
+    HANJA("한자 추천"),
     EVALUATE("이름 감명"),
 }
 
@@ -72,6 +73,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     var saju by mutableStateOf<SajuSummary?>(null)
         private set
     var candidates by mutableStateOf<List<NameCandidate>>(emptyList())
+        private set
+    var hanjaCombos by mutableStateOf<List<NameEvaluation>>(emptyList())
         private set
     var evaluation by mutableStateOf<NameEvaluation?>(null)
         private set
@@ -150,7 +153,54 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.Main) {
                     saju = sajuResult
                     candidates = list
+                    hanjaCombos = emptyList()
+                    evaluation = null
                     screen = AppScreen.RESULT
+                    busy = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    errorMessage = "계산 오류: ${e.message}"
+                    busy = false
+                }
+            }
+        }
+    }
+
+    /** 한글 이름은 정해져 있고 한자 조합만 추천받는 모드. */
+    fun runHanjaRecommend() {
+        val db = hanjaDb ?: return
+        val pool = namePool ?: return
+        val sHanja = pickedSurnameHanja()
+            ?: run { errorMessage = "성씨 한자를 선택해 주세요"; return }
+        if (givenName.isEmpty()) {
+            errorMessage = "한자를 붙일 이름을 입력해 주세요"
+            return
+        }
+        val input = if (preBirth) null else birthInput()
+            ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
+
+        errorMessage = null
+        busy = true
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val sajuResult = input?.let { SajuNamingService.analyze(it) }
+                val combos = NameGenerator(db, pool).hanjaCombosFor(
+                    surname = surname,
+                    surnameHanja = sHanja,
+                    givenName = givenName,
+                    saju = sajuResult,
+                    options = GeneratorOptions(school = school, requireAllGoodSuri = false),
+                )
+                withContext(Dispatchers.Main) {
+                    saju = sajuResult
+                    hanjaCombos = combos
+                    candidates = emptyList()
+                    evaluation = null
+                    errorMessage = if (combos.isEmpty()) {
+                        "'$givenName' 에 쓸 수 있는 인명용 한자를 찾지 못했습니다"
+                    } else null
+                    if (combos.isNotEmpty()) screen = AppScreen.RESULT
                     busy = false
                 }
             } catch (e: Exception) {
@@ -183,6 +233,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     saju = sajuResult
                     evaluation = eval
                     candidates = emptyList()
+                    hanjaCombos = emptyList()
                     screen = AppScreen.RESULT
                     busy = false
                 }
