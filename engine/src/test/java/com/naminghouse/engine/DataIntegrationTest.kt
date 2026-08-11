@@ -108,10 +108,19 @@ class DataIntegrationTest {
                 assertTrue("${cand.givenName}: ${h.char}(${h.meaning})는 이름에 쓰는 글자가 아님", h.usableForNaming)
             }
         }
-        // 점수순 정렬 확인
-        assertEquals(candidates.map { it.evaluation.score }.sortedDescending(),
-            candidates.map { it.evaluation.score })
+        // 1위는 전체 최고점이어야 한다
+        assertEquals(candidates.maxOf { it.evaluation.score }, candidates.first().evaluation.score)
         assertTrue("최상위 점수는 70점 이상이어야 함", candidates.first().evaluation.score >= 70)
+
+        // 다양성: 같은 첫 글자가 상위권을 도배하지 않아야 한다.
+        // (사주 보완 오행에 딱 맞는 글자 하나 때문에 '김대영·김대호·김대현·김대운' 처럼
+        //  쏠리던 것을 NameGenerator.diversify 가 완화한다)
+        val topFirstSyllables = candidates.take(20).groupingBy { it.givenName.first() }.eachCount()
+        val worst = topFirstSyllables.maxByOrNull { it.value }!!
+        assertTrue(
+            "상위 20개에서 '${worst.key}'로 시작하는 이름이 ${worst.value}개 — 2개 이하여야 함",
+            worst.value <= 2,
+        )
     }
 
     @Test

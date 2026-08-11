@@ -6,7 +6,7 @@
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/Theme.NamingHouse">
         <activity
             android:name=".MainActivity"
             android:exported="true"

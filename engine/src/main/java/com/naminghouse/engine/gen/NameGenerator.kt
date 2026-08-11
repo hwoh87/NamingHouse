@@ -87,15 +87,14 @@ class NameGenerator(
 
         // 만점 후보가 여럿 나오므로 동점 처리가 곧 추천 순위다:
         // 점수 → 실제 출생신고 순위 → 이름 대중성(tier) → 한자 친숙도 → 이름 순으로 가른다.
-        return results
-            .sortedWith(
-                compareByDescending<NameCandidate> { it.evaluation.score }
-                    .thenBy { it.stat?.latestRank?.second ?: Int.MAX_VALUE }
-                    .thenBy { it.tier }
-                    .thenByDescending { c -> c.hanja.sumOf { it.nameFit } }
-                    .thenBy { it.givenName }
-            )
-            .take(options.limit)
+        val ranked = results.sortedWith(
+            compareByDescending<NameCandidate> { it.evaluation.score }
+                .thenBy { it.stat?.latestRank?.second ?: Int.MAX_VALUE }
+                .thenBy { it.tier }
+                .thenByDescending { c -> c.hanja.sumOf { it.nameFit } }
+                .thenBy { it.givenName }
+        )
+        return diversify(ranked, options.limit)
     }
 
     /**
@@ -153,6 +152,37 @@ class NameGenerator(
                 idx[i] = 0
             }
         }
+    }
+
+    /**
+     * 첫 글자가 같은 이름이 상위에 몰리는 걸 완화한다.
+     *
+     * 사주 보완 오행에 딱 맞는 한 글자(예: 土가 필요할 때 垈)가 있으면 그 글자를 쓰는 이름이
+     * 죄다 만점 근처로 몰려 "김대영·김대호·김대현·김대운"처럼 첫인상이 단조로워진다.
+     * 점수 순서는 그대로 두되 같은 첫 글자가 [MAX_PER_SYLLABLE]개를 넘으면 뒤로 미룬다.
+     */
+    private fun diversify(ranked: List<NameCandidate>, limit: Int): List<NameCandidate> {
+        val picked = ArrayList<NameCandidate>(limit)
+        val deferred = ArrayList<NameCandidate>()
+        val seen = HashMap<Char, Int>()
+
+        for (c in ranked) {
+            val first = c.givenName.first()
+            val n = seen.getOrDefault(first, 0)
+            if (n < MAX_PER_SYLLABLE) {
+                seen[first] = n + 1
+                picked.add(c)
+                if (picked.size == limit) return picked
+            } else {
+                deferred.add(c)
+            }
+        }
+        // 다양성 제약으로 미뤄둔 후보로 남은 자리를 채운다(점수 순서 유지)
+        for (c in deferred) {
+            if (picked.size == limit) break
+            picked.add(c)
+        }
+        return picked
     }
 
     /** 4격 전부 길수가 되는 (이름1획, 이름2획) 조합 — 성 획수에 대해 사전계산 */
@@ -231,5 +261,8 @@ class NameGenerator(
 
         /** 한자 조합 탐색 상한 — '지'처럼 후보가 많은 음절이 겹치면 곱이 수천을 넘는다. */
         const val MAX_COMBOS = 1500
+
+        /** 추천 목록에서 첫 글자가 같은 이름의 최대 개수 */
+        const val MAX_PER_SYLLABLE = 2
     }
 }

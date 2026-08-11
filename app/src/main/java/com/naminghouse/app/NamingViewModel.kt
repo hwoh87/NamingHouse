@@ -97,6 +97,10 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     hanjaDb = db
                     namePool = pool
                     nameStats = stats
+                    // DB 로딩 전에는 후보를 못 봐서 기본 성씨가 비어 있다 — 로딩 직후 채운다
+                    if (surnameHanja.value.all { it == null }) {
+                        surnameHanja.value = List(surname.length) { i -> soleSurnameHanja(i) }
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { loadError = "데이터 로딩 실패: ${e.message}" }
@@ -257,8 +261,15 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     fun onSurnameChanged(value: String) {
         val filtered = value.filter { it.code in 0xAC00..0xD7A3 }.take(2)
         surname = filtered
-        surnameHanja.value = List(filtered.length) { null }
+        surnameHanja.value = List(filtered.length) { i -> soleSurnameHanja(i) }
     }
+
+    /**
+     * 그 음으로 읽는 인명용 한자가 딱 하나뿐이면 미리 골라 둔다(김→金, 최→崔).
+     * 후보가 여럿이면 고르지 않는다 — 성씨는 잘못 찍으면 결과가 통째로 틀어진다.
+     */
+    private fun soleSurnameHanja(index: Int): HanjaEntry? =
+        surnameCandidates(index).singleOrNull()
 
     fun onGivenNameChanged(value: String) {
         val filtered = value.filter { it.code in 0xAC00..0xD7A3 }.take(3)

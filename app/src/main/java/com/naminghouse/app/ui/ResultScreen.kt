@@ -1,6 +1,8 @@
 package com.naminghouse.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -74,7 +76,7 @@ fun ResultScreen(vm: NamingViewModel) {
                 AppMode.RECOMMEND -> {
                     item {
                         Text(
-                            "추천 이름 ${vm.candidates.size}개 — 수리사격·발음오행·자원오행 기준",
+                            "추천 이름 ${vm.candidates.size}개 — 수리사격·발음오행·수리오행·자원오행·음양 종합",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -132,6 +134,7 @@ fun ResultScreen(vm: NamingViewModel) {
  * 결과 목록의 한 줄. 한자 추천 모드에선 한글 이름이 모두 같으므로
  * [emphasizeHanja] 로 한자를 크게 보여 조합끼리 구분되게 한다.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CandidateRow(
     rank: Int,
@@ -176,7 +179,11 @@ private fun CandidateRow(
                         )
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
                     AxisChip("수리", eval.suriVerdict.label)
                     AxisChip("발음", eval.baleumVerdict.label)
                     AxisChip("수리오행", eval.suriOhengVerdict.label)

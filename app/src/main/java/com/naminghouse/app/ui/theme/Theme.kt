@@ -1,6 +1,11 @@
 package com.naminghouse.app.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -70,8 +75,21 @@ object WuxingColors {
 @Composable
 fun NamingHouseTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
-    MaterialTheme(
-        colorScheme = if (dark) BrandDark else BrandLight,
-        content = content,
-    )
+    val colorScheme = if (dark) BrandDark else BrandLight
+
+    // 시스템 다크모드 플래그가 아니라 **앱 배경의 밝기**로 시스템 바 아이콘 대비를 정한다.
+    // 이걸 안 하면 다크 모드에서 흰 아이콘이 밝은 배경 위에 그려져 시계가 안 보인다.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val light = colorScheme.background.luminance() > 0.5f
+        SideEffect {
+            val window = (view.context as Activity).window
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = light
+                isAppearanceLightNavigationBars = light
+            }
+        }
+    }
+
+    MaterialTheme(colorScheme = colorScheme, content = content)
 }

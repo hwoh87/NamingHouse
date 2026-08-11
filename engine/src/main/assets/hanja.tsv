@@ -1998,7 +1998,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 峯	봉	10	10	土	봉우리 봉	4	0
 峰	봉	10	10	土	峯과 同字	3	1
 峴	현	10	10	土	고개 현	3	1
-島	도	10	10	土	섬 도	4	0
+島	도	10	10	土	섬 도	4	1
 峹	도	10	10	土		0	1
 峻	준	10	10	土	높을 준	3	0
 峼	곡,호	10	10	土		0	1
@@ -3368,7 +3368,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 枌	분	8	8	木	나무 이름 분	0	0
 枍	예	8	8	木		0	1
 枎	부	8	8	木		0	1
-枏	남	8	8	木	녹나무 남	3	0
+枏	남	8	8	木	녹나무 남	3	1
 析	석	8	8	木	가를 석	3	1
 枑	호	8	8	木		0	1
 枒	아	8	8	木		1	1
@@ -3673,7 +3673,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 模	모	14	14	木	법 모	4	0
 樣	상,양	15	15	木	모양 양	4	1
 権	권	15	15	木		1	1
-樵	초	16	16	木	땔나무 초	3	0
+樵	초	16	16	木	땔나무 초	3	1
 樸	박	16	16	木	통나무 박	4	0
 樹	수	16	16	木	나무 수	4	0
 樺	화	14	14	木	자작나무 화	3	0
@@ -4323,7 +4323,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 潛	잠	16	15	水	잠길 잠	4	1
 潜	잠	16	15	水	潛의 俗字	1	1
 潝	흡	16	15	水	빨리 흐르는 소리 흡	0	1
-潞	노,로	16	16	水	강 이름 로	3	0
+潞	노,로	16	16	水	강 이름 로	3	1
 潟	석	16	15	水	개펄 석	3	1
 潡	돈	16	15	水	큰 물 돈	0	0
 潢	황	16	14	水	웅덩이 황	3	1
@@ -6811,7 +6811,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 蘭	난,란	23	20	木	난초 난	4	0
 蘯	탕	23	20	木	盪과 同字	0	1
 蘼	미	25	22	木	장미 미	0	1
-蘿	나,라	25	22	木	소나무겨우살이 나	3	0
+蘿	나,라	25	22	木	소나무겨우살이 나	3	1
 虁	기	25	24	木	夔와 同字	0	1
 虍	호	6	6	木	범	0	1
 虎	호	8	8	木	범 호	4	1
