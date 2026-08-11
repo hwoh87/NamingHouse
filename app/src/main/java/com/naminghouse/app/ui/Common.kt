@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.naminghouse.app.ui.theme.WuxingColors
 import com.naminghouse.engine.eval.AxisVerdict
+import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.samramanshang.manseryeok.orrery.model.Element
 
@@ -185,6 +186,86 @@ fun OhengBarChart(
     if (nameCounts.isNotEmpty()) {
         Text(
             "진한 칸이 사주, 옅은 칸이 이름 한자의 자원오행입니다.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * 이름 순위·남녀비율 카드 — 대법원 출생신고 통계.
+ * 통계에 없는 이름이면 아무것도 그리지 않는다.
+ */
+@Composable
+fun NameStatCard(stat: NameStat) {
+    SectionCard("이름 통계") {
+        val ranks = stat.ranks
+        if (ranks.isEmpty()) {
+            Text(
+                "최근 상위권에 든 기록이 없는 이름입니다.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        } else {
+            Text("출생신고 이름 순위", style = MaterialTheme.typography.bodyMedium)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                ranks.take(6).forEach { (year, rank) ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "${rank}위",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            "${year}년",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+
+        // 남녀비율 — 한 줄 막대
+        val malePct = stat.malePercent
+        Text("남녀 비율", style = MaterialTheme.typography.bodyMedium)
+        Row(
+            Modifier.fillMaxWidth().height(22.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (malePct > 0) {
+                Box(
+                    Modifier
+                        .weight(malePct.coerceAtLeast(1).toFloat())
+                        .height(22.dp)
+                        .background(Color(0xFF3D6CB0), RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (malePct >= 15) {
+                        Text("남 $malePct%", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+            val femalePct = 100 - malePct
+            if (femalePct > 0) {
+                Box(
+                    Modifier
+                        .weight(femalePct.coerceAtLeast(1).toFloat())
+                        .height(22.dp)
+                        .background(Color(0xFFC4587F), RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (femalePct >= 15) {
+                        Text("여 $femalePct%", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+        Text(
+            "2008년 이후 출생신고 ${stat.total}건 기준 · 대법원 전자가족관계등록시스템 통계",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

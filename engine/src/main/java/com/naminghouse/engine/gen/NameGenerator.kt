@@ -18,6 +18,8 @@ data class NameCandidate(
     val hanja: List<HanjaEntry>,
     val evaluation: NameEvaluation,
     val tier: Int,
+    /** 대법원 출생신고 통계 (없는 이름이면 null) */
+    val stat: NameStat? = null,
 )
 
 data class GeneratorOptions(
@@ -44,6 +46,7 @@ data class GeneratorOptions(
 class NameGenerator(
     private val hanjaDb: HanjaDb,
     private val namePool: NamePool,
+    private val stats: NameStats = NameStats.EMPTY,
 ) {
 
     fun generate(
@@ -79,14 +82,15 @@ class NameGenerator(
                 saju = saju,
                 school = options.school,
             )
-            results.add(NameCandidate(pool.name, best, evaluation, pool.tier))
+            results.add(NameCandidate(pool.name, best, evaluation, pool.tier, stats[pool.name]))
         }
 
         // 만점 후보가 여럿 나오므로 동점 처리가 곧 추천 순위다:
-        // 점수 → 이름 대중성(tier) → 한자 친숙도 → 이름(결정적 순서) 순으로 가른다.
+        // 점수 → 실제 출생신고 순위 → 이름 대중성(tier) → 한자 친숙도 → 이름 순으로 가른다.
         return results
             .sortedWith(
                 compareByDescending<NameCandidate> { it.evaluation.score }
+                    .thenBy { it.stat?.latestRank?.second ?: Int.MAX_VALUE }
                     .thenBy { it.tier }
                     .thenByDescending { c -> c.hanja.sumOf { it.nameFit } }
                     .thenBy { it.givenName }

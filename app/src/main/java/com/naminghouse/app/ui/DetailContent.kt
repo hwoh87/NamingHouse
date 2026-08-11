@@ -15,13 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naminghouse.engine.eval.NameEvaluation
+import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.oheng.OhengRelation
 import com.naminghouse.engine.saju.SajuSummary
 import com.naminghouse.engine.suri.SuriMeaning
 
 /** 이름 하나의 종합 감명 패널 — 추천 상세·감명 결과 공용 */
 @Composable
-fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?) {
+fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?, stat: NameStat? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
         // ── 헤더
@@ -46,6 +47,9 @@ fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?) {
                 fontWeight = FontWeight.Bold,
             )
         }
+
+        // ── 이름 통계 (대법원 출생신고)
+        stat?.let { NameStatCard(it) }
 
         // ── 수리사격
         SectionCard("수리사격 (원형이정)") {

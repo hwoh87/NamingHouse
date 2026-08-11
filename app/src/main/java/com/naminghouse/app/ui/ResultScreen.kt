@@ -36,12 +36,13 @@ import androidx.compose.ui.unit.dp
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.engine.eval.NameEvaluation
+import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.saju.SajuSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultScreen(vm: NamingViewModel) {
-    var selected by remember { mutableStateOf<NameEvaluation?>(null) }
+    var selected by remember { mutableStateOf<Pair<NameEvaluation, NameStat?>?>(null) }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -82,8 +83,8 @@ fun ResultScreen(vm: NamingViewModel) {
                         CandidateRow(
                             rank = i + 1,
                             eval = cand.evaluation,
-                            popular = cand.tier == 1,
-                            onClick = { selected = cand.evaluation },
+                            stat = cand.stat,
+                            onClick = { selected = cand.evaluation to cand.stat },
                         )
                     }
                     item { Spacer(Modifier.height(28.dp)) }
@@ -101,26 +102,26 @@ fun ResultScreen(vm: NamingViewModel) {
                         CandidateRow(
                             rank = i + 1,
                             eval = eval,
-                            popular = false,
+                            stat = vm.nameStats[eval.givenName],
                             emphasizeHanja = true,
-                            onClick = { selected = eval },
+                            onClick = { selected = eval to vm.nameStats[eval.givenName] },
                         )
                     }
                     item { Spacer(Modifier.height(28.dp)) }
                 }
 
                 AppMode.EVALUATE -> vm.evaluation?.let { eval ->
-                    item { EvaluationDetail(eval, vm.saju) }
+                    item { EvaluationDetail(eval, vm.saju, vm.nameStats[eval.givenName]) }
                     item { Spacer(Modifier.height(28.dp)) }
                 }
             }
         }
     }
 
-    selected?.let { eval ->
+    selected?.let { (eval, stat) ->
         ModalBottomSheet(onDismissRequest = { selected = null }) {
             Column(Modifier.padding(horizontal = 20.dp)) {
-                EvaluationDetail(eval, vm.saju)
+                EvaluationDetail(eval, vm.saju, stat)
                 Spacer(Modifier.height(32.dp))
             }
         }
@@ -135,7 +136,7 @@ fun ResultScreen(vm: NamingViewModel) {
 private fun CandidateRow(
     rank: Int,
     eval: NameEvaluation,
-    popular: Boolean,
+    stat: NameStat?,
     emphasizeHanja: Boolean = false,
     onClick: () -> Unit,
 ) {
@@ -181,7 +182,10 @@ private fun CandidateRow(
                     AxisChip("수리오행", eval.suriOhengVerdict.label)
                     AxisChip("자원", eval.jawonVerdict.label)
                     AxisChip("음양", eval.eumyangVerdict.label)
-                    if (popular) AxisChip("인기", "TOP")
+                    // 6개째 칩이라 연도까지 넣으면 줄이 깨진다 — 순위만 짧게
+                    stat?.latestRank?.let { (_, rank) ->
+                        if (rank <= 200) AxisChip("인기", "${rank}위")
+                    }
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

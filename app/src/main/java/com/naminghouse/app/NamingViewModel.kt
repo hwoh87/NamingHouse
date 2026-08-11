@@ -12,6 +12,7 @@ import com.naminghouse.engine.gen.GeneratorOptions
 import com.naminghouse.engine.gen.NameCandidate
 import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
+import com.naminghouse.engine.gen.NameStats
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.oheng.BaleumSchool
@@ -37,6 +38,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     var hanjaDb by mutableStateOf<HanjaDb?>(null)
         private set
     var namePool by mutableStateOf<NamePool?>(null)
+        private set
+    var nameStats by mutableStateOf(NameStats.EMPTY)
         private set
     var loadError by mutableStateOf<String?>(null)
         private set
@@ -86,9 +89,14 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                 val assets = getApplication<Application>().assets
                 val db = assets.open("hanja.tsv").bufferedReader().useLines { HanjaDb.parse(it) }
                 val pool = assets.open("names.tsv").bufferedReader().useLines { NamePool.parse(it) }
+                // 통계는 없어도 앱이 동작해야 하므로 실패해도 무시한다
+                val stats = runCatching {
+                    assets.open("name-stats.tsv").bufferedReader().useLines { NameStats.parse(it) }
+                }.getOrDefault(NameStats.EMPTY)
                 withContext(Dispatchers.Main) {
                     hanjaDb = db
                     namePool = pool
+                    nameStats = stats
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { loadError = "데이터 로딩 실패: ${e.message}" }
@@ -144,7 +152,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
                 val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val generator = NameGenerator(db, pool)
+                val generator = NameGenerator(db, pool, nameStats)
                 val options = GeneratorOptions(
                     school = school,
                     maxTier = if (popularOnly) 1 else 3,
@@ -185,7 +193,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
                 val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val combos = NameGenerator(db, pool).hanjaCombosFor(
+                val combos = NameGenerator(db, pool, nameStats).hanjaCombosFor(
                     surname = surname,
                     surnameHanja = sHanja,
                     givenName = givenName,
