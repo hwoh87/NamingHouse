@@ -80,7 +80,7 @@ fun InputScreen(vm: NamingViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                vm.surname.forEachIndexed { i, ch ->
+                vm.surnameSyllables.forEachIndexed { i, ch ->
                     HanjaSlotButton(
                         syllable = ch,
                         selected = vm.surnameHanja.value.getOrNull(i),
@@ -106,7 +106,7 @@ fun InputScreen(vm: NamingViewModel) {
                 )
                 if (vm.mode == AppMode.EVALUATE) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        vm.givenName.forEachIndexed { i, ch ->
+                        vm.givenNameSyllables.forEachIndexed { i, ch ->
                             HanjaSlotButton(
                                 syllable = ch,
                                 selected = vm.givenHanja.value.getOrNull(i),

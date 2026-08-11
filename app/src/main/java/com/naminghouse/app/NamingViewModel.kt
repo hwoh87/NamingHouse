@@ -99,7 +99,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     nameStats = stats
                     // DB 로딩 전에는 후보를 못 봐서 기본 성씨가 비어 있다 — 로딩 직후 채운다
                     if (surnameHanja.value.all { it == null }) {
-                        surnameHanja.value = List(surname.length) { i -> soleSurnameHanja(i) }
+                        surnameHanja.value = List(surnameSyllables.length) { i -> soleSurnameHanja(i) }
                     }
                 }
             } catch (e: Exception) {
@@ -108,15 +108,22 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * 입력란에는 조합 중인 낱자가 섞여 있을 수 있으므로, 실제 계산·한자 슬롯에는
+     * **완성된 음절만** 쓴다.
+     */
+    val surnameSyllables: String get() = surname.filter(::isHangulSyllable)
+    val givenNameSyllables: String get() = givenName.filter(::isHangulSyllable)
+
     fun surnameCandidates(index: Int): List<HanjaEntry> {
         val db = hanjaDb ?: return emptyList()
-        val ch = surname.getOrNull(index) ?: return emptyList()
+        val ch = surnameSyllables.getOrNull(index) ?: return emptyList()
         return db.candidatesFor(ch.toString())
     }
 
     fun givenNameCandidates(index: Int): List<HanjaEntry> {
         val db = hanjaDb ?: return emptyList()
-        val ch = givenName.getOrNull(index) ?: return emptyList()
+        val ch = givenNameSyllables.getOrNull(index) ?: return emptyList()
         return db.candidatesFor(ch.toString())
     }
 
@@ -139,7 +146,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun pickedSurnameHanja(): List<HanjaEntry>? {
         val picked = surnameHanja.value.filterNotNull()
-        if (picked.size != surname.length || picked.isEmpty()) return null
+        if (picked.size != surnameSyllables.length || picked.isEmpty()) return null
         return picked
     }
 
@@ -161,7 +168,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     school = school,
                     maxTier = if (popularOnly) 1 else 3,
                 )
-                val list = generator.generate(surname, sHanja, gender, sajuResult, options)
+                val list = generator.generate(surnameSyllables, sHanja, gender, sajuResult, options)
                 withContext(Dispatchers.Main) {
                     saju = sajuResult
                     candidates = list
@@ -185,7 +192,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         val pool = namePool ?: return
         val sHanja = pickedSurnameHanja()
             ?: run { errorMessage = "성씨 한자를 선택해 주세요"; return }
-        if (givenName.isEmpty()) {
+        if (givenNameSyllables.isEmpty()) {
             errorMessage = "한자를 붙일 이름을 입력해 주세요"
             return
         }
@@ -198,9 +205,9 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val sajuResult = input?.let { SajuNamingService.analyze(it) }
                 val combos = NameGenerator(db, pool, nameStats).hanjaCombosFor(
-                    surname = surname,
+                    surname = surnameSyllables,
                     surnameHanja = sHanja,
-                    givenName = givenName,
+                    givenName = givenNameSyllables,
                     saju = sajuResult,
                     options = GeneratorOptions(school = school, requireAllGoodSuri = false),
                 )
@@ -210,7 +217,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     candidates = emptyList()
                     evaluation = null
                     errorMessage = if (combos.isEmpty()) {
-                        "'$givenName' 에 쓸 수 있는 인명용 한자를 찾지 못했습니다"
+                        "'$givenNameSyllables' 에 쓸 수 있는 인명용 한자를 찾지 못했습니다"
                     } else null
                     if (combos.isNotEmpty()) screen = AppScreen.RESULT
                     busy = false
@@ -228,7 +235,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         val sHanja = pickedSurnameHanja()
             ?: run { errorMessage = "성씨 한자를 선택해 주세요"; return }
         val gHanja = givenHanja.value.filterNotNull()
-        if (givenName.isEmpty() || gHanja.size != givenName.length) {
+        if (givenNameSyllables.isEmpty() || gHanja.size != givenNameSyllables.length) {
             errorMessage = "이름과 이름 한자를 모두 선택해 주세요"
             return
         }
@@ -240,7 +247,9 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
                 val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val eval = NameEvaluator.evaluate(surname, givenName, sHanja, gHanja, sajuResult, school)
+                val eval = NameEvaluator.evaluate(
+                    surnameSyllables, givenNameSyllables, sHanja, gHanja, sajuResult, school
+                )
                 withContext(Dispatchers.Main) {
                     saju = sajuResult
                     evaluation = eval
@@ -259,9 +268,13 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun onSurnameChanged(value: String) {
-        val filtered = value.filter { it.code in 0xAC00..0xD7A3 }.take(2)
-        surname = filtered
-        surnameHanja.value = List(filtered.length) { i -> soleSurnameHanja(i) }
+        val before = surnameSyllables
+        surname = acceptHangul(value, maxSyllables = 2)
+        // 조합 중에는 한자 슬롯을 건드리지 않는다 — 두 글자 성씨에서 둘째 글자를 치는 동안
+        // 첫 글자에 골라 둔 한자가 날아가면 안 된다.
+        if (surnameSyllables != before) {
+            surnameHanja.value = List(surnameSyllables.length) { i -> soleSurnameHanja(i) }
+        }
     }
 
     /**
@@ -272,9 +285,11 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         surnameCandidates(index).singleOrNull()
 
     fun onGivenNameChanged(value: String) {
-        val filtered = value.filter { it.code in 0xAC00..0xD7A3 }.take(3)
-        givenName = filtered
-        givenHanja.value = List(filtered.length) { null }
+        val before = givenNameSyllables
+        givenName = acceptHangul(value, maxSyllables = 3)
+        if (givenNameSyllables != before) {
+            givenHanja.value = List(givenNameSyllables.length) { null }
+        }
     }
 
     fun backToInput() {

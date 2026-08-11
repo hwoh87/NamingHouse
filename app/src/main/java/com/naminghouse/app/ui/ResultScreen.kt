@@ -95,7 +95,7 @@ fun ResultScreen(vm: NamingViewModel) {
                 AppMode.HANJA -> {
                     item {
                         Text(
-                            "'${vm.surname}${vm.givenName}' 에 쓸 수 있는 한자 조합 ${vm.hanjaCombos.size}개",
+                            "'${vm.surnameSyllables}${vm.givenNameSyllables}' 에 쓸 수 있는 한자 조합 ${vm.hanjaCombos.size}개",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
