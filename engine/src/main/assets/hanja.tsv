@@ -320,7 +320,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 仚	현	5	5	火		0	1
 仜	홍	5	5	火		0	1
 仝	동	5	5	火	同의 古字	3	1
-仞	인	5	5	火	길 인	1	1
+仞	인	5	5	火	길 인	1	0
 仟	천	5	5	火	일천 천	3	1
 仡	흘	5	5	火	날랠 흘	1	1
 代	대	5	5	火	대신할 대	4	1
@@ -876,9 +876,9 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 匉	평	7	7			0	1
 匊	국	8	8		움켜 뜰 국	0	0
 匌	합	8	8		기운 답답할 합	0	1
-匍	포	9	9		엉금엉금 길 포	3	1
+匍	포	9	9		엉금엉금 길 포	3	0
 匏	포	11	11		박 포	3	1
-匐	복	11	11		길 복	3	1
+匐	복	11	11		길 복	3	0
 匕	비	2	2	金	비수 비	3	1
 化	화	4	4	金	될 화	4	0
 北	배,북	5	5	金	달아날	4	1
@@ -1307,7 +1307,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 圴	작	6	6	土		0	1
 圻	기,은	7	7	土	경기 기	3	1
 圾	급	6	6	土	위태할 급	2	1
-址	지	7	7	土	터 지	3	1
+址	지	7	7	土	터 지	3	0
 坁	지	7	7	土		0	1
 坂	판	7	7	土	언덕 판	3	0
 均	균,연	7	7	土	고를 균	3	1
@@ -1327,8 +1327,8 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 坩	감	8	8	土	도가니 감	1	1
 坪	평	8	8	土	벌판 평	3	1
 坫	점	8	8	土		0	1
-坮	대	8	8	土	들 대	3	0
-坰	경	8	8	土	들 경	3	0
+坮	대	8	8	土	들 대	3	1
+坰	경	8	8	土	들 경	3	1
 坱	앙	8	8	土	티끌 앙	0	1
 坳	요	8	8	土	凹와 同字	1	1
 坵	구	8	8	土	丘의 俗字	3	1
@@ -1340,7 +1340,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 坽	령,영	8	8	土		0	1
 垀	호	8	8	土		0	1
 垂	수	8	8	土	드리울 수	4	1
-垈	대	8	8	土	터 대	3	1
+垈	대	8	8	土	터 대	3	0
 型	형	9	9	土	거푸집 형	4	1
 垌	동	9	9	土	항아리 동	2	1
 垓	해	9	9	土	땅 가장자리 해	3	1
@@ -1382,7 +1382,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 埶	예	11	11	土		0	1
 執	집	11	11	土	잡을 집	3	1
 培	배	11	11	土	북돋을 배	4	1
-基	기	11	11	土	터 기	4	1
+基	기	11	11	土	터 기	4	0
 埻	준	11	11	土	과녘 준	2	1
 埼	기	11	11	土	崎와 同字	3	1
 埽	소	11	11	土	쓸 소	0	1
@@ -1430,8 +1430,8 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 塑	소	13	13	土	허수아비 소	4	1
 塒	시	13	13	土	홰 시	1	1
 塔	탑	12	12	土	탑 탑	4	1
-塗	도	13	13	土	바를 도	4	0
-塘	당	13	13	土	연못 당	4	1
+塗	도	13	13	土	바를 도	4	1
+塘	당	13	13	土	연못 당	4	0
 塚	총	13	13	土	冢의 俗字	3	1
 塝	방	13	13	土		0	1
 塞	새,색	13	13	土	변방 새	3	1
@@ -1459,7 +1459,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 墜	추	14	14	土	떨어질 추	3	1
 墝	요	15	15	土	메마른 밭 요	0	1
 增	증	15	15	土	불을 증	4	1
-墟	허	14	14	土	옛 터 허	3	1
+墟	허	14	14	土	옛 터 허	3	0
 墠	선	15	15	土		0	1
 墡	선	15	15	土	백토 선	2	1
 墣	복	15	15	土	흙덩이 복	1	1
@@ -1911,7 +1911,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 尋	심	12	12	木	찾을 심	4	1
 尌	주	12	12	木	세울 주	0	0
 對	대	14	14	木	마주볼 대	4	1
-導	도	15	15	木	이끌 도	4	1
+導	도	15	15	木	이끌 도	4	0
 小	소	3	3		작을 소	4	1
 少	소	4	4		적을 소	4	1
 尔	이	5	5		爾와 同字	1	1
@@ -1980,7 +1980,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 岰	유	8	8	土		0	1
 岱	대	8	8	土	태산 대	3	1
 岳	악	8	8	土	큰 산 악	3	0
-岵	호	8	8	土	산 호	3	0
+岵	호	8	8	土	산 호	3	1
 岷	민	8	8	土	산이름 민	3	1
 岸	안	8	8	土	물가 언덕 안	4	0
 岺	령,영	8	8	土	재 령	3	1
@@ -2189,7 +2189,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 府	부	8	8	木	곳집 부	4	1
 庠	상	9	9	木	학교 상	3	1
 庥	휴	9	9	木		1	1
-度	도,탁	9	9	木	법도 도	4	1
+度	도,탁	9	9	木	법도 도	4	0
 座	좌	10	10	木	자리 좌	4	1
 庨	효	10	10	木		0	1
 庩	도	10	10	木		0	1
@@ -3521,7 +3521,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 棘	극	12	12	木	가시나무 극	3	0
 棚	붕	12	12	木	시렁 붕	4	1
 棟	동	12	12	木	용마루 동	3	1
-棠	당	12	12	木	아가위 당	3	1
+棠	당	12	12	木	아가위 당	3	0
 棡	강	12	12	木		0	1
 棣	체	12	12	木	산앵두나무 체	1	0
 棧	잔	12	12	木	잔교 잔	3	1
@@ -3883,7 +3883,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 求	구	7	7	水	찾을 구	4	1
 汃	팔	6	5	水		0	1
 汋	작	7	6	水	삶을 작	0	1
-汎	범	7	6	水	뜰 범	3	0
+汎	범	7	6	水	뜰 범	3	1
 汏	대	7	6	水	씻을 대	0	1
 汐	석	7	6	水	조수 석	3	1
 汒	망	7	6	水	황급할 망	0	1
@@ -4067,7 +4067,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 浽	수	11	10	水		0	1
 浿	패	11	10	水	물이름 패	3	1
 涀	견	11	10	水		0	1
-涂	도	11	10	水	길 도	1	1
+涂	도	11	10	水	길 도	1	0
 涅	녈,열	11	10	水	죽을 녈	3	1
 涆	간	11	10	水		0	1
 涇	경	11	10	水	통할 경	3	0
@@ -6015,7 +6015,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 縤	소	16	16	木		0	1
 縫	봉	16	16	木	꿰맬 봉	4	1
 縮	축	17	17	木	줄어들 축	4	1
-縯	연	17	17	木	길 연	3	1
+縯	연	17	17	木	길 연	3	0
 縱	종	17	17	木	늘어질 종	4	1
 縲	류,유	17	17	木	포승 류	1	1
 縳	견	17	17	木		1	1
@@ -6187,7 +6187,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 耕	경	10	10	土	밭갈 경	4	1
 耖	초	10	10	土	밭 거듭 갈 초	0	1
 耗	모	10	10	土	줄 모	4	1
-耘	운	10	10	土	길 맬 운	2	1
+耘	운	10	10	土	길 맬 운	2	0
 耙	파	10	10	土	쇠시랑 파	1	1
 耞	가	11	11	土	도리깨 가	0	0
 耡	서	13	13	土	구실이름 서	0	1
@@ -7498,7 +7498,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 跫	공	13	13	土	발자국 소리 공	1	1
 跬	규	13	13	土	한발자국 규	1	1
 跭	강	13	13	土		0	1
-路	노,로	13	13	土	길 노	4	1
+路	노,로	13	13	土	길 노	4	0
 跱	치	13	13	土	머뭇거릴 치	0	1
 跳	도	13	13	土	뛸 도	4	1
 跼	국	14	14	土	구부릴 국	1	1
@@ -7529,7 +7529,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 蹊	혜	17	17	土	지름길 혜	3	1
 蹌	창	17	17	土	추창할 창	1	1
 蹏	제	17	17	土	蹄와 同字	0	1
-蹕	필	17	17	土	길 치울 필	1	1
+蹕	필	17	17	土	길 치울 필	1	0
 蹙	축	18	18	土	찡그릴 축	3	1
 蹜	축	18	18	土	발 끌어 디딜 축	0	1
 蹟	적	18	18	土	행적 적	4	1
@@ -7685,7 +7685,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 透	투	14	10	土	통할 투	4	0
 逐	축	14	10	土	쫓을 축	4	1
 逑	구	14	10	土	짝 구	3	1
-途	도	14	10	土	길 도	4	1
+途	도	14	10	土	길 도	4	0
 逕	경	14	10	土	소로 경	4	1
 逖	적	14	10	土	멀 적	1	0
 逗	두	14	10	土	머무를 두	4	1
@@ -7720,7 +7720,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 遐	하	16	12	土	멀 하	3	0
 遑	황	16	12	土	허둥거릴 황	3	1
 遒	주	16	12	土	다가설 주	2	1
-道	도	16	12	土	길 도	4	1
+道	도	16	12	土	길 도	4	0
 達	달	16	12	土	통달할 달	4	1
 違	위	16	12	土	어길 위	4	1
 遘	구	17	13	土	만날 구	1	1
@@ -8059,7 +8059,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 鍉	시	17	17	金	숟가락 시	0	1
 鍊	련,연	17	17	金	불릴 련	4	1
 鍋	과	16	16	金	노구솥 과	4	1
-鍍	도	17	17	金	도금할 도	3	1
+鍍	도	17	17	金	도금할 도	3	0
 鍑	복	17	17	金		2	1
 鍔	악	17	17	金	칼날끝 악	3	1
 鍗	제	17	17	金	큰 가마 제	0	1
@@ -8174,7 +8174,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 鑾	난,란	27	27	金	방울 란	1	1
 鑿	착	28	28	金	뚫을 착	3	1
 钁	곽	28	28	金		0	1
-長	장	8	8	木	길 장	4	1
+長	장	8	8	木	길 장	4	0
 門	문	8	8	木	문 문	4	1
 閃	섬	10	10	木	번쩍할 섬	4	1
 閈	한	11	11	木	마을 문 한	0	0
@@ -8233,7 +8233,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 阪	판	12	6	土	산비탈 판	3	1
 阭	윤	12	6	土		2	1
 阮	완,원	12	6	土	성씨 완	3	1
-阯	지	12	6	土	터 지	0	1
+阯	지	12	6	土	터 지	0	0
 防	방	12	6	土	둑 방	4	1
 阷	정	13	7	土		0	1
 阻	조	13	7	土	험할 조	4	1
@@ -8265,10 +8265,10 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 陰	음	16	10	土	음기 음	4	0
 陱	국	16	10	土		0	1
 陲	수	16	10	土	변방 수	1	1
-陳	진	16	10	土	늘어놓을 진	4	0
+陳	진	16	10	土	늘어놓을 진	4	1
 陴	비	16	10	土	성가퀴 비	1	1
 陵	능,릉	16	10	土	능 능	3	1
-陶	도	16	10	土	질 그도 도	3	1
+陶	도	16	10	土	질 그도 도	3	0
 陷	함	16	10	土	빠질 함	4	1
 陸	륙,육	16	10	土	뭍 륙	4	0
 陹	승	16	10	土		0	1

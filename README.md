@@ -51,7 +51,7 @@ python3 tools/hanja-db/build_hanja_db.py && python3 tools/name-pool/build_names.
 
 인명용 한자에는 蔬(나물)·嗽(기침할)·蜘(거미)처럼 흔하지만 이름엔 쓰지 않는 글자가 많다.
 `hanja.tsv` 의 `namefit`(Unihan 한국 코어 기반 상용도)과 `avoid`(훈 기반 판정)로 걸러
-작명 후보 생성에는 1,008자만 쓴다. 한자 선택 화면에서는 전부 보여주되 적합한 글자를 앞에 정렬한다.
+작명 후보 생성에는 1,020자만 쓴다. 한자 선택 화면에서는 전부 보여주되 적합한 글자를 앞에 정렬한다.
 판정 규칙과 근거는 [tools/hanja-db/README.md](tools/hanja-db/README.md) 참조.
 
 ## 빌드·테스트
