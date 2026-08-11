@@ -130,6 +130,12 @@ fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?) {
                     ElementBall(h.char.toString(), h.element)
                 }
             }
+            // 사주 분포 위에 이름의 자원오행을 얹어 어느 칸이 채워지는지 보인다
+            if (saju != null) {
+                val nameCounts = eval.jawonElements.filterNotNull()
+                    .groupingBy { it }.eachCount()
+                OhengBarChart(sajuCounts = saju.simpleCounts, nameCounts = nameCounts)
+            }
             val fit = eval.sajuFit
             if (fit != null) {
                 Text(

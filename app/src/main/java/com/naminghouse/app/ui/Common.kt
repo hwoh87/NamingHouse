@@ -3,6 +3,7 @@ package com.naminghouse.app.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -96,6 +97,96 @@ fun ElementBall(label: String, element: Element?, sub: String? = null) {
             sub ?: element?.let { "${it.hanja}(${it.ko})" } ?: "미상",
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+/**
+ * 오행 분포 막대 차트.
+ *
+ * 사주 여덟 글자를 아래쪽 진한 막대로, 이름 한자의 자원오행을 그 위에 옅은 막대로 쌓아
+ * "이름이 어느 칸을 채우는지"를 한 눈에 보인다. 사주에도 없고 이름도 못 채운 오행은
+ * 바닥에 납작한 줄만 남겨 결핍이 드러나게 한다.
+ *
+ * @param nameCounts 이름이 더하는 오행 개수. 비어 있으면 사주 분포만 그린다.
+ */
+@Composable
+fun OhengBarChart(
+    sajuCounts: Map<Element, Int>,
+    nameCounts: Map<Element, Int> = emptyMap(),
+) {
+    val maxTotal = Element.entries.maxOf { (sajuCounts[it] ?: 0) + (nameCounts[it] ?: 0) }.coerceAtLeast(1)
+    val maxBarHeight = 84.dp
+
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Element.entries.forEach { el ->
+            val base = sajuCounts[el] ?: 0
+            val added = nameCounts[el] ?: 0
+            val color = WuxingColors.of(el)
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    if (added > 0) "$base+$added" else "$base",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (added > 0) color else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Box(
+                    Modifier.height(maxBarHeight).width(34.dp),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    if (base == 0 && added == 0) {
+                        // 사주에도 없고 이름도 못 채운 오행 — 빈 자리로 남겨 결핍을 보인다
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                                .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(2.dp))
+                        )
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (added > 0) {
+                                Box(
+                                    Modifier
+                                        .width(34.dp)
+                                        .height(maxBarHeight * added / maxTotal)
+                                        .background(color.copy(alpha = 0.4f), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                )
+                            }
+                            if (base > 0) {
+                                Box(
+                                    Modifier
+                                        .width(34.dp)
+                                        .height(maxBarHeight * base / maxTotal)
+                                        .background(
+                                            color,
+                                            if (added > 0) RoundedCornerShape(0.dp)
+                                            else RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
+                                        )
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${el.hanja}(${el.ko})",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+    if (nameCounts.isNotEmpty()) {
+        Text(
+            "진한 칸이 사주, 옅은 칸이 이름 한자의 자원오행입니다.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
