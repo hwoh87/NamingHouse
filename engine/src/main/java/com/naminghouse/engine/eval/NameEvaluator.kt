@@ -6,6 +6,8 @@ import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.oheng.BaleumOheng
 import com.naminghouse.engine.oheng.BaleumResult
 import com.naminghouse.engine.oheng.BaleumSchool
+import com.naminghouse.engine.oheng.ArrangementQuality
+import com.naminghouse.engine.oheng.arrangementQualityOf
 import com.naminghouse.engine.oheng.EumYang
 import com.naminghouse.engine.oheng.EumYangResult
 import com.naminghouse.engine.oheng.OhengRelation
@@ -92,20 +94,13 @@ object NameEvaluator {
         // ── 발음오행
         val fullName = surname + givenName
         val baleum = BaleumOheng.evaluate(fullName, school)
-        val baleumVerdict = when {
-            baleum == null -> AxisVerdict.BOTONG
-            baleum.allSangsaeng -> AxisVerdict.GIL
-            !baleum.hasSanggeuk -> AxisVerdict.BOTONG
-            else -> AxisVerdict.HYUNG
-        }
+        val baleumQuality = baleum?.let { arrangementQualityOf(it.relations) }
+        val baleumVerdict = baleumQuality?.let(::verdictOf) ?: AxisVerdict.BOTONG
 
         // ── 수리오행 (글자별 획수 → 오행 배열)
         val suriOheng = SuriOheng.evaluate(surnameStrokes + givenStrokes)
-        val suriOhengVerdict = when {
-            suriOheng.allSangsaeng -> AxisVerdict.GIL
-            !suriOheng.hasSanggeuk -> AxisVerdict.BOTONG
-            else -> AxisVerdict.HYUNG
-        }
+        val suriOhengQuality = arrangementQualityOf(suriOheng.relations)
+        val suriOhengVerdict = verdictOf(suriOhengQuality)
 
         // ── 음양 (수리음양 + 발음음양)
         val strokeEumyang = EumYang.ofStrokes(surnameStrokes + givenStrokes)
@@ -127,8 +122,8 @@ object NameEvaluator {
 
         val score = score(
             suri = suri,
-            baleum = baleum,
-            suriOheng = suriOheng,
+            baleumQuality = baleumQuality,
+            suriOhengQuality = suriOhengQuality,
             strokeEumyang = strokeEumyang,
             soundEumyang = soundEumyang,
             jawonElements = jawonElements,
@@ -159,6 +154,12 @@ object NameEvaluator {
         )
     }
 
+    private fun verdictOf(quality: ArrangementQuality): AxisVerdict = when (quality) {
+        ArrangementQuality.SANGSAENG -> AxisVerdict.GIL
+        ArrangementQuality.BIHWA_ONLY -> AxisVerdict.BOTONG
+        ArrangementQuality.SANGGEUK -> AxisVerdict.HYUNG
+    }
+
     private fun sajuFit(saju: SajuSummary, jawonElements: List<Element?>): SajuFitResult {
         val targets = saju.targetElements
         val present = jawonElements.filterNotNull()
@@ -180,17 +181,13 @@ object NameEvaluator {
         if (present.size < jawonElements.size) return AxisVerdict.BOTONG
         if (present.size < 2) return AxisVerdict.BOTONG
         val relations = present.zipWithNext { a, b -> BaleumOheng.relationOf(a, b) }
-        return when {
-            relations.all { it == OhengRelation.SANGSAENG } -> AxisVerdict.GIL
-            relations.none { it == OhengRelation.SANGGEUK } -> AxisVerdict.BOTONG
-            else -> AxisVerdict.HYUNG
-        }
+        return verdictOf(arrangementQualityOf(relations))
     }
 
     private fun score(
         suri: SuriGyeok,
-        baleum: BaleumResult?,
-        suriOheng: SuriOhengResult,
+        baleumQuality: ArrangementQuality?,
+        suriOhengQuality: ArrangementQuality,
         strokeEumyang: EumYangResult,
         soundEumyang: EumYangResult?,
         jawonElements: List<Element?>,
@@ -209,19 +206,19 @@ object NameEvaluator {
         }
         val suriScore = 30.0 * suri.all.sumOf { gradeVal(it.grade) } / 4.0
 
-        // 발음오행 18
-        val baleumScore = when {
-            baleum == null -> 9.0
-            baleum.allSangsaeng -> 18.0
-            !baleum.hasSanggeuk -> 13.0
-            else -> 4.0
+        // 발음오행 18 — 상극만 감점하고 비화는 중간(판정 규칙과 같은 기준)
+        val baleumScore = when (baleumQuality) {
+            ArrangementQuality.SANGSAENG -> 18.0
+            ArrangementQuality.BIHWA_ONLY -> 13.0
+            ArrangementQuality.SANGGEUK -> 4.0
+            null -> 9.0 // 한글 이름이 아니라 판정 불가
         }
 
         // 수리오행 12
-        val suriOhengScore = when {
-            suriOheng.allSangsaeng -> 12.0
-            !suriOheng.hasSanggeuk -> 8.0
-            else -> 2.0
+        val suriOhengScore = when (suriOhengQuality) {
+            ArrangementQuality.SANGSAENG -> 12.0
+            ArrangementQuality.BIHWA_ONLY -> 8.0
+            ArrangementQuality.SANGGEUK -> 2.0
         }
 
         // 자원오행·사주보완 25
