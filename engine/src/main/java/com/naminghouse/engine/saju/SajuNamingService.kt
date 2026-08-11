@@ -1,5 +1,8 @@
 package com.naminghouse.engine.saju
 
+import com.naminghouse.engine.fortune.BirthSigns
+import com.naminghouse.engine.fortune.StarSign
+import com.naminghouse.engine.fortune.Ttii
 import com.samramanshang.manseryeok.orrery.analyzer.analyzeStrengthShared
 import com.samramanshang.manseryeok.orrery.analyzer.applyHwahaToCountsForStrength
 import com.samramanshang.manseryeok.orrery.analyzer.countElements
@@ -40,6 +43,10 @@ data class SajuSummary(
     val lacking: List<Element>,
     /** 이름의 자원오행으로 보완할 오행 — 우선순위순 */
     val targetElements: List<Element>,
+    /** 년지 기준 띠 (입춘 경계 반영) */
+    val ttii: Ttii?,
+    /** 양력 생일 기준 별자리 */
+    val starSign: StarSign?,
 )
 
 /**
@@ -114,6 +121,9 @@ object SajuNamingService {
             gisin = gi,
             lacking = lacking,
             targetElements = deriveTargets(yong, gi, lacking),
+            ttii = BirthSigns.ttiiOf(yp[1].toString()),
+            // 별자리는 달력상 양력 날짜 기준 — 절기·시각 보정 전 값을 쓴다
+            starSign = BirthSigns.starSignOf(solarInput.month, solarInput.day),
         )
     }
 

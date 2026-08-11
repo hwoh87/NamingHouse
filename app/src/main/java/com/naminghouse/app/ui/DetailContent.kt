@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naminghouse.engine.eval.NameEvaluation
+import com.naminghouse.engine.eval.summarize
 import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.oheng.OhengRelation
 import com.naminghouse.engine.saju.SajuSummary
@@ -48,8 +49,29 @@ fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?, stat: NameStat? =
             )
         }
 
+        // ── 총평 — 축별 결과를 읽어 만든 문장
+        val summary = summarize(eval)
+        SectionCard("총평") {
+            Text(summary.verdict, style = MaterialTheme.typography.bodyMedium)
+            summary.strengths.forEach { s ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("✓", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                    Text(s, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            summary.cautions.forEach { c ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("!", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    Text(c, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+
         // ── 이름 통계 (대법원 출생신고)
         stat?.let { NameStatCard(it) }
+
+        // ── 띠·별자리 — 이름이 아니라 태어난 때의 정보
+        saju?.let { BirthSignCard(it) }
 
         // ── 수리사격
         SectionCard("수리사격 (원형이정)") {

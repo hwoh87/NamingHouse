@@ -36,6 +36,7 @@ import com.naminghouse.app.ui.theme.WuxingColors
 import com.naminghouse.engine.eval.AxisVerdict
 import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.hanja.HanjaEntry
+import com.naminghouse.engine.saju.SajuSummary
 import com.samramanshang.manseryeok.orrery.model.Element
 
 val Element.ko: String
@@ -266,6 +267,38 @@ fun NameStatCard(stat: NameStat) {
         }
         Text(
             "2008년 이후 출생신고 ${stat.total}건 기준 · 대법원 전자가족관계등록시스템 통계",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** 띠·별자리 카드 — 이름이 아니라 태어난 때에 딸린 정보 */
+@Composable
+fun BirthSignCard(saju: SajuSummary) {
+    val ttii = saju.ttii
+    val star = saju.starSign
+    if (ttii == null && star == null) return
+
+    SectionCard("띠 · 별자리") {
+        ttii?.let {
+            Text(
+                "${it.name}  ${it.branchKo}(${it.branch})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(it.traits, style = MaterialTheme.typography.bodyMedium)
+        }
+        star?.let {
+            Text(
+                "${it.name}  ${it.period}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(it.traits, style = MaterialTheme.typography.bodyMedium)
+        }
+        Text(
+            "띠는 양력 1월 1일이 아니라 입춘을 해의 경계로 봅니다.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
