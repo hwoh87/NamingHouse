@@ -32,3 +32,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# 한자 DB 원본 데이터 (재생성 가능, 40MB+)
+tools/hanja-db/raw/
