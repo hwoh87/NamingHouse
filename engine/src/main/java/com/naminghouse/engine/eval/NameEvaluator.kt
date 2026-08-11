@@ -9,6 +9,8 @@ import com.naminghouse.engine.oheng.BaleumSchool
 import com.naminghouse.engine.oheng.EumYang
 import com.naminghouse.engine.oheng.EumYangResult
 import com.naminghouse.engine.oheng.OhengRelation
+import com.naminghouse.engine.oheng.SuriOheng
+import com.naminghouse.engine.oheng.SuriOhengResult
 import com.naminghouse.engine.saju.SajuSummary
 import com.naminghouse.engine.suri.SuriCalculator
 import com.naminghouse.engine.suri.SuriGrade
@@ -40,6 +42,8 @@ data class NameEvaluation(
     val suriVerdict: AxisVerdict,
     val baleum: BaleumResult?,
     val baleumVerdict: AxisVerdict,
+    val suriOheng: SuriOhengResult,
+    val suriOhengVerdict: AxisVerdict,
     val strokeEumyang: EumYangResult,
     val soundEumyang: EumYangResult?,
     val eumyangVerdict: AxisVerdict,
@@ -55,8 +59,12 @@ data class NameEvaluation(
 /**
  * 성명학 종합 평가기.
  *
- * 배점: 수리사격 35 + 발음오행 20 + 자원오행·사주보완 30 + 음양 10 = 95점 만점을
- * 100점으로 환산하지 않고, 나머지 5점은 불용한자 무결(경고 없음) 가점으로 채운다.
+ * 배점: 수리사격 30 + 발음오행 18 + 수리오행 12 + 자원오행·사주보완 25 + 음양 10
+ *       + 불용한자 무결 5 = 100.
+ *
+ * 축 구성은 작명왕의 6축(사주오행·수리사격·발음오행·발음음양·수리오행·수리음양)을 따랐고,
+ * 발음음양·수리음양은 하나의 '음양' 축으로 합쳤다. 가중치 자체는 자체 판단이다 —
+ * 작명왕은 숫자 점수 없이 축별 서술 등급만 낸다.
  */
 object NameEvaluator {
 
@@ -91,6 +99,14 @@ object NameEvaluator {
             else -> AxisVerdict.HYUNG
         }
 
+        // ── 수리오행 (글자별 획수 → 오행 배열)
+        val suriOheng = SuriOheng.evaluate(surnameStrokes + givenStrokes)
+        val suriOhengVerdict = when {
+            suriOheng.allSangsaeng -> AxisVerdict.GIL
+            !suriOheng.hasSanggeuk -> AxisVerdict.BOTONG
+            else -> AxisVerdict.HYUNG
+        }
+
         // ── 음양 (수리음양 + 발음음양)
         val strokeEumyang = EumYang.ofStrokes(surnameStrokes + givenStrokes)
         val soundEumyang = EumYang.ofSound(fullName)
@@ -112,6 +128,7 @@ object NameEvaluator {
         val score = score(
             suri = suri,
             baleum = baleum,
+            suriOheng = suriOheng,
             strokeEumyang = strokeEumyang,
             soundEumyang = soundEumyang,
             jawonElements = jawonElements,
@@ -128,6 +145,8 @@ object NameEvaluator {
             suriVerdict = suriVerdict,
             baleum = baleum,
             baleumVerdict = baleumVerdict,
+            suriOheng = suriOheng,
+            suriOhengVerdict = suriOhengVerdict,
             strokeEumyang = strokeEumyang,
             soundEumyang = soundEumyang,
             eumyangVerdict = eumyangVerdict,
@@ -171,13 +190,14 @@ object NameEvaluator {
     private fun score(
         suri: SuriGyeok,
         baleum: BaleumResult?,
+        suriOheng: SuriOhengResult,
         strokeEumyang: EumYangResult,
         soundEumyang: EumYangResult?,
         jawonElements: List<Element?>,
         sajuFit: SajuFitResult?,
         bulyongCount: Int,
     ): Int {
-        // 수리사격 35
+        // 수리사격 30
         val gradeVal = { g: SuriGrade ->
             when (g) {
                 SuriGrade.DAEGIL -> 1.0
@@ -187,26 +207,33 @@ object NameEvaluator {
                 SuriGrade.DAEHYUNG -> 0.0
             }
         }
-        val suriScore = 35.0 * suri.all.sumOf { gradeVal(it.grade) } / 4.0
+        val suriScore = 30.0 * suri.all.sumOf { gradeVal(it.grade) } / 4.0
 
-        // 발음오행 20
+        // 발음오행 18
         val baleumScore = when {
-            baleum == null -> 10.0
-            baleum.allSangsaeng -> 20.0
-            !baleum.hasSanggeuk -> 14.0
+            baleum == null -> 9.0
+            baleum.allSangsaeng -> 18.0
+            !baleum.hasSanggeuk -> 13.0
             else -> 4.0
         }
 
-        // 자원오행·사주보완 30
+        // 수리오행 12
+        val suriOhengScore = when {
+            suriOheng.allSangsaeng -> 12.0
+            !suriOheng.hasSanggeuk -> 8.0
+            else -> 2.0
+        }
+
+        // 자원오행·사주보완 25
         val jawonScore: Double = if (sajuFit != null) {
             val top = sajuFit.targets.take(2)
             val coverage = if (top.isEmpty()) 0.5 else sajuFit.matched.count { it in top }.toDouble() / top.size
-            (30.0 * coverage - 5.0 * sajuFit.gisinUsed.size).coerceIn(0.0, 30.0)
+            (25.0 * coverage - 5.0 * sajuFit.gisinUsed.size).coerceIn(0.0, 25.0)
         } else {
             when (jawonHarmonyVerdict(jawonElements)) {
-                AxisVerdict.GIL -> 27.0
-                AxisVerdict.BOTONG -> 18.0
-                AxisVerdict.HYUNG -> 8.0
+                AxisVerdict.GIL -> 22.0
+                AxisVerdict.BOTONG -> 15.0
+                AxisVerdict.HYUNG -> 7.0
             }
         }
 
@@ -217,7 +244,7 @@ object NameEvaluator {
         // 불용한자 무결 가점 5, 경고당 -6
         val bulyongScore = if (bulyongCount == 0) 5.0 else -6.0 * bulyongCount
 
-        return (suriScore + baleumScore + jawonScore + eumyangScore + bulyongScore)
+        return (suriScore + baleumScore + suriOhengScore + jawonScore + eumyangScore + bulyongScore)
             .coerceIn(0.0, 100.0)
             .toInt()
     }

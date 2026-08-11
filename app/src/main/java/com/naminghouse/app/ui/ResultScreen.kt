@@ -185,6 +185,7 @@ private fun CandidateRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
                     AxisChip("수리", eval.suriVerdict.label)
                     AxisChip("발음", eval.baleumVerdict.label)
+                    AxisChip("수리오행", eval.suriOhengVerdict.label)
                     AxisChip("자원", eval.jawonVerdict.label)
                     AxisChip("음양", eval.eumyangVerdict.label)
                     if (popular) AxisChip("인기", "TOP")

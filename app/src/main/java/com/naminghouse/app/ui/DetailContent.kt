@@ -72,27 +72,35 @@ fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?) {
                     val full = eval.surname + eval.givenName
                     full.forEachIndexed { i, ch ->
                         ElementBall(ch.toString(), baleum.elements.getOrNull(i))
-                        if (i < baleum.relations.size) {
-                            val rel = baleum.relations[i]
-                            Text(
-                                when (rel) {
-                                    OhengRelation.SANGSAENG -> "→생"
-                                    OhengRelation.BIHWA -> "=비"
-                                    OhengRelation.SANGGEUK -> "×극"
-                                },
-                                style = MaterialTheme.typography.labelMedium,
-                                color = when (rel) {
-                                    OhengRelation.SANGSAENG -> MaterialTheme.colorScheme.primary
-                                    OhengRelation.BIHWA -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    OhengRelation.SANGGEUK -> MaterialTheme.colorScheme.error
-                                },
-                            )
-                        }
+                        if (i < baleum.relations.size) RelationArrow(baleum.relations[i])
                     }
                     Spacer(Modifier.weight(1f))
                     VerdictBadge(eval.baleumVerdict)
                 }
             }
+        }
+
+        // ── 수리오행
+        SectionCard("수리오행") {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                val strokes = (eval.surnameHanja + eval.givenHanja).map { it.wonhoek }
+                eval.suriOheng.elements.forEachIndexed { i, el ->
+                    ElementBall("${strokes.getOrNull(i) ?: ""}", el)
+                    if (i < eval.suriOheng.relations.size) {
+                        RelationArrow(eval.suriOheng.relations[i])
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                VerdictBadge(eval.suriOhengVerdict)
+            }
+            Text(
+                "글자 획수의 끝자리를 오행으로 환산해 배열을 봅니다 (1·2 木, 3·4 火, 5·6 土, 7·8 金, 9·0 水).",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         // ── 음양
@@ -190,6 +198,24 @@ fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?) {
             }
         }
     }
+}
+
+/** 오행 구슬 사이의 상생·비화·상극 표시 */
+@Composable
+private fun RelationArrow(relation: OhengRelation) {
+    Text(
+        when (relation) {
+            OhengRelation.SANGSAENG -> "→생"
+            OhengRelation.BIHWA -> "=비"
+            OhengRelation.SANGGEUK -> "×극"
+        },
+        style = MaterialTheme.typography.labelMedium,
+        color = when (relation) {
+            OhengRelation.SANGSAENG -> MaterialTheme.colorScheme.primary
+            OhengRelation.BIHWA -> MaterialTheme.colorScheme.onSurfaceVariant
+            OhengRelation.SANGGEUK -> MaterialTheme.colorScheme.error
+        },
+    )
 }
 
 @Composable

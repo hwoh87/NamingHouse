@@ -4,6 +4,7 @@ import com.naminghouse.engine.suri.Suri81
 import com.naminghouse.engine.suri.SuriCalculator
 import com.naminghouse.engine.suri.SuriGrade
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SuriTest {
@@ -35,6 +36,25 @@ class SuriTest {
         assertEquals(27, g.hyeong.number)
         assertEquals(24, g.i.number)
         assertEquals(32, g.jeong.number)
+    }
+
+    /**
+     * 작명왕 실측 리포트(tools/jakmyeongwang-report.md)와 4격이 일치하는지 고정한다.
+     * 성 金 8획 + 이름 10획·21획 → 초년 31 / 청년 18 / 장년 29 / 전체 39.
+     * 우리 공식(허수 없음)이 작명왕과 같다는 증거.
+     */
+    @Test
+    fun `작명왕 실측 사례 - 4격이 31_18_29_39 로 일치`() {
+        val g = SuriCalculator.calculate(listOf(8), listOf(10, 21))
+        assertEquals(31, g.won.number)
+        assertEquals(18, g.hyeong.number)
+        assertEquals(29, g.i.number)
+        assertEquals(39, g.jeong.number)
+        // 작명왕은 네 격 모두 "매우 좋아요"로 표시했다
+        assertTrue(g.allGood)
+        // 명칭도 두 개는 그대로 일치한다(18 발전격, 29 성공격)
+        assertEquals("발전격", g.hyeong.title)
+        assertEquals("성공격", g.i.title)
     }
 
     @Test
