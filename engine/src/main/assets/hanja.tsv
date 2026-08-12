@@ -783,7 +783,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 剋	극	9	9	金	깍일 극	3	1
 剌	날,라,랄	9	9	金	어그러질 랄	3	1
 前	전	9	9	金	앞 전	4	1
-剔	척	10	10	金	바를 척	3	0
+剔	척	10	10	金	바를 척	3	1
 剕	비	10	10	金	발 벨 비	0	1
 剖	부	10	10	金	쪼갤 부	3	1
 剗	잔	10	10	金	깍을 잔	0	1
@@ -1354,7 +1354,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 垣	원	9	9	土	낮은 담 원	3	1
 垤	질	9	9	土	개밋둑 질	0	1
 垶	성	10	10	土		0	1
-垸	완	10	10	土	회 섞어 바를 완	2	0
+垸	완	10	10	土	회 섞어 바를 완	2	1
 垽	은	10	10	土	해감 은	0	1
 埂	경	10	10	土		2	1
 埃	애	10	10	土	티끌 애	3	1
@@ -7901,7 +7901,7 @@ hanja	readings	wonhoek	pilhoek	element	meaning	namefit	avoid
 醵	갹	20	20	金	술추렴	3	1
 醼	연	23	23	金		0	1
 釀	양	24	24	金	술 빚을 양	4	1
-釁	흔	26	26	金	피바를 흔	1	0
+釁	흔	26	26	金	피바를 흔	1	1
 釃	시	26	26	金	술 거를 시	0	1
 釆	변	7	7		분별하다	1	1
 采	채	8	8		캘 채	3	0
