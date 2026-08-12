@@ -152,6 +152,46 @@ def valid(name: str) -> bool:
     return all(0xAC00 <= ord(ch) <= 0xD7A3 for ch in name)
 
 
+STATS = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..",
+    "engine", "src", "main", "assets", "name-stats.tsv",
+)
+
+
+def load_stats():
+    """대법원 실측 통계 — {이름: (성별, 최근최고순위, 총건수)}. 없으면 빈 dict."""
+    if not os.path.exists(STATS):
+        print("  (name-stats.tsv 없음 — 큐레이션 목록만 사용)", file=sys.stderr)
+        return {}
+    out = {}
+    with open(STATS, encoding="utf-8") as f:
+        next(f, None)
+        for line in f:
+            c = line.rstrip("\n").split("\t")
+            if len(c) < 5:
+                continue
+            name, m, fem = c[0], int(c[2] or 0), int(c[3] or 0)
+            ranks = [int(p.split(":")[1]) for p in c[4].split(",") if ":" in p]
+            total = m + fem
+            if total == 0:
+                continue
+            pct = round(m * 100 / total)
+            gender = "M" if pct >= 70 else "F" if pct <= 30 else "U"
+            out[name] = (gender, min(ranks) if ranks else None, total)
+    return out
+
+
+def tier_from_rank(rank):
+    """실측 순위 → tier. 순위가 없으면 None(큐레이션 tier 유지)."""
+    if rank is None:
+        return None
+    if rank <= 100:
+        return 1
+    if rank <= 300:
+        return 2
+    return 3
+
+
 def main() -> int:
     sources = [
         ("M", 1, parse(M1)), ("F", 1, parse(F1)),
@@ -177,6 +217,25 @@ def main() -> int:
             continue
         slot = table.setdefault(name, {"genders": set(), "tier": 2})
         slot["genders"] |= {"M", "F"}
+
+    # 대법원 실측 통계를 얹는다. 손으로 매긴 tier·성별보다 실제 출생신고 집계가 정확하다.
+    stats = load_stats()
+    added = 0
+    for name, (gender, rank, _total) in stats.items():
+        if not valid(name):
+            continue
+        slot = table.get(name)
+        if slot is None:
+            # 통계에는 있는데 큐레이션 목록에서 빠진 이름(가은·민우·서은 등)
+            table[name] = {"genders": {gender} if gender != "U" else {"M", "F"},
+                           "tier": tier_from_rank(rank) or 2, "fromStats": True}
+            added += 1
+        else:
+            slot["genders"] = {gender} if gender != "U" else {"M", "F"}
+            t = tier_from_rank(rank)
+            if t is not None:
+                slot["tier"] = t
+    print(f"  실측 통계 반영: {len(stats)}개 (신규 {added}개)")
 
     rows = []
     for name, slot in table.items():
