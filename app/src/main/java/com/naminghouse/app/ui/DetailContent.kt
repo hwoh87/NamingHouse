@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naminghouse.engine.eval.NameEvaluation
+import com.naminghouse.engine.eval.meaningLine
 import com.naminghouse.engine.eval.summarize
 import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.oheng.OhengRelation
@@ -46,6 +47,11 @@ fun EvaluationDetail(eval: NameEvaluation, saju: SajuSummary?, stat: NameStat? =
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "뜻  ${meaningLine(eval)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 

@@ -34,10 +34,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.engine.eval.NameEvaluation
+import com.naminghouse.engine.eval.meaningLine
 import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.saju.SajuSummary
 
@@ -163,12 +165,6 @@ private fun CandidateRow(
                 Row(verticalAlignment = Alignment.Bottom) {
                     if (emphasizeHanja) {
                         Text(hanja, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            eval.givenHanja.joinToString(" · ") { it.meaning.ifEmpty { "-" } },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     } else {
                         Text(hangul, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(8.dp))
@@ -179,6 +175,14 @@ private fun CandidateRow(
                         )
                     }
                 }
+                // 뜻이 없으면 후보끼리 비교가 안 된다 — 목록에서도 바로 보이게
+                Text(
+                    meaningLine(eval),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),

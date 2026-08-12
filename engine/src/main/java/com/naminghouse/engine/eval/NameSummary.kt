@@ -24,6 +24,21 @@ private fun particleOf(last: Element): String =
  * 그러면 어느 이름이든 같은 말이라 쓸모가 없다. 여기서는 **실제로 어느 축이 좋고 어디가
  * 걸리는지**를 짚어, 후보끼리 비교할 근거가 되게 한다.
  */
+/**
+ * 이름 두 글자의 뜻을 한 줄로 — "길 · 물 졸졸 흐를" 처럼 훈만 뽑아 잇는다.
+ *
+ * 사전 훈(訓)을 그대로 보여줄 뿐 시적인 해석을 지어내지 않는다. 조합의 뜻을 문장으로
+ * 만들려면 근거 없는 창작이 되고, 후보를 비교하는 데는 원래 뜻이 더 정확하다.
+ */
+fun meaningLine(eval: NameEvaluation): String =
+    eval.givenHanja.joinToString(" · ") { hunOf(it.meaning) }
+
+/** "길 도" → "길". 훈음에서 음을 떼어 훈만 남긴다. */
+private fun hunOf(meaning: String): String {
+    if (meaning.isBlank()) return "뜻 미상"
+    return if (" " in meaning) meaning.substringBeforeLast(' ') else meaning
+}
+
 fun summarize(eval: NameEvaluation): NameSummary {
     val full = eval.surname + eval.givenName
     val hanja = (eval.surnameHanja + eval.givenHanja).joinToString("") { it.char.toString() }

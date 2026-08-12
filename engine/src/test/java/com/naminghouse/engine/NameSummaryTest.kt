@@ -1,6 +1,7 @@
 package com.naminghouse.engine
 
 import com.naminghouse.engine.eval.NameEvaluator
+import com.naminghouse.engine.eval.meaningLine
 import com.naminghouse.engine.eval.summarize
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.saju.SajuNamingService
@@ -27,6 +28,30 @@ class NameSummaryTest {
             givenHanja = listOf(db.byChar.getValue(n1), db.byChar.getValue(n2)),
             saju = if (withSaju) SajuNamingService.analyze(BirthInput(2026, 3, 15, 9, 20, Gender.M)) else null,
         )
+
+    @Test
+    fun `뜻줄은 훈만 뽑아 잇는다`() {
+        // 道 "길 도", 沇 "물 졸졸 흐를 연" → 음을 떼고 훈만
+        val line = meaningLine(eval('金', '道', '沇', "김도윤"))
+        assertTrue(line, line.contains("길"))
+        assertTrue(line, line.contains("·"))
+        // 음(도·연)이 그대로 남아 있으면 안 된다
+        assertFalse(line, line.endsWith(" 도") || line.endsWith(" 연"))
+    }
+
+    @Test
+    fun `뜻이 없는 글자는 미상으로 표기한다`() {
+        val noMeaning = db.entries.firstOrNull { it.meaning.isBlank() && it.usableForNaming }
+        if (noMeaning != null) {
+            val e = NameEvaluator.evaluate(
+                surname = "김", givenName = "가나",
+                surnameHanja = listOf(db.byChar.getValue('金')),
+                givenHanja = listOf(noMeaning, db.byChar.getValue('永')),
+                saju = null,
+            )
+            assertTrue(meaningLine(e), meaningLine(e).contains("뜻 미상"))
+        }
+    }
 
     @Test
     fun `총평 첫 문장에 이름과 점수와 등급이 들어간다`() {
