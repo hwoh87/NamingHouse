@@ -21,6 +21,9 @@
 
 세 모드 모두 "출생 전/사주 없이" 토글로 사주 없이 성명학만 볼 수 있다.
 
+추천 목록에서 별을 눌러 이름을 담아두면(DataStore 영속) 상단 별 아이콘에서 모아 보고
+카카오톡·문자로 공유할 수 있다 — 추천 60개를 훑고 서너 개를 추려 가족과 상의하는 실제 흐름에 맞춘 것.
+
 ### 삼라 엔진 이식 (`com.samramanshang.manseryeok.orrery`)
 
 `../Samra/engine-core/src/commonMain` 에서 사주 경로 14개 파일만 복사(패키지 유지, 무수정).
@@ -67,7 +70,7 @@
 | 파일 | 내용 | 출처 |
 |---|---|---|
 | `hanja.tsv` | 인명용 한자 9,054자: 독음, 원획, 필획, 자원오행, 뜻, 인명 적합도 | 대법원 인명용 한자표(rutopio MIT 정리본) + Unihan(획수·부수·상용도) + libhangul(훈음, BSD-3). 원획은 부수 원형 환산, 자원오행은 부수 기반 자체 매핑 |
-| `names.tsv` | 한글 이름 후보 풀 1,104개 (성별·티어) | 공개 순위 집계 기반 자체 큐레이션 |
+| `names.tsv` | 한글 이름 후보 풀 1,152개 (성별·티어) | 자체 큐레이션 + `name-stats.tsv` 실측 병합(순위 ≤100 티어1, ≤300 티어2) |
 | `name-stats.tsv` | 이름 213개의 연도별 순위·남녀비율 | 대법원 전자가족관계등록시스템 「상위 출생신고 이름 현황」 실측 수집 |
 
 재생성:
@@ -87,11 +90,15 @@ python3 tools/hanja-db/build_hanja_db.py \
 연도별 순위와 남녀비율 막대로 보여준다. 한 조회에 상위 20개만 오므로 전국 순위는
 근사값이다 — 한계와 수집 방식은 [tools/name-stats/README.md](tools/name-stats/README.md) 참조.
 
+이 실측치는 후보 풀에도 되먹인다. `build_names.py` 가 `name-stats.tsv` 를 읽어
+순위로 티어를, 남아 비율로 성별(70% 이상 M, 30% 이하 F, 나머지 U)을 덮어쓴다.
+실제로 신고되는 이름 48개가 이 경로로 새로 들어왔고, 티어1은 209개다.
+
 ### 인명 적합도 필터
 
 인명용 한자에는 蔬(나물)·嗽(기침할)·蜘(거미)처럼 흔하지만 이름엔 쓰지 않는 글자가 많다.
 `hanja.tsv` 의 `namefit`(Unihan 한국 코어 기반 상용도)과 `avoid`(훈 기반 판정)로 걸러
-작명 후보 생성에는 1,020자만 쓴다. 한자 선택 화면에서는 전부 보여주되 적합한 글자를 앞에 정렬한다.
+작명 후보 생성에는 1,013자만 쓴다. 한자 선택 화면에서는 전부 보여주되 적합한 글자를 앞에 정렬한다.
 판정 규칙과 근거는 [tools/hanja-db/README.md](tools/hanja-db/README.md) 참조.
 
 ## 빌드·테스트
@@ -102,6 +109,18 @@ python3 tools/hanja-db/build_hanja_db.py \
 ```
 
 스택: AGP 9.1.1 · Kotlin 2.2.10 · Compose BOM 2024.09 · minSdk 24 / targetSdk 36 (삼라와 동일 버전 유지).
+
+### 릴리스 빌드
+
+R8 축소·리소스 축소가 켜져 있다(19MB → 1.6MB). 서명 키는 **저장소에 넣지 않고**
+Gradle 프로퍼티로 주입한다 — `~/.gradle/gradle.properties` 에 두거나 CI 시크릿으로 넘긴다.
+
+```bash
+./gradlew :app:assembleRelease -PVERSION_CODE=1 -PVERSION_NAME=1.0 -PRELEASE_STORE_FILE=$HOME/keys/naminghouse.jks -PRELEASE_STORE_PASSWORD=... -PRELEASE_KEY_ALIAS=naminghouse -PRELEASE_KEY_PASSWORD=...
+```
+
+`RELEASE_STORE_FILE` 이 없으면 서명 없이 빌드된다(`app-release-unsigned.apk`).
+`VERSION_CODE`/`VERSION_NAME` 기본값은 `1` / `1.0`.
 
 ## 성명학 주의사항
 

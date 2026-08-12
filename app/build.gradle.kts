@@ -15,13 +15,30 @@ android {
         applicationId = "com.naminghouse.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1-dev"
+        versionCode = (project.findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
+        versionName = (project.findProperty("VERSION_NAME") as String?) ?: "1.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            // 키는 저장소에 넣지 않는다 — 로컬 gradle.properties 나 CI 시크릿으로 주입한다.
+            //   ./gradlew assembleRelease -PRELEASE_STORE_FILE=... -PRELEASE_STORE_PASSWORD=...
+            val storeFilePath = project.findProperty("RELEASE_STORE_FILE") as String?
+            if (!storeFilePath.isNullOrBlank()) {
+                storeFile = file(storeFilePath)
+                storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+                keyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String?
+                keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+            }
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 축소·난독화 켬. 에셋이 20MB 라 리소스 축소까지 해야 체감이 있다.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
