@@ -7,6 +7,7 @@ import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.saju.SajuNamingService
 import com.samramanshang.manseryeok.orrery.model.BirthInput
 import com.samramanshang.manseryeok.orrery.model.Gender
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,13 +31,30 @@ class NameSummaryTest {
         )
 
     @Test
-    fun `뜻줄은 훈만 뽑아 잇는다`() {
-        // 道 "길 도", 沇 "물 졸졸 흐를 연" → 음을 떼고 훈만
+    fun `뜻줄은 훈에 글자를 병기한다`() {
+        // 道 "길 도" → "길(道)". 음(도)은 떼고 글자를 붙인다.
         val line = meaningLine(eval('金', '道', '沇', "김도윤"))
-        assertTrue(line, line.contains("길"))
-        assertTrue(line, line.contains("·"))
-        // 음(도·연)이 그대로 남아 있으면 안 된다
-        assertFalse(line, line.endsWith(" 도") || line.endsWith(" 연"))
+        assertTrue(line, line.startsWith("길(道)"))
+        assertTrue(line, line.contains(" + "))
+        assertTrue(line, line.contains("(沇)"))
+        assertFalse("음이 남아 있으면 안 됨: $line", line.contains("길 도"))
+    }
+
+    @Test
+    fun `동음이의 훈도 글자로 구분된다`() {
+        // 道·永 둘 다 훈이 "길" — 예전 표기 "길 · 길" 로는 같은 글자처럼 보였다
+        val line = meaningLine(eval('金', '道', '永', "김도영"))
+        assertTrue(line, line.contains("(道)"))
+        assertTrue(line, line.contains("(永)"))
+        assertEquals("길(道) + 길(永)", line)
+    }
+
+    @Test
+    fun `훈은 사전 그대로 두고 변형하지 않는다`() {
+        // 명사화(ㄹ→ㅁ)는 永(길)→"김" 같은 오차가 나므로 하지 않는다
+        val line = meaningLine(eval('金', '道', '永', "김도영"))
+        assertFalse("永 의 훈이 변형됨: $line", line.contains("김("))
+        assertFalse(line, line.contains("긺"))
     }
 
     @Test
