@@ -20,6 +20,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,7 +43,19 @@ fun InputScreen(vm: NamingViewModel) {
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("작명하우스", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "작명하우스",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+            )
+            if (vm.favorites.isNotEmpty()) {
+                TextButton(onClick = { vm.showFavorites = true }) {
+                    Text("담아둔 이름 ${vm.favorites.size}")
+                }
+            }
+        }
         Text(
             "사주와 성명학으로 좋은 이름을 짓습니다",
             style = MaterialTheme.typography.bodyMedium,
@@ -269,4 +282,5 @@ fun InputScreen(vm: NamingViewModel) {
         }
         Spacer(Modifier.height(24.dp))
     }
+    FavoritesSheet(vm)
 }

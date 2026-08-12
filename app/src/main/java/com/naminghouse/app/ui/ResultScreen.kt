@@ -15,6 +15,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -64,6 +68,15 @@ fun ResultScreen(vm: NamingViewModel) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
                 }
             },
+            actions = {
+                IconButton(onClick = { vm.showFavorites = true }) {
+                    BadgedBox(badge = {
+                        if (vm.favorites.isNotEmpty()) Badge { Text("${vm.favorites.size}") }
+                    }) {
+                        Icon(Icons.Filled.Star, contentDescription = "담아둔 이름")
+                    }
+                }
+            },
         )
 
         LazyColumn(
@@ -88,6 +101,8 @@ fun ResultScreen(vm: NamingViewModel) {
                             rank = i + 1,
                             eval = cand.evaluation,
                             stat = cand.stat,
+                            isFavorite = vm.isFavorite(cand.evaluation),
+                            onToggleFavorite = { vm.toggleFavorite(cand.evaluation) },
                             onClick = { selected = cand.evaluation to cand.stat },
                         )
                     }
@@ -108,6 +123,8 @@ fun ResultScreen(vm: NamingViewModel) {
                             eval = eval,
                             stat = vm.nameStats[eval.givenName],
                             emphasizeHanja = true,
+                            isFavorite = vm.isFavorite(eval),
+                            onToggleFavorite = { vm.toggleFavorite(eval) },
                             onClick = { selected = eval to vm.nameStats[eval.givenName] },
                         )
                     }
@@ -121,6 +138,8 @@ fun ResultScreen(vm: NamingViewModel) {
             }
         }
     }
+
+    FavoritesSheet(vm)
 
     selected?.let { (eval, stat) ->
         ModalBottomSheet(onDismissRequest = { selected = null }) {
@@ -143,6 +162,8 @@ private fun CandidateRow(
     eval: NameEvaluation,
     stat: NameStat?,
     emphasizeHanja: Boolean = false,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
     onClick: () -> Unit,
 ) {
     Card(
@@ -198,6 +219,14 @@ private fun CandidateRow(
                         if (rank <= 200) AxisChip("인기", "${rank}위")
                     }
                 }
+            }
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                    contentDescription = if (isFavorite) "즐겨찾기 해제" else "즐겨찾기",
+                    tint = if (isFavorite) MaterialTheme.colorScheme.secondary
+                    else MaterialTheme.colorScheme.outline,
+                )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(

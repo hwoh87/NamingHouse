@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.eval.NameEvaluator
+import com.naminghouse.engine.eval.meaningLine
 import com.naminghouse.engine.gen.GeneratorOptions
 import com.naminghouse.engine.gen.NameCandidate
 import com.naminghouse.engine.gen.NameGenerator
@@ -83,7 +84,40 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var errorMessage by mutableStateOf<String?>(null)
 
+    // ── 즐겨찾기
+    private val favoritesStore = FavoritesStore(app)
+    var favorites by mutableStateOf<List<FavoriteName>>(emptyList())
+        private set
+    var showFavorites by mutableStateOf(false)
+
+    /** 이 이름이 담겨 있는가 — 이름+한자로 판별(점수는 사주에 따라 달라진다) */
+    fun isFavorite(eval: NameEvaluation): Boolean {
+        val hanja = (eval.surnameHanja + eval.givenHanja).joinToString("") { it.char.toString() }
+        return favorites.any {
+            it.surname == eval.surname && it.givenName == eval.givenName && it.hanja == hanja
+        }
+    }
+
+    fun toggleFavorite(eval: NameEvaluation) {
+        val item = FavoriteName(
+            surname = eval.surname,
+            givenName = eval.givenName,
+            hanja = (eval.surnameHanja + eval.givenHanja).joinToString("") { it.char.toString() },
+            score = eval.score,
+            grade = eval.grade,
+            meaning = meaningLine(eval),
+        )
+        viewModelScope.launch { favoritesStore.toggle(item) }
+    }
+
+    fun removeFavorite(item: FavoriteName) {
+        viewModelScope.launch { favoritesStore.remove(item) }
+    }
+
     init {
+        viewModelScope.launch {
+            favoritesStore.flow.collect { favorites = it }
+        }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val assets = getApplication<Application>().assets
