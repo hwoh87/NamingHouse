@@ -3,10 +3,6 @@ package com.naminghouse.app.ui
 import android.content.Intent
 import android.graphics.Bitmap
 import android.widget.Toast
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +59,7 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.eval.meaningLine
@@ -113,7 +110,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             JokjaCard(
@@ -140,12 +137,12 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
             )
             Row(
                 Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val isFav = vm.isFavorite(eval)
                 OutlinedButton(
                     onClick = { vm.toggleFavorite(eval) },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = InkShape.medium,
                     modifier = Modifier.weight(1f).height(50.dp),
                 ) {
                     Icon(
@@ -168,7 +165,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                             }
                         }
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = InkShape.medium,
                     modifier = Modifier.weight(1.4f).height(50.dp),
                 ) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -197,7 +194,7 @@ private fun JokjaCard(eval: NameEvaluation, modifier: Modifier = Modifier) {
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = InkShape.large,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
@@ -241,7 +238,7 @@ private fun JokjaCard(eval: NameEvaluation, modifier: Modifier = Modifier) {
                             )
                         }
                         Spacer(Modifier.weight(1f))
-                        StampedSeal(score = eval.score, grade = eval.grade, key = eval)
+                        StampedSeal(score = eval.score, grade = eval.grade)
                     }
                 }
 
@@ -276,27 +273,13 @@ private fun JokjaRod() {
     )
 }
 
-/** 낙관 — 도장이 찍히듯 떨어지는 점수. */
+/** 낙관 — 비스듬히 찍힌 점수 도장. */
 @Composable
-private fun StampedSeal(score: Int, grade: String, key: Any) {
-    val scale = remember(key) { Animatable(1.55f) }
-    val alpha = remember(key) { Animatable(0f) }
-    LaunchedEffect(key) {
-        launch { alpha.animateTo(1f, tween(130)) }
-        scale.animateTo(
-            1f,
-            spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium),
-        )
-    }
+private fun StampedSeal(score: Int, grade: String) {
     SealBadge(
         main = "$score",
         sub = grade,
-        modifier = Modifier.graphicsLayer {
-            scaleX = scale.value
-            scaleY = scale.value
-            this.alpha = alpha.value
-            rotationZ = -3f
-        },
+        modifier = Modifier.graphicsLayer { rotationZ = -3f },
     )
 }
 

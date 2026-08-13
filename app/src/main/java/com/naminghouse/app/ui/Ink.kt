@@ -1,7 +1,6 @@
 package com.naminghouse.app.ui
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -54,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.naminghouse.app.R
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 import kotlin.math.PI
 import kotlin.math.pow
@@ -233,7 +233,7 @@ fun InkCard(
     spacing: Dp = 10.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = InkShape.large
     // 반투명 면이라 Surface 가 대응하는 onColor 를 찾지 못한다 — 직접 지정한다.
     val color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.82f)
     val onColor = MaterialTheme.colorScheme.onSurface
@@ -289,7 +289,7 @@ fun SealBadge(main: String, sub: String, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(width = 58.dp, height = 62.dp)
-            .background(ink.seal, RoundedCornerShape(6.dp)),
+            .background(ink.seal, InkShape.small),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -316,7 +316,7 @@ fun BrandMark(modifier: Modifier = Modifier, size: Dp = 42.dp) {
     Box(
         modifier
             .size(size)
-            .background(Color(0xFF25313C), RoundedCornerShape(11.dp)),
+            .background(Color(0xFF25313C), InkShape.medium),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -366,7 +366,7 @@ fun InkNavBar(current: String?, onNavigate: (String) -> Unit) {
                 Column(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(InkShape.medium)
                         .clickable { onNavigate(tab.route) }
                         .padding(vertical = 2.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -411,7 +411,7 @@ fun <T> InkSegmented(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = InkShape.medium,
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
         contentColor = MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -419,18 +419,14 @@ fun <T> InkSegmented(
         Row(Modifier.padding(3.dp)) {
             options.forEach { option ->
                 val on = option == selected
-                val fill by animateColorAsState(
-                    if (on) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    label = "segmentFill",
-                )
-                val labelColor by animateColorAsState(
-                    if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    label = "segmentLabel",
-                )
+                val fill = if (on) MaterialTheme.colorScheme.primary else Color.Transparent
+                val labelColor =
+                    if (on) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 Box(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(9.dp))
+                        .clip(InkShape.medium)
                         .background(fill)
                         .clickable { onSelect(option) }
                         .padding(vertical = 9.dp),

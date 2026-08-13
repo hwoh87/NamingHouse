@@ -153,7 +153,7 @@ fun EvaluationDetail(
             help = "한자마다 부수와 뜻에서 오는 고유 오행(자원오행)이 있습니다. 사주에 부족하거나 " +
                 "필요한 기운(용신)을 이름 한자가 채워 주는지를 봅니다 — 사주 기반 작명의 핵심 축입니다.",
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 eval.givenHanja.forEach { h ->
                     ElementBall(h.char.toString(), h.element)
                 }
@@ -300,7 +300,7 @@ private fun DetailHero(eval: NameEvaluation) {
 /** 총평의 강점·주의 한 줄 */
 @Composable
 private fun NoteLine(mark: String, text: String, color: androidx.compose.ui.graphics.Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             mark,
             color = color,
@@ -323,8 +323,8 @@ private fun BallRow(
     Row(verticalAlignment = Alignment.CenterVertically) {
         FlowRow(
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) { balls() }
         Spacer(Modifier.width(8.dp))
         verdictTrailing()

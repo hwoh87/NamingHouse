@@ -1,7 +1,6 @@
 package com.naminghouse.app
 
 import android.app.Application
-import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -57,10 +56,6 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
 
     /** 상세 화면이 보고 있는 이름 — 라우트로 직렬화하기엔 무거워 여기 든다. */
     var selected by mutableStateOf<Pair<NameEvaluation, NameStat?>?>(null)
-
-    /** 결과 목록이 채워진 시각 — 등장 스태거는 이 직후에만 돈다. */
-    var resultsShownAt by mutableStateOf(0L)
-        private set
 
     /** 저장된 입력이 있는가 — 홈의 '이어서 이름 짓기' 노출 기준. */
     var hasSavedInput by mutableStateOf(false)
@@ -155,6 +150,48 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
 
     fun removeFavorite(item: FavoriteName) {
         viewModelScope.launch { favoritesStore.remove(item) }
+    }
+
+    /**
+     * 담아둔 이름을 다시 평가해 상세로 보낸다.
+     *
+     * 즐겨찾기에는 요약(점수·등급·뜻)만 저장돼 있어 수리·오행 풀이는 그때그때 새로 계산한다.
+     * 사주는 **지금 저장된 생년월일시** 기준이라, 담아둔 뒤 입력을 바꿨으면 점수가 달라질 수 있다.
+     *
+     * @return 계산을 시작했으면 true, 데이터가 아직 준비되지 않았으면 false
+     */
+    fun openFavorite(item: FavoriteName): Boolean {
+        val db = hanjaDb ?: return false
+        val entries = item.hanja.map { db.byChar[it] ?: return false }
+        if (entries.size != item.surname.length + item.givenName.length) return false
+        val sHanja = entries.take(item.surname.length)
+        val gHanja = entries.drop(item.surname.length)
+        if (sHanja.isEmpty() || gHanja.isEmpty()) return false
+        // 생년월일시가 비어 있거나 어긋나면 사주 없이 수리·오행만 보여 준다.
+        val input = if (preBirth) null else birthInput()
+
+        errorMessage = null
+        busy = true
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val sajuResult = input?.let { SajuNamingService.analyze(it) }
+                val eval = NameEvaluator.evaluate(
+                    item.surname, item.givenName, sHanja, gHanja, sajuResult, school
+                )
+                withContext(Dispatchers.Main) {
+                    saju = sajuResult
+                    selected = eval to nameStats[item.givenName]
+                    pendingRoute = Routes.DETAIL
+                    busy = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    errorMessage = "계산 오류: ${e.message}"
+                    busy = false
+                }
+            }
+        }
+        return true
     }
 
     init {
@@ -325,7 +362,6 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                         "조건에 맞는 이름을 찾지 못했습니다 — 돌림자·외자·인기 이름 조건을 조정해 보세요"
                     } else null
                     if (list.isNotEmpty()) {
-                        resultsShownAt = SystemClock.uptimeMillis()
                         pendingRoute = "result"
                     }
                     busy = false
@@ -374,7 +410,6 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                         "'$givenNameSyllables' 에 쓸 수 있는 인명용 한자를 찾지 못했습니다"
                     } else null
                     if (combos.isNotEmpty()) {
-                        resultsShownAt = SystemClock.uptimeMillis()
                         pendingRoute = "result"
                     }
                     busy = false

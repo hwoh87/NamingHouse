@@ -2,6 +2,8 @@ package com.naminghouse.app.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -14,6 +16,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.naminghouse.app.ThemeMode
 import com.samramanshang.manseryeok.orrery.model.Element
@@ -88,6 +91,29 @@ private val BrandDark = darkColorScheme(
 )
 
 /**
+ * 기하 규율 — 모서리는 네 단계뿐.
+ *
+ * 화면마다 7·9·11dp 가 섞이면 눈이 그 불규칙을 읽고 정돈되지 않았다고 판단한다.
+ * 면(카드·입력·버튼·칩)은 반드시 이 넷 중 하나를 쓴다.
+ *
+ * 획은 여기 해당하지 않는다 — 구분선·족자 막대·낙관 테두리처럼 두께가 몇 dp뿐인
+ * 그래픽 요소는 반경이 두께에 비례해야 해서 별도로 둔다.
+ */
+object InkShape {
+    /** 칩·배지 — 작은 표식 */
+    val small = RoundedCornerShape(4.dp)
+
+    /** 기본 — 카드·입력·버튼 */
+    val medium = RoundedCornerShape(10.dp)
+
+    /** 큰 면 — 족자·바텀시트·다이얼로그 */
+    val large = RoundedCornerShape(16.dp)
+
+    /** 아바타·토글처럼 완전히 둥근 것 */
+    val circle = CircleShape
+}
+
+/**
  * Material 스킴이 자리를 마련해 주지 않는 도메인 색.
  *
  * 오행 다섯 색과 길·흉 판정색은 라이트/다크에서 각각 다른 명도가 필요해서
@@ -98,6 +124,8 @@ data class InkPalette(
     val seal: Color,
     val onSeal: Color,
     val gold: Color,
+    /** 금니 옅은 면 — 배지·강조 칸의 바탕 */
+    val goldSoft: Color,
     val gil: Color,
     val botong: Color,
     val hyung: Color,
@@ -122,6 +150,9 @@ private val LightInk = InkPalette(
     seal = JuSa,
     onSeal = Color(0xFFFBF3E7),
     gold = GeumNi,
+    // JP+UI Kit 의 금색 램프 200. 알파를 씌워 만들던 방식은 한지 바탕이 비쳐
+    // 색상이 틀어졌다 — 값을 직접 둔다.
+    goldSoft = Color(0xFFFFEFAA),
     gil = Color(0xFF2F6B4A),
     botong = Color(0xFF876A22),
     hyung = Color(0xFF9E3A2F),
@@ -138,6 +169,10 @@ private val DarkInk = InkPalette(
     seal = Color(0xFFC1584A),
     onSeal = Color(0xFFFBF3E7),
     gold = Color(0xFFD8B665),
+    // 다크는 킷에 대응하는 값이 없다. 이 배지는 판정 배지 다섯 개와 한 줄에 서기 때문에
+    // 무게가 맞아야 한다 — 그쪽이 쓰는 알파 14%가 어두운 면 위에 만들어 내는 명도를
+    // 그대로 고정값으로 옮겼다. 옅은 노랑을 쓰면 혼자 튄다.
+    goldSoft = Color(0xFF342E20),
     gil = Color(0xFF74B792),
     botong = Color(0xFFD3AE5F),
     hyung = Color(0xFFE0958A),

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,6 +32,7 @@ import androidx.navigation.NavHostController
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ThemeMode
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.oheng.BaleumSchool
 
@@ -98,8 +98,8 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
         InkCard {
             SectionTitle("프리미엄") {
                 Surface(
-                    shape = RoundedCornerShape(999.dp),
-                    color = InkTheme.colors.gold.copy(alpha = 0.16f),
+                    shape = InkShape.circle,
+                    color = InkTheme.colors.goldSoft,
                 ) {
                     Text(
                         "준비 중",
@@ -122,6 +122,11 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
             SettingsRow("버전", value = appVersion(), onClick = null)
         }
 
+        SamraBanner(
+            subtitle = "같은 곳에서 만든 사주 만세력 앱입니다. " +
+                "이 앱의 사주 계산이 여기서 왔습니다.",
+        )
+
         Text(
             "만든 곳 · 삼라만상",
             style = MaterialTheme.typography.labelSmall,
@@ -141,7 +146,7 @@ private fun SettingsRow(label: String, value: String? = null, onClick: (() -> Un
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(InkShape.medium)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(vertical = 8.dp, horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -178,13 +183,13 @@ private fun appVersion(): String {
 private fun LicensesDialog(onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = InkShape.large,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(
                 Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     "글꼴·오픈소스 라이선스",

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -29,15 +28,22 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.R
 import com.naminghouse.app.shareText
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 
 /** 담아둔 이름을 여는 별 — 결과 화면 앱바에서 쓴다. */
@@ -71,15 +77,23 @@ fun FavoritesAction(count: Int, onClick: () -> Unit) {
  * 담아두기와 내보내기가 같이 있어야 쓸모가 있다.
  */
 @Composable
-fun FavoritesScreen(vm: NamingViewModel) {
+fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
     val context = LocalContext.current
+    // 담아둔 이름을 다시 평가하면 뷰모델이 목적지를 적어 둔다 — 여기서 소비하고 이동한다.
+    LaunchedEffect(vm.pendingRoute) {
+        vm.pendingRoute?.let { route ->
+            vm.pendingRoute = null
+            nav.navigate(route)
+        }
+    }
+    var notReady by remember { mutableStateOf(false) }
 
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
             Modifier.padding(top = 16.dp),
@@ -106,7 +120,7 @@ fun FavoritesScreen(vm: NamingViewModel) {
                         }
                         context.startActivity(Intent.createChooser(send, "이름 공유"))
                     },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = InkShape.medium,
                 ) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
@@ -127,8 +141,19 @@ fun FavoritesScreen(vm: NamingViewModel) {
                 )
             }
         } else {
+            if (notReady) {
+                Text(
+                    "한자 자료를 불러오는 중이에요. 잠시 후 다시 눌러 주세요.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             vm.favorites.forEach { f ->
-                InkCard(contentPadding = PaddingValues(14.dp), spacing = 4.dp) {
+                InkCard(
+                    onClick = { notReady = !vm.openFavorite(f) },
+                    contentPadding = PaddingValues(14.dp),
+                    spacing = 4.dp,
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.Bottom) {

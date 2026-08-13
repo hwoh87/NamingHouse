@@ -1,9 +1,6 @@
 package com.naminghouse.app.ui
 
-import android.os.SystemClock
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -37,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,6 +51,7 @@ import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.eval.AxisVerdict
 import com.naminghouse.engine.eval.NameEvaluation
@@ -65,7 +61,6 @@ import com.naminghouse.engine.saju.SajuSummary
 import com.samramanshang.manseryeok.orrery.constants.SajuConstants
 import com.samramanshang.manseryeok.orrery.util.TimezoneUtils
 import kotlin.math.abs
-import kotlinx.coroutines.delay
 
 /** 간지 한자 → 한글 독음 (丙午 → 병오). 삼라 상수의 천간·지지 순서를 그대로 쓴다. */
 private fun ganziHangul(ganzi: String): String = buildString {
@@ -119,11 +114,17 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
         )
 
         LazyColumn(
-            Modifier.fillMaxSize().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             vm.saju?.let { saju ->
                 item { SajuCard(saju) }
+                // 사주를 방금 본 자리 — 작명은 여기까지만 보여 주므로 더 깊은 풀이는 형제 앱으로.
+                item {
+                    SamraBanner(
+                        subtitle = "이 사주의 대운·세운·일진은 삼라만상 만세력에서 볼 수 있습니다.",
+                    )
+                }
             }
 
             when (vm.mode) {
@@ -145,7 +146,6 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                                 vm.selected = cand.evaluation to cand.stat
                                 nav.navigate(Routes.DETAIL)
                             },
-                            modifier = Modifier.staggerIn(vm.resultsShownAt, i),
                         )
                     }
                     item { Spacer(Modifier.height(28.dp)) }
@@ -170,7 +170,6 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                                 vm.selected = eval to vm.nameStats[eval.givenName]
                                 nav.navigate(Routes.DETAIL)
                             },
-                            modifier = Modifier.staggerIn(vm.resultsShownAt, i),
                         )
                     }
                     item { Spacer(Modifier.height(28.dp)) }
@@ -180,25 +179,6 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                 AppMode.EVALUATE -> Unit
             }
         }
-    }
-}
-
-/**
- * 결과가 갓 나온 직후에만 위에서 아래로 스며들 듯 등장시킨다.
- * 스크롤로 다시 올라올 때는 애니메이션 없이 그려진다 — 목록이 출렁이면 비교를 방해한다.
- */
-@Composable
-private fun Modifier.staggerIn(resultsShownAt: Long, index: Int): Modifier {
-    val animate = remember { SystemClock.uptimeMillis() - resultsShownAt < 900L }
-    if (!animate) return this
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(index.coerceAtMost(8) * 45L)
-        progress.animateTo(1f, tween(300))
-    }
-    return graphicsLayer {
-        alpha = progress.value
-        translationY = (1f - progress.value) * 12.dp.toPx()
     }
 }
 
@@ -277,9 +257,11 @@ private fun CandidateRow(
             }
             Spacer(Modifier.width(6.dp))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // 이름(titleLarge 22sp)보다 점수가 크면 상품인 이름이 숫자에 밀린다.
+                // 같은 크기로 내리고 강조는 색에 맡긴다.
                 Text(
                     "${eval.score}",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -322,12 +304,12 @@ private fun AxisMarks(eval: NameEvaluation, stat: NameStat?) {
             if (rank <= 200) {
                 Box(
                     Modifier
-                        .background(InkTheme.colors.gold.copy(alpha = 0.14f), RoundedCornerShape(5.dp))
+                        .background(InkTheme.colors.goldSoft, InkShape.small)
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
                         "인기 ${rank}위",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 13.sp),
+                        style = axisBadgeStyle,
                         color = InkTheme.colors.gold,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -338,17 +320,24 @@ private fun AxisMarks(eval: NameEvaluation, stat: NameStat?) {
     }
 }
 
+/**
+ * 축 배지 글씨 — 한 줄에 여섯 개가 서야 해서 labelSmall(11sp)보다 한 단계 작다.
+ * 두 곳에서 같은 값을 쓰므로 여기 한 번만 적는다.
+ */
+private val axisBadgeStyle: TextStyle
+    @Composable get() = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 13.sp)
+
 @Composable
 private fun AxisMark(label: String, verdict: AxisVerdict) {
     val color = verdictColor(verdict)
     Box(
         Modifier
-            .background(color.copy(alpha = 0.13f), RoundedCornerShape(5.dp))
+            .background(color.copy(alpha = 0.13f), InkShape.small)
             .padding(horizontal = 5.dp, vertical = 2.dp)
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 13.sp),
+            style = axisBadgeStyle,
             color = color,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
@@ -390,7 +379,7 @@ fun SajuCard(saju: SajuSummary) {
                     )
                     Spacer(Modifier.height(3.dp))
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = InkShape.medium,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
                         contentColor = MaterialTheme.colorScheme.onSurface,
                         border = androidx.compose.foundation.BorderStroke(

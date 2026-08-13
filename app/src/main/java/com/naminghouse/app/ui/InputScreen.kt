@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
+import com.naminghouse.app.ui.theme.InkShape
 import com.samramanshang.manseryeok.orrery.model.Gender
 import com.samramanshang.manseryeok.orrery.util.TimezoneUtils
 import kotlin.math.abs
@@ -195,7 +195,7 @@ private fun BabyCard(vm: NamingViewModel) {
         AnimatedVisibility(!vm.singleName) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     InkField(
@@ -310,7 +310,7 @@ private fun RegionRow(vm: NamingViewModel) {
             Hint(regionHint(vm))
         }
         Spacer(Modifier.width(8.dp))
-        OutlinedButton(onClick = { open = true }, shape = RoundedCornerShape(12.dp)) {
+        OutlinedButton(onClick = { open = true }, shape = InkShape.medium) {
             Text(vm.city.name, style = MaterialTheme.typography.labelLarge)
         }
     }
@@ -361,7 +361,7 @@ private fun SubmitBar(vm: NamingViewModel) {
                     }
                 },
                 enabled = !vm.busy && vm.hanjaDb != null,
-                shape = RoundedCornerShape(14.dp),
+                shape = InkShape.medium,
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             ) {
                 if (vm.busy) {
@@ -403,7 +403,7 @@ private fun InkField(
         label = { Text(label) },
         singleLine = true,
         enabled = enabled,
-        shape = RoundedCornerShape(12.dp),
+        shape = InkShape.medium,
         keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number)
         else KeyboardOptions.Default,
         modifier = modifier,
@@ -421,7 +421,7 @@ private fun SwitchRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(InkShape.medium)
             .clickable { onChange(!checked) }
             .padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -446,7 +446,7 @@ private fun CheckRow(checked: Boolean, onChange: (Boolean) -> Unit, text: String
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(InkShape.medium)
             .clickable { onChange(!checked) },
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -65,7 +65,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp),
+                .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Spacer(Modifier.height(4.dp))

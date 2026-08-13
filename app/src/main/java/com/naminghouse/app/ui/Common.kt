@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.app.ui.theme.hanjaAwareFamily
 import com.naminghouse.engine.eval.AxisVerdict
@@ -110,7 +111,7 @@ fun SectionCard(title: String, help: String? = null, content: @Composable () -> 
 @Composable
 fun VerdictBadge(verdict: AxisVerdict) {
     val color = verdictColor(verdict)
-    Surface(shape = RoundedCornerShape(7.dp), color = color.copy(alpha = 0.14f)) {
+    Surface(shape = InkShape.small, color = color.copy(alpha = 0.14f)) {
         Text(
             verdict.label,
             color = color,
@@ -305,7 +306,8 @@ fun NameStatCard(stat: NameStat) {
                         .height(24.dp)
                         .background(
                             InkTheme.colors.male,
-                            RoundedCornerShape(topStart = 7.dp, bottomStart = 7.dp),
+                            // 막대 높이(24dp)의 절반 — 끝이 정확한 반원이 된다.
+                            RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp),
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -322,7 +324,7 @@ fun NameStatCard(stat: NameStat) {
                         .height(24.dp)
                         .background(
                             InkTheme.colors.female,
-                            RoundedCornerShape(topEnd = 7.dp, bottomEnd = 7.dp),
+                            RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -382,7 +384,7 @@ fun HanjaPickerDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = InkShape.large,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
@@ -474,7 +476,7 @@ fun HanjaSlotButton(
     var open = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     OutlinedButton(
         onClick = { open.value = true },
-        shape = RoundedCornerShape(12.dp),
+        shape = InkShape.medium,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 10.dp),
     ) {
         if (selected == null) {
@@ -527,7 +529,7 @@ fun CityPickerDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = InkShape.large,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {

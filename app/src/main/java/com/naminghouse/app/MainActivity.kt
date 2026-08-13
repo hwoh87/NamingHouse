@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -91,12 +93,17 @@ private fun AppNavigation(vm: NamingViewModel) {
             navController = nav,
             startDestination = Routes.HOME,
             modifier = Modifier.padding(padding),
+            // 화면 전환은 즉시 — 기본 슬라이드/페이드가 앱을 느리게 보이게 한다.
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
         ) {
             composable(Routes.HOME) { HomeScreen(vm, nav) }
             composable(Routes.INPUT) { InputScreen(vm, nav) }
             composable(Routes.RESULT) { ResultScreen(vm, nav) }
             composable(Routes.DETAIL) { DetailScreen(vm, nav) }
-            composable(Routes.FAVORITES) { FavoritesScreen(vm) }
+            composable(Routes.FAVORITES) { FavoritesScreen(vm, nav) }
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.TERMS) {
                 LegalScreen("이용약관", "legal/terms.md", nav)

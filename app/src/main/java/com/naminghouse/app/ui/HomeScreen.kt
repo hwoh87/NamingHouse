@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +28,7 @@ import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.R
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkTheme
 import com.samramanshang.manseryeok.orrery.model.Gender
 
@@ -81,7 +81,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
                         vm.mode = AppMode.RECOMMEND
                         nav.navigate(Routes.INPUT)
                     },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = InkShape.medium,
                     modifier = Modifier.fillMaxWidth().height(46.dp),
                 ) {
                     Text(
@@ -158,6 +158,9 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
             }
         }
+
+        // ── 형제 앱 — 사주를 더 깊이 보고 싶은 사람에게
+        SamraBanner()
 
         Spacer(Modifier.height(8.dp))
     }

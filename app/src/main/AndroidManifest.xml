@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      API 30+ 패키지 가시성 — 형제 앱(삼라만상 만세력) 설치 여부를 보고
+      배너를 '열기'/'무료'로 가르기 위해 이 패키지만 조회할 수 있게 연다.
+    -->
+    <queries>
+        <package android:name="com.samramanshang.manseryeok" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
