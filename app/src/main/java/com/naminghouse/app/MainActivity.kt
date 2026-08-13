@@ -24,6 +24,7 @@ import com.naminghouse.app.ui.HanjiBackdrop
 import com.naminghouse.app.ui.HomeScreen
 import com.naminghouse.app.ui.InkNavBar
 import com.naminghouse.app.ui.InputScreen
+import com.naminghouse.app.ui.LegalScreen
 import com.naminghouse.app.ui.ResultScreen
 import com.naminghouse.app.ui.SettingsScreen
 import com.naminghouse.app.ui.theme.NamingHouseTheme
@@ -36,6 +37,8 @@ object Routes {
     const val DETAIL = "detail"
     const val FAVORITES = "favorites"
     const val SETTINGS = "settings"
+    const val TERMS = "legal_terms"
+    const val PRIVACY = "legal_privacy"
 
     /** 하단 탭이 붙는 최상위 목적지 */
     val topLevel = setOf(HOME, FAVORITES, SETTINGS)
@@ -94,7 +97,13 @@ private fun AppNavigation(vm: NamingViewModel) {
             composable(Routes.RESULT) { ResultScreen(vm, nav) }
             composable(Routes.DETAIL) { DetailScreen(vm, nav) }
             composable(Routes.FAVORITES) { FavoritesScreen(vm) }
-            composable(Routes.SETTINGS) { SettingsScreen(vm) }
+            composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
+            composable(Routes.TERMS) {
+                LegalScreen("이용약관", "legal/terms.md", nav)
+            }
+            composable(Routes.PRIVACY) {
+                LegalScreen("개인정보 처리방침", "legal/privacy.md", nav)
+            }
         }
     }
 }

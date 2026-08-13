@@ -29,7 +29,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavHostController
 import com.naminghouse.app.NamingViewModel
+import com.naminghouse.app.Routes
 import com.naminghouse.app.ThemeMode
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.oheng.BaleumSchool
@@ -42,7 +44,7 @@ import com.naminghouse.engine.oheng.BaleumSchool
  * 스토어 심사는 약관·개인정보 처리방침·구매 복원을 요구한다.
  */
 @Composable
-fun SettingsScreen(vm: NamingViewModel) {
+fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
     val context = LocalContext.current
     var showLicenses by remember { mutableStateOf(false) }
     val notYet = { Toast.makeText(context, "준비 중입니다 — 스토어 출시와 함께 열립니다", Toast.LENGTH_SHORT).show() }
@@ -114,8 +116,8 @@ fun SettingsScreen(vm: NamingViewModel) {
 
         InkCard {
             SectionTitle("정보")
-            SettingsRow("이용약관", onClick = notYet)
-            SettingsRow("개인정보 처리방침", onClick = notYet)
+            SettingsRow("이용약관", onClick = { nav.navigate(Routes.TERMS) })
+            SettingsRow("개인정보 처리방침", onClick = { nav.navigate(Routes.PRIVACY) })
             SettingsRow("글꼴·오픈소스 라이선스", onClick = { showLicenses = true })
             SettingsRow("버전", value = appVersion(), onClick = null)
         }
