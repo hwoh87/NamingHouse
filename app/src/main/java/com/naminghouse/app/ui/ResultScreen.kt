@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -113,6 +114,8 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
             },
             // 앱바 뒤로 배경의 원산이 그대로 이어져야 해서 면을 깔지 않는다.
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            // 상태바 인셋은 Scaffold 가 이미 콘텐츠에 주었다 — 기본값대로 두면 이중 공백.
+            windowInsets = WindowInsets(0, 0, 0, 0),
         )
 
         LazyColumn(

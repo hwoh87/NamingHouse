@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -104,6 +105,8 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            // 상태바 인셋은 Scaffold 가 이미 콘텐츠에 주었다 — 기본값대로 두면 이중 공백.
+            windowInsets = WindowInsets(0, 0, 0, 0),
         )
 
         Column(
