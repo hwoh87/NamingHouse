@@ -2,79 +2,170 @@ package com.naminghouse.app.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import com.naminghouse.app.ThemeMode
 import com.samramanshang.manseryeok.orrery.model.Element
 
-// 한지 느낌의 웜 라이트 + 차분한 다크. 삼라 패턴(브랜드 고정 스킴, 다이나믹 컬러 미사용)을 따른다.
-private val Navy = Color(0xFF1F3A5F)
-private val Gold = Color(0xFFB98A2F)
+// ─────────────────────────────────────────────────────────────────────────────
+// 수묵(水墨) 팔레트
+//
+// 한지 위에 먹으로 쓴 화면을 기준으로 삼는다. 강조는 원색이 아니라 먹의 농담으로 주고,
+// 붉은색은 낙관(落款) 자리에만 쓴다 — 목록 60줄이 전부 붉으면 낙관이 아니라 소음이 된다.
+// 삼라 패턴대로 브랜드 고정 스킴을 쓰고 다이나믹 컬러는 쓰지 않는다.
+// ─────────────────────────────────────────────────────────────────────────────
+
+private val CheongMuk = Color(0xFF2C3640)   // 청묵(靑墨) — 주된 먹빛
+private val Hanji = Color(0xFFF5EFE2)       // 한지 바탕
+private val JuSa = Color(0xFF9C3A2E)        // 주사(朱砂) — 낙관
+private val GeumNi = Color(0xFFA5873F)      // 금니(金泥)
 
 private val BrandLight = lightColorScheme(
-    primary = Navy,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFD9E2F1),
-    onPrimaryContainer = Color(0xFF0E2340),
-    secondary = Gold,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFF3E3C2),
-    onSecondaryContainer = Color(0xFF4A3608),
-    background = Color(0xFFFBF7EF),
-    onBackground = Color(0xFF241F18),
-    surface = Color(0xFFFBF7EF),
-    onSurface = Color(0xFF241F18),
-    surfaceVariant = Color(0xFFEFE7D8),
-    onSurfaceVariant = Color(0xFF54503F),
-    outline = Color(0xFF9A917D),
-    surfaceContainer = Color(0xFFF4EEE1),
-    surfaceContainerHigh = Color(0xFFEFE7D7),
-    surfaceContainerHighest = Color(0xFFE9E0CE),
-    error = Color(0xFFA83C32),
+    primary = CheongMuk,
+    onPrimary = Color(0xFFF8F3E8),
+    primaryContainer = Color(0xFFD5DCE2),
+    onPrimaryContainer = Color(0xFF16202A),
+    secondary = JuSa,
+    onSecondary = Color(0xFFFDF4EE),
+    secondaryContainer = Color(0xFFF0D9D2),
+    onSecondaryContainer = Color(0xFF561B12),
+    tertiary = GeumNi,
+    onTertiary = Color(0xFFFFFBF2),
+    background = Hanji,
+    onBackground = Color(0xFF241F19),
+    surface = Hanji,
+    onSurface = Color(0xFF241F19),
+    surfaceVariant = Color(0xFFE7DECB),
+    onSurfaceVariant = Color(0xFF67604F),
+    outline = Color(0xFFB2A78E),
+    outlineVariant = Color(0xFFD5CAB2),
+    surfaceContainerLowest = Color(0xFFFEFBF4),
+    surfaceContainerLow = Color(0xFFFAF5EA),
+    surfaceContainer = Color(0xFFF7F1E4),
+    surfaceContainerHigh = Color(0xFFF1EADB),
+    surfaceContainerHighest = Color(0xFFEAE1CE),
+    error = Color(0xFFA03A2E),
+    onError = Color(0xFFFFF5F2),
 )
 
 private val BrandDark = darkColorScheme(
-    primary = Color(0xFFAAC3E8),
-    onPrimary = Color(0xFF102540),
-    primaryContainer = Color(0xFF2D4A73),
-    onPrimaryContainer = Color(0xFFD9E2F1),
-    secondary = Color(0xFFE0BE72),
-    onSecondary = Color(0xFF3C2E06),
-    secondaryContainer = Color(0xFF57431A),
-    onSecondaryContainer = Color(0xFFF3E3C2),
-    background = Color(0xFF171613),
-    onBackground = Color(0xFFE8E2D6),
-    surface = Color(0xFF171613),
-    onSurface = Color(0xFFE8E2D6),
-    surfaceVariant = Color(0xFF2A2822),
-    onSurfaceVariant = Color(0xFFCBC4B2),
-    outline = Color(0xFF8F8875),
-    surfaceContainer = Color(0xFF1F1E1A),
-    surfaceContainerHigh = Color(0xFF262420),
-    surfaceContainerHighest = Color(0xFF2D2B25),
-    error = Color(0xFFE8998F),
+    primary = Color(0xFFA9BCC9),
+    onPrimary = Color(0xFF15222B),
+    primaryContainer = Color(0xFF2E3E49),
+    onPrimaryContainer = Color(0xFFD3E1EA),
+    secondary = Color(0xFFD9796A),
+    onSecondary = Color(0xFF47160E),
+    secondaryContainer = Color(0xFF6B291F),
+    onSecondaryContainer = Color(0xFFF5D6CE),
+    tertiary = Color(0xFFD8B665),
+    onTertiary = Color(0xFF3B2C07),
+    background = Color(0xFF141311),
+    onBackground = Color(0xFFE9E2D4),
+    surface = Color(0xFF141311),
+    onSurface = Color(0xFFE9E2D4),
+    surfaceVariant = Color(0xFF2B2925),
+    onSurfaceVariant = Color(0xFFBAB2A1),
+    outline = Color(0xFF8A8271),
+    outlineVariant = Color(0xFF3A3733),
+    surfaceContainerLowest = Color(0xFF0E0D0C),
+    surfaceContainerLow = Color(0xFF191815),
+    surfaceContainer = Color(0xFF1D1C19),
+    surfaceContainerHigh = Color(0xFF25231F),
+    surfaceContainerHighest = Color(0xFF2D2B26),
+    error = Color(0xFFE0958A),
+    onError = Color(0xFF44100A),
 )
 
-/** 오행 도메인 컬러 (라이트/다크 공용으로 무난한 톤) */
-object WuxingColors {
+/**
+ * Material 스킴이 자리를 마련해 주지 않는 도메인 색.
+ *
+ * 오행 다섯 색과 길·흉 판정색은 라이트/다크에서 각각 다른 명도가 필요해서
+ * (다크에서 진한 녹색 글씨는 읽히지 않는다) 스킴처럼 두 벌을 두고 갈아 끼운다.
+ */
+@Immutable
+data class InkPalette(
+    val seal: Color,
+    val onSeal: Color,
+    val gold: Color,
+    val gil: Color,
+    val botong: Color,
+    val hyung: Color,
+    val male: Color,
+    val female: Color,
+    val tree: Color,
+    val fire: Color,
+    val earth: Color,
+    val metal: Color,
+    val water: Color,
+) {
     fun of(element: Element): Color = when (element) {
-        Element.TREE -> Color(0xFF3E8E5A)
-        Element.FIRE -> Color(0xFFC64B3E)
-        Element.EARTH -> Color(0xFFB9862F)
-        Element.METAL -> Color(0xFF8A8D93)
-        Element.WATER -> Color(0xFF3D6CB0)
+        Element.TREE -> tree
+        Element.FIRE -> fire
+        Element.EARTH -> earth
+        Element.METAL -> metal
+        Element.WATER -> water
     }
 }
 
+private val LightInk = InkPalette(
+    seal = JuSa,
+    onSeal = Color(0xFFFBF3E7),
+    gold = GeumNi,
+    gil = Color(0xFF2F6B4A),
+    botong = Color(0xFF876A22),
+    hyung = Color(0xFF9E3A2F),
+    male = Color(0xFF3D6CB0),
+    female = Color(0xFFB1567A),
+    tree = Color(0xFF3F7A55),
+    fire = Color(0xFFB0463A),
+    earth = Color(0xFF9E7C33),
+    metal = Color(0xFF6F7681),
+    water = Color(0xFF3A5F8A),
+)
+
+private val DarkInk = InkPalette(
+    seal = Color(0xFFC1584A),
+    onSeal = Color(0xFFFBF3E7),
+    gold = Color(0xFFD8B665),
+    gil = Color(0xFF74B792),
+    botong = Color(0xFFD3AE5F),
+    hyung = Color(0xFFE0958A),
+    male = Color(0xFF7FA6DC),
+    female = Color(0xFFD98BA9),
+    tree = Color(0xFF6FAE84),
+    fire = Color(0xFFD9786B),
+    earth = Color(0xFFCFA95C),
+    metal = Color(0xFF9AA3AF),
+    water = Color(0xFF7098CC),
+)
+
+private val LocalInk = staticCompositionLocalOf { LightInk }
+
+object InkTheme {
+    val colors: InkPalette
+        @Composable @ReadOnlyComposable get() = LocalInk.current
+}
+
+// 활자는 Type.kt — 마루부리(한글 명조)·한자 명조·프리텐다드 세 벌을 번들한다.
+
 @Composable
-fun NamingHouseTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
+fun NamingHouseTheme(mode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
+    val dark = when (mode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
     val colorScheme = if (dark) BrandDark else BrandLight
 
     // 시스템 다크모드 플래그가 아니라 **앱 배경의 밝기**로 시스템 바 아이콘 대비를 정한다.
@@ -91,5 +182,7 @@ fun NamingHouseTheme(content: @Composable () -> Unit) {
         }
     }
 
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    CompositionLocalProvider(LocalInk provides if (dark) DarkInk else LightInk) {
+        MaterialTheme(colorScheme = colorScheme, typography = InkTypography, content = content)
+    }
 }

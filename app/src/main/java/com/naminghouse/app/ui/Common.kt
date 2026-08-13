@@ -1,5 +1,7 @@
 package com.naminghouse.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -25,19 +25,30 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.naminghouse.app.ui.theme.WuxingColors
+import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkTheme
+import com.naminghouse.app.ui.theme.hanjaAwareFamily
 import com.naminghouse.engine.eval.AxisVerdict
 import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.saju.SajuSummary
+import com.samramanshang.manseryeok.orrery.model.City
 import com.samramanshang.manseryeok.orrery.model.Element
+import com.samramanshang.manseryeok.orrery.repository.CityRepository
 
 val Element.ko: String
     get() = when (this) {
@@ -48,57 +59,102 @@ val Element.ko: String
         Element.WATER -> "수"
     }
 
+/** 판정 색은 라이트/다크에서 명도가 달라야 해서 테마에서 꺼내 쓴다. */
 @Composable
-fun SectionCard(title: String, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            content()
+fun verdictColor(verdict: AxisVerdict): Color = when (verdict) {
+    AxisVerdict.GIL -> InkTheme.colors.gil
+    AxisVerdict.BOTONG -> InkTheme.colors.botong
+    AxisVerdict.HYUNG -> InkTheme.colors.hyung
+}
+
+/**
+ * 축 카드. [help] 를 주면 제목 옆에 ? 가 붙고, 눌러 그 축이 무엇을 보는지 펼쳐 읽을 수 있다.
+ * 성명학 용어를 처음 보는 부모를 위한 것 — 항상 펼쳐 두면 판정보다 설명이 화면을 먹는다.
+ */
+@Composable
+fun SectionCard(title: String, help: String? = null, content: @Composable () -> Unit) {
+    var showHelp by remember { mutableStateOf(false) }
+    InkCard {
+        SectionTitle(title) {
+            if (help != null) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (showHelp) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    else Color.Transparent,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.clip(CircleShape).clickable { showHelp = !showHelp },
+                ) {
+                    Text(
+                        "?",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
+            }
         }
+        if (help != null) {
+            AnimatedVisibility(showHelp) {
+                Text(
+                    help,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        content()
     }
 }
 
 @Composable
 fun VerdictBadge(verdict: AxisVerdict) {
-    val (color, text) = when (verdict) {
-        AxisVerdict.GIL -> Color(0xFF2E7D4F) to "길"
-        AxisVerdict.BOTONG -> Color(0xFF8A6D1E) to "보통"
-        AxisVerdict.HYUNG -> Color(0xFFA83C32) to "흉"
-    }
-    Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.15f)) {
+    val color = verdictColor(verdict)
+    Surface(shape = RoundedCornerShape(7.dp), color = color.copy(alpha = 0.14f)) {
         Text(
-            text,
+            verdict.label,
             color = color,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
         )
     }
 }
 
-/** 오행 원형 칩: 글자(음절·한자)와 오행색 */
+/**
+ * 오행 구슬 — 글자(음절·획수·한자)와 오행색.
+ *
+ * 단색 원이 아니라 가운데가 옅고 가장자리에 먹이 고인 방울로 그린다.
+ */
 @Composable
 fun ElementBall(label: String, element: Element?, sub: String? = null) {
+    val base = element?.let { InkTheme.colors.of(it) } ?: MaterialTheme.colorScheme.outline
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(
-            shape = CircleShape,
-            color = element?.let { WuxingColors.of(it) } ?: MaterialTheme.colorScheme.outline,
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(lerp(base, Color.White, 0.22f), base, lerp(base, Color.Black, 0.14f))
+                    ),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 label,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(10.dp),
+                fontFamily = hanjaAwareFamily(label),
+                maxLines = 1,
             )
         }
         Text(
             sub ?: element?.let { "${it.hanja}(${it.ko})" } ?: "미상",
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(top = 2.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
@@ -119,6 +175,7 @@ fun OhengBarChart(
 ) {
     val maxTotal = Element.entries.maxOf { (sajuCounts[it] ?: 0) + (nameCounts[it] ?: 0) }.coerceAtLeast(1)
     val maxBarHeight = 84.dp
+    val cap = RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp)
 
     Row(
         Modifier.fillMaxWidth(),
@@ -128,7 +185,7 @@ fun OhengBarChart(
         Element.entries.forEach { el ->
             val base = sajuCounts[el] ?: 0
             val added = nameCounts[el] ?: 0
-            val color = WuxingColors.of(el)
+            val color = InkTheme.colors.of(el)
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
@@ -139,7 +196,7 @@ fun OhengBarChart(
                 )
                 Spacer(Modifier.height(4.dp))
                 Box(
-                    Modifier.height(maxBarHeight).width(34.dp),
+                    Modifier.height(maxBarHeight).width(32.dp),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
                     if (base == 0 && added == 0) {
@@ -155,27 +212,23 @@ fun OhengBarChart(
                             if (added > 0) {
                                 Box(
                                     Modifier
-                                        .width(34.dp)
+                                        .width(32.dp)
                                         .height(maxBarHeight * added / maxTotal)
-                                        .background(color.copy(alpha = 0.4f), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                        .background(color.copy(alpha = 0.38f), cap)
                                 )
                             }
                             if (base > 0) {
                                 Box(
                                     Modifier
-                                        .width(34.dp)
+                                        .width(32.dp)
                                         .height(maxBarHeight * base / maxTotal)
-                                        .background(
-                                            color,
-                                            if (added > 0) RoundedCornerShape(0.dp)
-                                            else RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
-                                        )
+                                        .background(color, if (added > 0) RoundedCornerShape(0.dp) else cap)
                                 )
                             }
                         }
                     }
                 }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(5.dp))
                 Text(
                     "${el.hanja}(${el.ko})",
                     style = MaterialTheme.typography.labelSmall,
@@ -207,7 +260,11 @@ fun NameStatCard(stat: NameStat) {
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
-            Text("출생신고 이름 순위", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "출생신고 이름 순위",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -215,8 +272,8 @@ fun NameStatCard(stat: NameStat) {
                 ranks.take(6).forEach { (year, rank) ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "${rank}위",
-                            style = MaterialTheme.typography.titleMedium,
+                            "$rank",
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -232,17 +289,24 @@ fun NameStatCard(stat: NameStat) {
 
         // 남녀비율 — 한 줄 막대
         val malePct = stat.malePercent
-        Text("남녀 비율", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "남녀 비율",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Row(
-            Modifier.fillMaxWidth().height(22.dp),
+            Modifier.fillMaxWidth().height(24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (malePct > 0) {
                 Box(
                     Modifier
                         .weight(malePct.coerceAtLeast(1).toFloat())
-                        .height(22.dp)
-                        .background(Color(0xFF3D6CB0), RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)),
+                        .height(24.dp)
+                        .background(
+                            InkTheme.colors.male,
+                            RoundedCornerShape(topStart = 7.dp, bottomStart = 7.dp),
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (malePct >= 15) {
@@ -255,8 +319,11 @@ fun NameStatCard(stat: NameStat) {
                 Box(
                     Modifier
                         .weight(femalePct.coerceAtLeast(1).toFloat())
-                        .height(22.dp)
-                        .background(Color(0xFFC4587F), RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)),
+                        .height(24.dp)
+                        .background(
+                            InkTheme.colors.female,
+                            RoundedCornerShape(topEnd = 7.dp, bottomEnd = 7.dp),
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (femalePct >= 15) {
@@ -315,16 +382,25 @@ fun HanjaPickerDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
                 Text(
-                    "'$syllable' 인명용 한자 (${candidates.size}자)",
-                    style = MaterialTheme.typography.titleMedium,
+                    "'$syllable' 인명용 한자",
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
-                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${candidates.size}자 · 이름에 흔히 쓰는 글자부터 보여 드립니다",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                InkStroke(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.primary, alpha = 0.25f)
+                Spacer(Modifier.height(6.dp))
+
                 if (candidates.isEmpty()) {
                     Text("해당 음의 인명용 한자가 없습니다", style = MaterialTheme.typography.bodyMedium)
                 } else {
@@ -334,13 +410,14 @@ fun HanjaPickerDialog(
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable { onSelect(entry) }
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     entry.char.toString(),
                                     style = MaterialTheme.typography.headlineSmall,
-                                    modifier = Modifier.width(44.dp),
+                                    fontFamily = HanjaFamily,
+                                    modifier = Modifier.width(46.dp),
                                 )
                                 Column(Modifier.weight(1f)) {
                                     Text(
@@ -353,25 +430,27 @@ fun HanjaPickerDialog(
                                         "원획 ${entry.wonhoek} · 필획 ${entry.pilhoek}" +
                                             if (entry.usableForNaming) "" else " · 이름에 드물게 쓰는 글자",
                                         style = MaterialTheme.typography.labelSmall,
+                                        // 못 쓰는 글자가 아니라 드문 글자다 — 빨간 오류색은 과하다.
                                         color = if (entry.usableForNaming) {
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                         } else {
-                                            MaterialTheme.colorScheme.error
+                                            InkTheme.colors.botong
                                         },
                                     )
                                 }
                                 entry.element?.let { el ->
-                                    Surface(shape = CircleShape, color = WuxingColors.of(el)) {
+                                    Surface(shape = CircleShape, color = InkTheme.colors.of(el)) {
                                         Text(
                                             el.hanja,
                                             color = Color.White,
                                             style = MaterialTheme.typography.labelMedium,
-                                            modifier = Modifier.padding(6.dp),
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(7.dp),
                                         )
                                     }
                                 }
                             }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         }
                     }
                 }
@@ -393,19 +472,34 @@ fun HanjaSlotButton(
     onSelect: (HanjaEntry) -> Unit,
 ) {
     var open = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    OutlinedButton(onClick = { open.value = true }) {
+    OutlinedButton(
+        onClick = { open.value = true },
+        shape = RoundedCornerShape(12.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+    ) {
         if (selected == null) {
-            Text("$syllable · 한자 선택")
+            Text("$syllable · 한자 고르기", style = MaterialTheme.typography.labelLarge)
         } else {
-            Text("$syllable ${selected.char} (${selected.wonhoek}획)")
+            Text(
+                selected.char.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = HanjaFamily,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "$syllable · ${selected.wonhoek}획",
+                style = MaterialTheme.typography.labelMedium,
+            )
             selected.element?.let { el ->
                 Spacer(Modifier.width(6.dp))
-                Surface(shape = CircleShape, color = WuxingColors.of(el)) {
+                Surface(shape = CircleShape, color = InkTheme.colors.of(el)) {
                     Text(
                         el.hanja,
                         color = Color.White,
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(4.dp),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(5.dp),
                     )
                 }
             }
@@ -418,5 +512,72 @@ fun HanjaSlotButton(
             onSelect = { open.value = false; onSelect(it) },
             onDismiss = { open.value = false },
         )
+    }
+}
+
+/**
+ * 출생 지역 선택 다이얼로그 — 국내 도시만.
+ * 해외 출생은 도시의 시간대 정보가 없어 진태양시 환산이 틀어지므로 넣지 않는다.
+ */
+@Composable
+fun CityPickerDialog(
+    selected: City,
+    onSelect: (City) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ) {
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
+                Text(
+                    "출생 지역",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "출생지 경도로 진태양시를 보정합니다",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(10.dp))
+                InkStroke(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.primary, alpha = 0.25f)
+                Spacer(Modifier.height(6.dp))
+
+                LazyColumn(Modifier.weight(1f, fill = false)) {
+                    items(CityRepository.KOREAN_CITIES) { c ->
+                        val on = c == selected
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(c) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                c.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                                color = if (on) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                c.region ?: "",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+                    Text("닫기")
+                }
+            }
+        }
     }
 }

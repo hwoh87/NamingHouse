@@ -1,6 +1,7 @@
 package com.naminghouse.app
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,6 +14,7 @@ import com.naminghouse.engine.gen.GeneratorOptions
 import com.naminghouse.engine.gen.NameCandidate
 import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
+import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.gen.NameStats
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
@@ -20,7 +22,9 @@ import com.naminghouse.engine.oheng.BaleumSchool
 import com.naminghouse.engine.saju.SajuNamingService
 import com.naminghouse.engine.saju.SajuSummary
 import com.samramanshang.manseryeok.orrery.model.BirthInput
+import com.samramanshang.manseryeok.orrery.model.City
 import com.samramanshang.manseryeok.orrery.model.Gender
+import com.samramanshang.manseryeok.orrery.repository.CityRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,8 +34,6 @@ enum class AppMode(val label: String) {
     HANJA("한자 추천"),
     EVALUATE("이름 감명"),
 }
-
-enum class AppScreen { INPUT, RESULT }
 
 class NamingViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -46,10 +48,38 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     // ── 화면 상태
-    var screen by mutableStateOf(AppScreen.INPUT)
     var mode by mutableStateOf(AppMode.RECOMMEND)
     var busy by mutableStateOf(false)
         private set
+
+    /** 계산이 끝나 이동해야 할 목적지. 입력 화면이 소비하고 비운다. */
+    var pendingRoute by mutableStateOf<String?>(null)
+
+    /** 상세 화면이 보고 있는 이름 — 라우트로 직렬화하기엔 무거워 여기 든다. */
+    var selected by mutableStateOf<Pair<NameEvaluation, NameStat?>?>(null)
+
+    /** 결과 목록이 채워진 시각 — 등장 스태거는 이 직후에만 돈다. */
+    var resultsShownAt by mutableStateOf(0L)
+        private set
+
+    /** 저장된 입력이 있는가 — 홈의 '이어서 이름 짓기' 노출 기준. */
+    var hasSavedInput by mutableStateOf(false)
+        private set
+
+    // ── 설정
+    private val settingsStore = SettingsStore(app)
+    var themeMode by mutableStateOf(ThemeMode.SYSTEM)
+        private set
+
+    fun onThemeModeChanged(m: ThemeMode) {
+        themeMode = m
+        viewModelScope.launch { settingsStore.saveThemeMode(m) }
+    }
+
+    fun onSchoolChanged(s: BaleumSchool) {
+        school = s
+        viewModelScope.launch { settingsStore.saveSchool(s) }
+    }
 
     // ── 공통 입력: 성씨
     var surname by mutableStateOf("김")
@@ -66,8 +96,17 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     var isLunar by mutableStateOf(false)
     var isLeapMonth by mutableStateOf(false)
     var unknownTime by mutableStateOf(false)
+    /** 출생 지역 — 경도로 진태양시를 보정한다(국내 도시만, 해외 출생은 시간대 정보가 없어 미지원). */
+    var city by mutableStateOf<City>(CityRepository.SEOUL)
     var school by mutableStateOf(BaleumSchool.UNHAE)
     var popularOnly by mutableStateOf(false) // tier 1 이름만
+    var singleName by mutableStateOf(false) // 외자(한 글자) 이름만 추천
+    var dolimja by mutableStateOf("") // 돌림자 (빈 문자열 = 사용 안 함)
+    var dolimjaLast by mutableStateOf(false) // 돌림자 위치: false=첫 글자, true=끝 글자
+
+    fun onDolimjaChanged(value: String) {
+        dolimja = acceptHangul(value, maxSyllables = 1)
+    }
 
     // ── 감명 모드 입력
     var givenName by mutableStateOf("")
@@ -84,11 +123,15 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var errorMessage by mutableStateOf<String?>(null)
 
+    // ── 입력 영속화
+    private val inputStore = InputStore(app)
+    /** 저장돼 있던 성씨 한자 — DB 로딩이 끝나야 실제 항목으로 되살릴 수 있다 */
+    private var savedSurnameHanja: String? = null
+
     // ── 즐겨찾기
     private val favoritesStore = FavoritesStore(app)
     var favorites by mutableStateOf<List<FavoriteName>>(emptyList())
         private set
-    var showFavorites by mutableStateOf(false)
 
     /** 이 이름이 담겨 있는가 — 이름+한자로 판별(점수는 사주에 따라 달라진다) */
     fun isFavorite(eval: NameEvaluation): Boolean {
@@ -118,6 +161,36 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             favoritesStore.flow.collect { favorites = it }
         }
+        // 저장된 입력 복원. 성씨 한자만은 DB가 있어야 하므로 문자열로 들고 있다가
+        // 아래 로딩 완료 쪽과 늦게 끝나는 쪽이 되살린다(둘 다 메인 스레드라 경합 없음).
+        viewModelScope.launch {
+            inputStore.load()?.let { s ->
+                hasSavedInput = true
+                surname = s.surname
+                savedSurnameHanja = s.surnameHanja
+                gender = runCatching { Gender.valueOf(s.gender) }.getOrDefault(Gender.M)
+                preBirth = s.preBirth
+                popularOnly = s.popularOnly
+                if (s.year.isNotBlank()) { year = s.year; month = s.month; day = s.day }
+                if (s.hour.isNotBlank()) { hour = s.hour; minute = s.minute }
+                isLunar = s.isLunar
+                isLeapMonth = s.isLeapMonth
+                unknownTime = s.unknownTime
+                city = CityRepository.KOREAN_CITIES.firstOrNull {
+                    it.name == s.cityName && (it.region ?: "") == s.cityRegion
+                } ?: CityRepository.SEOUL
+                school = runCatching { BaleumSchool.valueOf(s.school) }
+                    .getOrDefault(BaleumSchool.UNHAE)
+                singleName = s.singleName
+                dolimja = s.dolimja
+                dolimjaLast = s.dolimjaLast
+                if (hanjaDb != null) restoreSurnameHanja()
+            }
+            // 학파는 설정으로 옮겨졌다 — 설정 값이 있으면 그쪽이 우선한다.
+            val settings = settingsStore.load()
+            themeMode = settings.themeMode
+            settings.school?.let { school = it }
+        }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val assets = getApplication<Application>().assets
@@ -133,13 +206,43 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     nameStats = stats
                     // DB 로딩 전에는 후보를 못 봐서 기본 성씨가 비어 있다 — 로딩 직후 채운다
                     if (surnameHanja.value.all { it == null }) {
-                        surnameHanja.value = List(surnameSyllables.length) { i -> soleSurnameHanja(i) }
+                        restoreSurnameHanja()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { loadError = "데이터 로딩 실패: ${e.message}" }
             }
         }
+    }
+
+    /** 저장된 한자가 그 음의 후보에 있으면 그걸로, 없으면 유일 후보 자동 선택으로. */
+    private fun restoreSurnameHanja() {
+        val saved = savedSurnameHanja
+        surnameHanja.value = List(surnameSyllables.length) { i ->
+            saved?.getOrNull(i)?.let { ch -> surnameCandidates(i).firstOrNull { it.char == ch } }
+                ?: soleSurnameHanja(i)
+        }
+    }
+
+    /** 제출에 성공한 입력을 저장한다 — 다음 실행 때 그대로 복원된다. */
+    private fun persistInputs() {
+        val snapshot = SavedInput(
+            surname = surnameSyllables,
+            surnameHanja = surnameHanja.value.joinToString("") { it?.char?.toString() ?: "" },
+            gender = gender.name,
+            preBirth = preBirth,
+            popularOnly = popularOnly,
+            year = year, month = month, day = day,
+            hour = hour, minute = minute,
+            isLunar = isLunar, isLeapMonth = isLeapMonth, unknownTime = unknownTime,
+            cityName = city.name, cityRegion = city.region ?: "",
+            school = school.name,
+            singleName = singleName,
+            dolimja = dolimja,
+            dolimjaLast = dolimjaLast,
+        )
+        hasSavedInput = true
+        viewModelScope.launch { inputStore.save(snapshot) }
     }
 
     /**
@@ -175,6 +278,10 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             unknownTime = unknownTime,
             isLunar = isLunar,
             isLeapMonth = isLunar && isLeapMonth,
+            latitude = city.lat,
+            longitude = city.lon,
+            // 지역을 받는 이유가 이 보정이다 — 표준시(동경 135°) 대신 출생지 태양시로 계산.
+            useTrueSolarTime = true,
         )
     }
 
@@ -193,6 +300,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
 
         errorMessage = null
+        persistInputs()
         busy = true
         viewModelScope.launch(Dispatchers.Default) {
             try {
@@ -201,6 +309,9 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                 val options = GeneratorOptions(
                     school = school,
                     maxTier = if (popularOnly) 1 else 3,
+                    singleSyllable = singleName,
+                    fixedSyllable = if (singleName) null else dolimja.filter(::isHangulSyllable).firstOrNull(),
+                    fixedLast = dolimjaLast,
                 )
                 val list = generator.generate(surnameSyllables, sHanja, gender, sajuResult, options)
                 withContext(Dispatchers.Main) {
@@ -208,7 +319,15 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     candidates = list
                     hanjaCombos = emptyList()
                     evaluation = null
-                    screen = AppScreen.RESULT
+                    // 외자·돌림자·인기 필터가 겹치면 빈 결과가 나올 수 있다 —
+                    // 빈 화면으로 넘기지 말고 입력 화면에서 조건을 풀게 안내한다.
+                    errorMessage = if (list.isEmpty()) {
+                        "조건에 맞는 이름을 찾지 못했습니다 — 돌림자·외자·인기 이름 조건을 조정해 보세요"
+                    } else null
+                    if (list.isNotEmpty()) {
+                        resultsShownAt = SystemClock.uptimeMillis()
+                        pendingRoute = "result"
+                    }
                     busy = false
                 }
             } catch (e: Exception) {
@@ -234,6 +353,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
 
         errorMessage = null
+        persistInputs()
         busy = true
         viewModelScope.launch(Dispatchers.Default) {
             try {
@@ -253,7 +373,10 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     errorMessage = if (combos.isEmpty()) {
                         "'$givenNameSyllables' 에 쓸 수 있는 인명용 한자를 찾지 못했습니다"
                     } else null
-                    if (combos.isNotEmpty()) screen = AppScreen.RESULT
+                    if (combos.isNotEmpty()) {
+                        resultsShownAt = SystemClock.uptimeMillis()
+                        pendingRoute = "result"
+                    }
                     busy = false
                 }
             } catch (e: Exception) {
@@ -277,6 +400,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
 
         errorMessage = null
+        persistInputs()
         busy = true
         viewModelScope.launch(Dispatchers.Default) {
             try {
@@ -289,7 +413,9 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     evaluation = eval
                     candidates = emptyList()
                     hanjaCombos = emptyList()
-                    screen = AppScreen.RESULT
+                    // 감명은 이름이 하나라 목록을 거치지 않고 바로 상세로 간다
+                    selected = eval to nameStats[eval.givenName]
+                    pendingRoute = "detail"
                     busy = false
                 }
             } catch (e: Exception) {
@@ -324,9 +450,5 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         if (givenNameSyllables != before) {
             givenHanja.value = List(givenNameSyllables.length) { null }
         }
-    }
-
-    fun backToInput() {
-        screen = AppScreen.INPUT
     }
 }
