@@ -34,6 +34,12 @@ data class GeneratorOptions(
     val excludeBulyong: Boolean = true,
     /** 원형이정 4격 모두 길수인 조합만 */
     val requireAllGoodSuri: Boolean = true,
+    /** 외자(한 글자) 이름만 추천 */
+    val singleSyllable: Boolean = false,
+    /** 돌림자 — 지정하면 그 글자가 든 두자 이름만 후보로 쓴다(외자에는 무의미해 무시) */
+    val fixedSyllable: Char? = null,
+    /** 돌림자 위치 — false=첫 글자, true=끝 글자 */
+    val fixedLast: Boolean = false,
 )
 
 /**
@@ -58,21 +64,34 @@ class NameGenerator(
     ): List<NameCandidate> {
         require(surnameHanja.isNotEmpty()) { "성씨 한자가 필요함" }
         val surnameStrokes = surnameHanja.map { it.wonhoek }
-        val validPairs = goodStrokePairs(surnameStrokes, options.requireAllGoodSuri)
+        val wantLength = if (options.singleSyllable) 1 else 2
+        val validPairs =
+            if (wantLength == 2) goodStrokePairs(surnameStrokes, options.requireAllGoodSuri)
+            else emptySet()
+        val validSingles =
+            if (wantLength == 1) goodStrokeSingles(surnameStrokes, options.requireAllGoodSuri)
+            else emptySet()
         val targets = saju?.targetElements.orEmpty().toSet()
         val gisin = saju?.gisin.orEmpty().toSet()
 
         val results = ArrayList<NameCandidate>(options.limit * 2)
 
         for (pool in namePool.forGender(gender, options.maxTier)) {
-            if (pool.name.length != 2) continue // v1 은 두 글자 이름만 생성
+            if (pool.name.length != wantLength) continue
+            if (wantLength == 2 && options.fixedSyllable != null) {
+                val at = if (options.fixedLast) 1 else 0
+                if (pool.name[at] != options.fixedSyllable) continue
+            }
 
             val full = surname + pool.name
             val baleum = BaleumOheng.evaluate(full, options.school) ?: continue
             if (options.excludeSanggeuk && baleum.hasSanggeuk) continue
 
-            val best = bestHanjaCombo(pool.name, surnameStrokes, validPairs, targets, gisin, options)
-                ?: continue
+            val best = if (wantLength == 1) {
+                bestHanjaSingle(pool.name, validSingles, targets, gisin, options)
+            } else {
+                bestHanjaCombo(pool.name, surnameStrokes, validPairs, targets, gisin, options)
+            } ?: continue
 
             val evaluation = NameEvaluator.evaluate(
                 surname = surname,
@@ -195,6 +214,25 @@ class NameGenerator(
         return pairs
     }
 
+    /** 외자용 — 4격 전부 길수가 되는 이름 한 글자 획수 */
+    private fun goodStrokeSingles(surnameStrokes: List<Int>, requireAllGood: Boolean): Set<Int> =
+        (1..MAX_STROKE).filterTo(HashSet()) { a ->
+            !requireAllGood || SuriCalculator.calculate(surnameStrokes, listOf(a)).allGood
+        }
+
+    /** 외자 이름의 최적 한자 — 조합 탐색 없이 한 글자 후보에서 고른다. */
+    private fun bestHanjaSingle(
+        givenName: String,
+        validSingles: Set<Int>,
+        targets: Set<Element>,
+        gisin: Set<Element>,
+        options: GeneratorOptions,
+    ): List<HanjaEntry>? =
+        candidatesOf(givenName, options)
+            .filter { it.wonhoek in validSingles }
+            .maxByOrNull { comboScore(listOf(it), targets, gisin) }
+            ?.let { listOf(it) }
+
     /**
      * 후보 한자 — 벽자·부적합자를 먼저 걷어낸다.
      * 이 필터가 없으면 획수·자원오행만 맞는 叨(탐할)·瘰(연주창) 같은 글자가 추천에 올라온다.
@@ -232,7 +270,7 @@ class NameGenerator(
             for (h2 in c2) {
                 if ((h1.wonhoek to h2.wonhoek) !in validPairs) continue
                 if (++examined > 2000) return best
-                val score = comboScore(h1, h2, targets, gisin)
+                val score = comboScore(listOf(h1, h2), targets, gisin)
                 if (score > bestScore) {
                     bestScore = score
                     best = listOf(h1, h2)
@@ -242,17 +280,16 @@ class NameGenerator(
         return best
     }
 
-    /** 빠른 조합 적합도 — 전체 감명 이전의 가지치기용 점수 */
-    private fun comboScore(h1: HanjaEntry, h2: HanjaEntry, targets: Set<Element>, gisin: Set<Element>): Int {
+    /** 빠른 조합 적합도 — 전체 감명 이전의 가지치기용 점수. 외자(1글자)도 같은 기준. */
+    private fun comboScore(picked: List<HanjaEntry>, targets: Set<Element>, gisin: Set<Element>): Int {
         var score = 0
-        val elements = listOfNotNull(h1.element, h2.element)
+        val elements = picked.mapNotNull { it.element }
         score += elements.size * 2 // 자원오행 미상보다 명확한 글자 우대
         score += targets.intersect(elements.toSet()).size * 10
         score -= elements.count { it in gisin && it !in targets } * 8
         // 흔히 쓰는 글자 우대 — 같은 획수·오행이면 낯선 글자보다 익숙한 글자를 고른다.
-        score += (h1.nameFit + h2.nameFit) * 3
-        if (h1.meaning.isNotEmpty()) score += 1
-        if (h2.meaning.isNotEmpty()) score += 1
+        score += picked.sumOf { it.nameFit } * 3
+        score += picked.count { it.meaning.isNotEmpty() }
         return score
     }
 

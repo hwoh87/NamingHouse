@@ -226,6 +226,8 @@ name	gender	tier
 건형	M	2
 건희	M	2
 겨울	F	2
+결	U	2
+경	U	2
 경민	M	2
 경수	M	2
 경아	F	2
@@ -289,6 +291,7 @@ name	gender	tier
 대준	M	2
 대현	M	2
 덕현	M	2
+도	U	2
 도담	F	2
 도민	M	2
 도연	F	2
@@ -377,6 +380,7 @@ name	gender	tier
 봄이	F	2
 봉준	M	2
 봉현	M	2
+빈	U	2
 사랑	F	2
 사월	F	2
 상민	M	2
@@ -520,6 +524,7 @@ name	gender	tier
 우신	M	2
 우혁	M	2
 우현	M	2
+원	U	2
 원우	M	2
 원준	M	2
 원호	M	2
@@ -530,6 +535,7 @@ name	gender	tier
 유성	M	2
 유신	M	2
 유정	F	2
+윤	U	2
 윤정	F	2
 윤지	F	2
 윤하	F	2
@@ -606,6 +612,7 @@ name	gender	tier
 지혁	M	2
 지현	F	2
 지혜	F	2
+진	U	2
 진서	F	2
 진성	M	2
 진아	F	2
@@ -640,6 +647,7 @@ name	gender	tier
 태우	M	2
 태율	M	2
 태현	M	2
+하	U	2
 하경	F	2
 하늘	U	2
 하민	M	2
@@ -660,6 +668,7 @@ name	gender	tier
 해윤	F	2
 향기	F	2
 향아	F	2
+현	U	2
 현겸	M	2
 현빈	M	2
 현서	U	2
@@ -710,12 +719,14 @@ name	gender	tier
 가순	F	3
 갑수	M	3
 갑진	M	3
+강	M	3
 강석	M	3
 강옥	F	3
 강일	M	3
 강진	M	3
 강태	M	3
 강희	F	3
+건	M	3
 건모	M	3
 경석	M	3
 경순	F	3
@@ -740,9 +751,11 @@ name	gender	tier
 권우	M	3
 권일	M	3
 귀남	F	3
+규	M	3
 규석	M	3
 규순	F	3
 규옥	F	3
+근	M	3
 근석	M	3
 근수	M	3
 근태	M	3
@@ -772,6 +785,8 @@ name	gender	tier
 다순	F	3
 다실	F	3
 다옥	F	3
+단	M	3
+담	M	3
 담호	M	3
 대석	M	3
 대성	M	3
@@ -795,6 +810,9 @@ name	gender	tier
 동철	M	3
 두석	M	3
 두성	M	3
+란	F	3
+린	F	3
+림	F	3
 만석	M	3
 만수	M	3
 명석	M	3
@@ -845,6 +863,7 @@ name	gender	tier
 봉순	F	3
 봉식	M	3
 봉희	F	3
+산	M	3
 삼순	F	3
 삼진	M	3
 삼희	F	3
@@ -861,6 +880,7 @@ name	gender	tier
 서순	F	3
 서옥	F	3
 서환	M	3
+석	M	3
 석규	M	3
 석주	M	3
 석진	M	3
@@ -873,6 +893,7 @@ name	gender	tier
 선자	F	3
 선철	M	3
 선희	F	3
+섭	M	3
 성경	F	3
 성권	M	3
 성규	M	3
@@ -903,6 +924,7 @@ name	gender	tier
 순옥	F	3
 순자	F	3
 순희	F	3
+슬	F	3
 승국	M	3
 승규	M	3
 승자	F	3
@@ -917,6 +939,7 @@ name	gender	tier
 신철	M	3
 신호	M	3
 신희	F	3
+아	F	3
 안규	M	3
 안수	M	3
 애경	F	3
@@ -932,6 +955,7 @@ name	gender	tier
 여옥	F	3
 여찬	M	3
 여철	M	3
+연	F	3
 연경	F	3
 연미	F	3
 연식	M	3
@@ -953,12 +977,14 @@ name	gender	tier
 영채	M	3
 영철	M	3
 영희	F	3
+예	F	3
 예권	M	3
 옥경	F	3
 옥순	F	3
 옥실	F	3
 옥자	F	3
 옥희	F	3
+완	M	3
 용국	M	3
 용수	M	3
 용순	F	3
@@ -969,6 +995,9 @@ name	gender	tier
 우석	M	3
 우종	M	3
 우철	M	3
+욱	M	3
+운	M	3
+웅	M	3
 원규	M	3
 원순	F	3
 원식	M	3
@@ -985,6 +1014,7 @@ name	gender	tier
 윤기	M	3
 윤성	M	3
 윤철	M	3
+은	F	3
 은경	F	3
 은권	M	3
 은미	F	3
@@ -1043,6 +1073,7 @@ name	gender	tier
 주순	F	3
 주옥	F	3
 주환	M	3
+준	M	3
 준식	M	3
 준철	M	3
 지순	F	3
@@ -1057,12 +1088,14 @@ name	gender	tier
 진옥	F	3
 진철	M	3
 진희	F	3
+찬	M	3
 창규	M	3
 창수	M	3
 창순	F	3
 창옥	F	3
 창철	M	3
 창희	F	3
+채	F	3
 채경	F	3
 채순	F	3
 채옥	F	3
@@ -1081,6 +1114,7 @@ name	gender	tier
 춘옥	F	3
 춘자	F	3
 춘희	F	3
+탄	M	3
 태수	M	3
 태순	F	3
 태식	M	3
@@ -1098,15 +1132,19 @@ name	gender	tier
 하희	F	3
 학규	M	3
 학진	M	3
+한	M	3
 한수	M	3
 한철	M	3
+해	F	3
 해수	M	3
 해철	M	3
 향순	F	3
 향옥	F	3
 향희	F	3
+헌	M	3
 헌수	M	3
 헌철	M	3
+혁	M	3
 현경	F	3
 현규	M	3
 현숙	F	3
@@ -1119,6 +1157,7 @@ name	gender	tier
 혜숙	F	3
 혜순	F	3
 혜옥	F	3
+호	M	3
 호규	M	3
 호순	F	3
 호영	M	3
@@ -1127,12 +1166,14 @@ name	gender	tier
 호희	F	3
 홍기	M	3
 홍철	M	3
+화	F	3
 화경	F	3
 화수	M	3
 화순	F	3
 화실	F	3
 화자	F	3
 화희	F	3
+환	M	3
 환수	M	3
 회창	M	3
 효경	F	3
@@ -1141,6 +1182,8 @@ name	gender	tier
 효옥	F	3
 효철	M	3
 효희	F	3
+후	M	3
+훈	M	3
 훈규	M	3
 훈철	M	3
 흥수	M	3

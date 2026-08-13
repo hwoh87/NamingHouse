@@ -3,11 +3,13 @@ package com.naminghouse.engine.eval
 import com.naminghouse.engine.oheng.OhengRelation
 import com.samramanshang.manseryeok.orrery.model.Element
 
-/** 총평 — 판정 한 줄, 강점, 주의점 */
+/** 총평 — 판정 한 줄, 강점, 주의점, 그리고 걸리는 축을 어떻게 풀지 제안 */
 data class NameSummary(
     val verdict: String,
     val strengths: List<String>,
     val cautions: List<String>,
+    /** 나쁜 축이 있을 때만 — "무엇을 바꾸면 되는지"를 한 줄씩, 배점 큰 축부터 최대 3개 */
+    val suggestions: List<String> = emptyList(),
 )
 
 /**
@@ -117,5 +119,40 @@ fun summarize(eval: NameEvaluation): NameSummary {
             "이(가) 있습니다(학파에 따라 이견이 있는 속설)."
     }
 
-    return NameSummary(verdict, strengths, cautions)
+    // ── 개선 제안 — 주의점을 어떻게 풀지. 소리를 바꿔야 하는 축(발음)과 한자만
+    // 바꾸면 되는 축(수리·자원·수리음양)을 구분해 알려 준다. 배점 큰 축부터 최대 3개.
+    val suggestions = mutableListOf<String>()
+
+    if (!eval.suri.allGood) {
+        suggestions += "네 격은 한자 획수에서 나옵니다 — 같은 이름이라도 획수가 다른 한자를 " +
+            "고르면 달라지니, '한자 추천'에서 전길 조합을 찾아보세요."
+    }
+    if (fit != null && (fit.matched.isEmpty() || fit.gisinUsed.isNotEmpty())) {
+        suggestions += "보완 대상 오행(" + fit.targets.joinToString("·") { it.hanja } +
+            ") 자원의 한자로 바꿔 보세요 — '한자 추천'이 사주 보완 순으로 정렬해 줍니다."
+    }
+    if (eval.baleum?.hasSanggeuk == true) {
+        suggestions += "발음오행은 소리에서 나와 한자로는 고칠 수 없습니다 — " +
+            "'이름 추천'에서 상생 배열의 이름을 받아 보세요."
+    }
+    if (!eval.strokeEumyang.isBalanced) {
+        suggestions += "홀수 획(양)과 짝수 획(음) 한자가 섞이면 풀립니다 — " +
+            "같은 음의 다른 한자로 바꿔 보세요."
+    }
+    eval.soundEumyang?.let { se ->
+        if (!se.isBalanced) {
+            // 중성 ㅣ는 양으로 표시되므로, 편중일 때 음(●)이 하나라도 있으면 순음 쪽이다
+            suggestions += if (se.pattern.all { it }) {
+                "모음이 ㅏ·ㅗ 계열(양성)로만 쏠렸습니다 — ㅓ·ㅜ·ㅡ 같은 음성 모음이 든 글자를 섞어 보세요."
+            } else {
+                "모음이 ㅓ·ㅜ·ㅡ 계열(음성)로만 쏠렸습니다 — ㅏ·ㅗ 같은 양성 모음이 든 글자를 섞어 보세요."
+            }
+        }
+    }
+    if (eval.bulyongWarnings.isNotEmpty()) {
+        suggestions += "불용한자가 마음에 걸리면 같은 음의 다른 한자로만 바꿔도 됩니다 — " +
+            "부르는 이름은 그대로 지킬 수 있습니다."
+    }
+
+    return NameSummary(verdict, strengths, cautions, suggestions.take(3))
 }

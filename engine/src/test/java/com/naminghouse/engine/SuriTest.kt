@@ -84,6 +84,25 @@ class SuriTest {
         assertEquals(expectedGood, actualGood)
     }
 
+    /**
+     * 풀이문은 화면에 그대로 나가는 콘텐츠다 — 빠지거나(빈 문자열),
+     * 등급과 어긋난 논조("길수입니다"라며 흉 등급)가 섞이지 않게 고정한다.
+     */
+    @Test
+    fun `81수리 표 - 풀이문이 전부 있고 등급 논조와 어긋나지 않는다`() {
+        Suri81.all.forEach { m ->
+            assertTrue("${m.number}수 풀이문 없음", m.description.isNotBlank())
+            assertTrue("${m.number}수 풀이문이 너무 짧음", m.description.length >= 30)
+            assertTrue("${m.number}수 풀이문은 문장으로 끝나야 함", m.description.endsWith("."))
+            if (!m.grade.isGood) {
+                assertTrue(
+                    "${m.number}수(흉)의 풀이문이 길수 표현을 씀",
+                    !m.description.contains("길수입니다"),
+                )
+            }
+        }
+    }
+
     @Test
     fun `대표 수리 명칭`() {
         assertEquals("태초격", Suri81.of(1).title)

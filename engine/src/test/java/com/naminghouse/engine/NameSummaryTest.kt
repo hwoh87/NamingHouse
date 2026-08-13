@@ -133,8 +133,42 @@ class NameSummaryTest {
     @Test
     fun `모든 문장이 서로 다르고 비어 있지 않다`() {
         val s = summarize(eval('金', '道', '沇', "김도윤"))
-        val all = s.strengths + s.cautions
+        val all = s.strengths + s.cautions + s.suggestions
         assertTrue(all.none { it.isBlank() })
         assertTrue("중복 문장 없음", all.size == all.distinct().size)
+    }
+
+    @Test
+    fun `주의점이 없으면 제안도 없다`() {
+        // 김대영은 전 축이 길한 대표 사례 — 고칠 것이 없는데 제안이 나오면 안 된다
+        val e = eval('金', '垈', '永', "김대영")
+        val s = summarize(e)
+        if (s.cautions.isEmpty()) assertTrue(s.suggestions.joinToString(), s.suggestions.isEmpty())
+    }
+
+    @Test
+    fun `수리사격이 흉하면 한자 추천으로 안내한다`() {
+        // 흉수 조합을 실제 평가로 찾아 고정한다 — 획수 8+9+9=26(영웅시비) 등
+        val e = NameEvaluator.evaluate(
+            surname = "김", givenName = "성정",
+            surnameHanja = listOf(db.byChar.getValue('金')),
+            givenHanja = listOf(db.byChar.getValue('城'), db.byChar.getValue('貞')),
+            saju = null,
+        )
+        val s = summarize(e)
+        if (!e.suri.allGood) {
+            assertTrue(s.suggestions.joinToString(), s.suggestions.any { "한자 추천" in it })
+        }
+    }
+
+    @Test
+    fun `제안은 최대 3개다`() {
+        listOf(
+            eval('金', '道', '沇', "김도윤"),
+            eval('金', '垈', '永', "김대영"),
+            eval('李', '宙', '河', "이주하"),
+        ).forEach { e ->
+            assertTrue(summarize(e).suggestions.size <= 3)
+        }
     }
 }

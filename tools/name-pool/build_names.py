@@ -141,6 +141,21 @@ U_EXTRA = """
 가온 아윤 다인 예찬 하람 한별 나윤 세영 승아 소울 별하 이레 하늘 소원 다올
 """
 
+# ─────────────────────────────────────────────────────────────
+# 외자(한 글자) 이름 — 앱의 '외자 이름' 옵션에서만 후보로 쓴다.
+# 인명용 한자가 실제로 붙는 음절만 넣는다(봄·별 같은 순우리말 음절은
+# 한자가 없어 생성 단계에서 통째로 탈락하므로 여기 두지 않는다).
+# ─────────────────────────────────────────────────────────────
+M_SINGLE = """
+준 건 훈 강 산 한 환 찬 혁 호 운 담 단 헌 석 욱 웅 규 근 탄 완 후 섭
+"""
+F_SINGLE = """
+설 연 은 예 아 채 화 란 린 림 해 슬
+"""
+U_SINGLE = """
+율 윤 진 하 도 현 빈 결 경 원
+"""
+
 
 def parse(block: str) -> list:
     return [w for w in block.split() if w]
@@ -197,6 +212,7 @@ def main() -> int:
         ("M", 1, parse(M1)), ("F", 1, parse(F1)),
         ("M", 2, parse(M2) + parse(M2B)), ("F", 2, parse(F2) + parse(F2B)),
         ("M", 3, parse(M3) + parse(M3B)), ("F", 3, parse(F3) + parse(F3B)),
+        ("M", 3, parse(M_SINGLE)), ("F", 3, parse(F_SINGLE)),
     ]
 
     # name -> {"genders": set, "tier": int}
@@ -211,7 +227,7 @@ def main() -> int:
             slot["genders"].add(gender)
             slot["tier"] = min(slot["tier"], tier)
 
-    for name in parse(U_EXTRA):
+    for name in parse(U_EXTRA) + parse(U_SINGLE):
         name = unicodedata.normalize("NFC", name)
         if not valid(name):
             continue
