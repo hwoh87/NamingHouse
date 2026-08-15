@@ -9,6 +9,7 @@ activityCompose = "1.8.0"
 # 끌어올린다 — 컴파일도 같은 세대로 맞춰야 NoSuchMethodError 가 안 난다.
 composeBom = "2025.08.00"
 composeRuntime = "1.11.4"
+billing = "9.1.0"
 datastorePreferences = "1.1.1"
 desugarJdkLibs = "2.1.5"
 kotlinxDatetime = "0.6.2"
@@ -29,6 +30,7 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }

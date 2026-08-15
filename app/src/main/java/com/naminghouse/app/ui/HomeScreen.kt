@@ -106,6 +106,10 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
             glyph = "鑑", title = "이름 감명",
             desc = "지어 둔 이름의 풀이와 점수를 봅니다",
         ) { vm.mode = AppMode.EVALUATE; nav.navigate(Routes.INPUT) }
+        ModeCard(
+            glyph = "譜", title = "인기 이름 순위",
+            desc = "요즘 아기들이 많이 받는 이름을 순위로 봅니다",
+        ) { nav.navigate(Routes.RANKING) }
 
         // ── 담아둔 이름 미리보기
         InkCard(onClick = {

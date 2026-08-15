@@ -66,6 +66,18 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     var themeMode by mutableStateOf(ThemeMode.SYSTEM)
         private set
 
+    // ── 프리미엄 (감명서 PDF·낙관 각인·표구)
+    val premium = PremiumManager(app, viewModelScope)
+    var isPremium by mutableStateOf(false)
+        private set
+    var jokjaStyle by mutableStateOf(JokjaStyle.BAEKJI)
+        private set
+
+    fun onJokjaStyleChanged(style: JokjaStyle) {
+        jokjaStyle = style
+        viewModelScope.launch { settingsStore.saveJokjaStyle(style) }
+    }
+
     fun onThemeModeChanged(m: ThemeMode) {
         themeMode = m
         viewModelScope.launch { settingsStore.saveThemeMode(m) }
@@ -195,6 +207,10 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     init {
+        premium.start()
+        viewModelScope.launch {
+            premium.isPremium.collect { isPremium = it }
+        }
         viewModelScope.launch {
             favoritesStore.flow.collect { favorites = it }
         }
@@ -226,6 +242,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             // 학파는 설정으로 옮겨졌다 — 설정 값이 있으면 그쪽이 우선한다.
             val settings = settingsStore.load()
             themeMode = settings.themeMode
+            jokjaStyle = settings.jokjaStyle
             settings.school?.let { school = it }
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -485,5 +502,9 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         if (givenNameSyllables != before) {
             givenHanja.value = List(givenNameSyllables.length) { null }
         }
+    }
+
+    override fun onCleared() {
+        premium.dispose()
     }
 }

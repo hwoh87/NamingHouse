@@ -17,6 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +48,8 @@ import com.naminghouse.engine.oheng.BaleumSchool
 fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
     val context = LocalContext.current
     var showLicenses by remember { mutableStateOf(false) }
-    val notYet = { Toast.makeText(context, "준비 중입니다 — 스토어 출시와 함께 열립니다", Toast.LENGTH_SHORT).show() }
+    var showPremium by remember { mutableStateOf(false) }
+    val price by vm.premium.priceText.collectAsState()
 
     Column(
         Modifier
@@ -97,21 +99,37 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
 
         InkCard {
             SectionTitle("프리미엄") {
-                Surface(
-                    shape = InkShape.circle,
-                    color = InkTheme.colors.goldSoft,
-                ) {
-                    Text(
-                        "준비 중",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = InkTheme.colors.gold,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                    )
+                if (vm.isPremium) {
+                    Surface(
+                        shape = InkShape.circle,
+                        color = InkTheme.colors.goldSoft,
+                    ) {
+                        Text(
+                            "이용 중",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkTheme.colors.gold,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
-            SettingsRow("프리미엄 감명서 · PDF 저장", onClick = notYet)
-            SettingsRow("구매 복원", onClick = notYet)
+            SettingsRow(
+                "프리미엄 감명서 · PDF 저장",
+                value = if (vm.isPremium) "이용 중" else price,
+                onClick = {
+                    if (vm.isPremium) {
+                        Toast.makeText(
+                            context,
+                            "이름 상세 화면에서 PDF 저장·낙관 각인·표구를 쓸 수 있습니다",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    } else {
+                        showPremium = true
+                    }
+                },
+            )
+            SettingsRow("구매 복원", onClick = { vm.premium.restore() })
         }
 
         InkCard {
@@ -138,6 +156,9 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
 
     if (showLicenses) {
         LicensesDialog(onDismiss = { showLicenses = false })
+    }
+    if (showPremium) {
+        PremiumSheet(vm, onDismiss = { showPremium = false })
     }
 }
 

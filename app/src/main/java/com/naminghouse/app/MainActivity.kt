@@ -1,6 +1,7 @@
 package com.naminghouse.app
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,6 +30,7 @@ import com.naminghouse.app.ui.HomeScreen
 import com.naminghouse.app.ui.InkNavBar
 import com.naminghouse.app.ui.InputScreen
 import com.naminghouse.app.ui.LegalScreen
+import com.naminghouse.app.ui.RankingScreen
 import com.naminghouse.app.ui.ResultScreen
 import com.naminghouse.app.ui.SettingsScreen
 import com.naminghouse.app.ui.theme.NamingHouseTheme
@@ -37,6 +41,7 @@ object Routes {
     const val INPUT = "input"
     const val RESULT = "result"
     const val DETAIL = "detail"
+    const val RANKING = "ranking"
     const val FAVORITES = "favorites"
     const val SETTINGS = "settings"
     const val TERMS = "legal_terms"
@@ -63,6 +68,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        // 결제 후 복귀와 대기 결제(편의점 결제 등)의 완료를 여기서 잡는다.
+        vm.premium.refreshEntitlement()
+    }
 }
 
 @Composable
@@ -70,6 +81,17 @@ private fun AppNavigation(vm: NamingViewModel) {
     val nav: NavHostController = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
+
+    // 결제 안내문은 어느 화면에서든 나올 수 있어 여기서 한 번만 소비한다.
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        vm.premium.message.collect { msg ->
+            if (msg != null) {
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                vm.premium.message.value = null
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -103,6 +125,7 @@ private fun AppNavigation(vm: NamingViewModel) {
             composable(Routes.INPUT) { InputScreen(vm, nav) }
             composable(Routes.RESULT) { ResultScreen(vm, nav) }
             composable(Routes.DETAIL) { DetailScreen(vm, nav) }
+            composable(Routes.RANKING) { RankingScreen(vm, nav) }
             composable(Routes.FAVORITES) { FavoritesScreen(vm, nav) }
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.TERMS) {

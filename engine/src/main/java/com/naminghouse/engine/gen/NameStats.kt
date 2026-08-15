@@ -21,6 +21,9 @@ data class NameStat(
     /** 가장 최근 연도의 순위 (없으면 null) */
     val latestRank: Pair<Int, Int>? get() = ranks.firstOrNull()
 
+    /** [year]년 순위 — 그 해 기록이 없으면 null */
+    fun rankIn(year: Int): Int? = ranks.firstOrNull { it.first == year }?.second
+
     /** 최근 몇 해 안에 100위 안에 든 적이 있는가 — '인기 이름' 판정 */
     val isPopular: Boolean get() = ranks.any { (_, rank) -> rank <= 100 }
 }
@@ -37,6 +40,29 @@ class NameStats private constructor(private val byName: Map<String, NameStat>) {
     operator fun get(name: String): NameStat? = byName[name]
 
     val size: Int get() = byName.size
+
+    /** 순위 이력이 존재하는 연도들 — 최신 해부터 */
+    fun chartYears(): List<Int> =
+        byName.values.asSequence()
+            .flatMap { it.ranks.asSequence() }
+            .map { it.first }
+            .distinct()
+            .sortedDescending()
+            .toList()
+
+    /**
+     * [year]년 [gender] 인기 차트 — (순위, 통계)를 순위 오름차순으로.
+     *
+     * 순위는 우세 성별 기준으로만 저장되므로(빌더 참조) 남녀 겸용 이름은 우세 쪽 차트에만 선다.
+     * 시도별 상위 20위 합산 데이터라 30위 밖은 연속성이 없다 — [maxRank] 기본값이 30인 이유.
+     */
+    fun chart(gender: Gender, year: Int, maxRank: Int = 30): List<Pair<Int, NameStat>> =
+        byName.values
+            .mapNotNull { s ->
+                val rank = s.rankIn(year) ?: return@mapNotNull null
+                if (s.dominant == gender && rank <= maxRank) rank to s else null
+            }
+            .sortedBy { it.first }
 
     companion object {
         val EMPTY = NameStats(emptyMap())

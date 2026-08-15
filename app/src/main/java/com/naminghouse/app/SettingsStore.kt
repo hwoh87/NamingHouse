@@ -14,10 +14,18 @@ enum class ThemeMode(val label: String) {
     DARK("다크"),
 }
 
+/** 족자 표구 — 감명서 족자의 종이·먹빛. 백지 외 두 종은 프리미엄에서 열린다. */
+enum class JokjaStyle(val label: String) {
+    BAEKJI("백지"),
+    GAMJI("감지금니"),
+    DAGAL("다갈"),
+}
+
 private val Context.settingsStore by preferencesDataStore(name = "settings")
 
 private val THEME_MODE = stringPreferencesKey("themeMode")
 private val SCHOOL = stringPreferencesKey("school")
+private val JOKJA_STYLE = stringPreferencesKey("jokjaStyle")
 
 /**
  * 설정 화면의 값들.
@@ -28,7 +36,11 @@ private val SCHOOL = stringPreferencesKey("school")
  */
 class SettingsStore(private val context: Context) {
 
-    data class Settings(val themeMode: ThemeMode, val school: BaleumSchool?)
+    data class Settings(
+        val themeMode: ThemeMode,
+        val school: BaleumSchool?,
+        val jokjaStyle: JokjaStyle,
+    )
 
     suspend fun load(): Settings {
         val p = context.settingsStore.data.first()
@@ -36,6 +48,8 @@ class SettingsStore(private val context: Context) {
             themeMode = p[THEME_MODE]?.let { m -> runCatching { ThemeMode.valueOf(m) }.getOrNull() }
                 ?: ThemeMode.SYSTEM,
             school = p[SCHOOL]?.let { s -> runCatching { BaleumSchool.valueOf(s) }.getOrNull() },
+            jokjaStyle = p[JOKJA_STYLE]?.let { j -> runCatching { JokjaStyle.valueOf(j) }.getOrNull() }
+                ?: JokjaStyle.BAEKJI,
         )
     }
 
@@ -45,5 +59,9 @@ class SettingsStore(private val context: Context) {
 
     suspend fun saveSchool(school: BaleumSchool) {
         context.settingsStore.edit { it[SCHOOL] = school.name }
+    }
+
+    suspend fun saveJokjaStyle(style: JokjaStyle) {
+        context.settingsStore.edit { it[JOKJA_STYLE] = style.name }
     }
 }
