@@ -358,7 +358,7 @@ fun InkNavBar(current: String?, onNavigate: (String) -> Unit) {
         Row(
             Modifier
                 .navigationBarsPadding()
-                .padding(top = 7.dp, bottom = 9.dp)
+                .padding(top = InkSpace.s8, bottom = InkSpace.s8)
         ) {
             tabs.forEachIndexed { i, tab ->
                 val on = tab.route == current
@@ -393,7 +393,7 @@ fun InkNavBar(current: String?, onNavigate: (String) -> Unit) {
                             seed = i * 2.3f,
                         )
                     } else {
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(InkSpace.s8))
                     }
                 }
             }
@@ -417,7 +417,7 @@ fun <T> InkSegmented(
         contentColor = MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(Modifier.padding(3.dp)) {
+        Row(Modifier.padding(InkSpace.s4)) {
             options.forEach { option ->
                 val on = option == selected
                 val fill = if (on) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -430,7 +430,7 @@ fun <T> InkSegmented(
                         .clip(InkShape.medium)
                         .background(fill)
                         .clickable { onSelect(option) }
-                        .padding(vertical = 9.dp),
+                        .padding(vertical = InkSpace.s8),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
