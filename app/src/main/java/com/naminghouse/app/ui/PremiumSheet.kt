@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 
 /**
@@ -57,8 +58,8 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 28.dp),
+                .padding(horizontal = InkSpace.s24)
+                .padding(bottom = InkSpace.s28),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -88,7 +89,7 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
             FeatureLine("표구 두 종 추가", "감지금니·다갈 — 족자의 종이와 먹빛을 바꿉니다")
             FeatureLine("한 번으로 평생", "재구매 없음 — 둘째, 셋째 이름도 그대로 씁니다")
 
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(InkSpace.s2))
 
             Button(
                 onClick = { activity?.let { vm.premium.launchPurchase(it) } },

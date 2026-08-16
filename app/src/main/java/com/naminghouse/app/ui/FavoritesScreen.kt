@@ -44,6 +44,7 @@ import com.naminghouse.app.R
 import com.naminghouse.app.shareText
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 
 /** 담아둔 이름을 여는 별 — 결과 화면 앱바에서 쓴다. */
@@ -92,11 +93,11 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = InkSpace.gutter),
+        verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
     ) {
         Row(
-            Modifier.padding(top = 16.dp),
+            Modifier.padding(top = InkSpace.s16),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
@@ -162,7 +163,7 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(InkSpace.s8))
                                 Text(
                                     f.hanja,
                                     style = MaterialTheme.typography.titleMedium,
@@ -193,6 +194,6 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(InkSpace.s24))
     }
 }

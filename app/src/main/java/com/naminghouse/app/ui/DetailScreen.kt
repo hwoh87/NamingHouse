@@ -75,6 +75,7 @@ import com.naminghouse.app.JokjaStyle
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.eval.meaningLine
@@ -194,8 +195,8 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
         ) {
             JokjaCard(
                 eval = eval,
@@ -237,25 +238,25 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
 
             EvaluationDetail(eval, vm.saju, stat, showHero = false)
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(InkSpace.s4))
         }
 
         // 하단 고정 행동 줄 — 담아두기 · 감명서 공유
         Column(Modifier.fillMaxWidth()) {
             InkStroke(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                Modifier.fillMaxWidth().padding(horizontal = InkSpace.gutter),
                 color = MaterialTheme.colorScheme.onSurface,
                 alpha = 0.16f,
             )
             Row(
-                Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s12),
+                horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
             ) {
                 val isFav = vm.isFavorite(eval)
                 OutlinedButton(
                     onClick = { vm.toggleFavorite(eval) },
                     shape = InkShape.medium,
-                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    contentPadding = PaddingValues(horizontal = InkSpace.s8),
                     modifier = Modifier.weight(1f).height(50.dp),
                 ) {
                     Icon(
@@ -364,7 +365,7 @@ private fun JokjaCard(
                 modifier = Modifier.matchParentSize().padding(10.dp),
             )
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 16.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = InkSpace.s16),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 JokjaRod(colors.rod)
@@ -387,7 +388,7 @@ private fun JokjaCard(
                             NameSeal(sealName)
                         }
                     }
-                    Spacer(Modifier.width(16.dp))
+                    Spacer(Modifier.width(InkSpace.s16))
                     // 독음과 낙관 — 족자의 방서(傍書) 자리
                     Column(
                         Modifier.fillMaxHeight(),
@@ -412,9 +413,9 @@ private fun JokjaCard(
                     color = colors.subInk,
                     textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(InkSpace.s12))
                 JokjaRod(colors.rod)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(InkSpace.s8))
                 Text(
                     "작명하우스 · 사주와 성명학으로 지은 이름",
                     style = MaterialTheme.typography.labelSmall,
@@ -517,7 +518,7 @@ private fun JokjaStyleRow(selected: JokjaStyle, onSelect: (JokjaStyle) -> Unit) 
                 Modifier
                     .clip(InkShape.circle)
                     .clickable { onSelect(s) }
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = InkSpace.s8, vertical = InkSpace.s4),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(

@@ -45,6 +45,7 @@ import androidx.navigation.NavHostController
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.samramanshang.manseryeok.orrery.model.Gender
 import com.samramanshang.manseryeok.orrery.util.TimezoneUtils
 import kotlin.math.abs
@@ -68,7 +69,7 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
 
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 4.dp, end = 20.dp, top = 6.dp, bottom = 2.dp),
+            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = 6.dp, bottom = InkSpace.s2),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { nav.popBackStack() }) {
@@ -85,10 +86,10 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
         ) {
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(InkSpace.s2))
 
             vm.loadError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -96,7 +97,7 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
             if (vm.hanjaDb == null && vm.loadError == null) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
                 ) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                     Text(
@@ -112,7 +113,7 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
             if (vm.mode == AppMode.RECOMMEND) BabyCard(vm)
             BirthCard(vm)
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(InkSpace.s4))
         }
 
         SubmitBar(vm)
@@ -129,7 +130,7 @@ private fun SurnameCard(vm: NamingViewModel) {
             onValueChange = vm::onSurnameChanged,
             label = "성 (한글, 1~2자)",
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
             vm.surnameSyllables.forEachIndexed { i, ch ->
                 HanjaSlotButton(
                     syllable = ch,
@@ -153,7 +154,7 @@ private fun GivenNameCard(vm: NamingViewModel) {
             label = "이름 (한글, 1~3자)",
         )
         if (vm.mode == AppMode.EVALUATE) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 vm.givenNameSyllables.forEachIndexed { i, ch ->
                     HanjaSlotButton(
                         syllable = ch,
@@ -193,9 +194,9 @@ private fun BabyCard(vm: NamingViewModel) {
         )
         // 외자에는 돌림자가 무의미하다 — 켜면 접는다
         AnimatedVisibility(!vm.singleName) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     InkField(
@@ -238,7 +239,7 @@ private fun BirthCard(vm: NamingViewModel) {
         )
 
         if (!vm.preBirth) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 InkField(
                     value = vm.year,
                     onValueChange = { vm.year = it.filter(Char::isDigit).take(4) },
@@ -266,7 +267,7 @@ private fun BirthCard(vm: NamingViewModel) {
                 CheckRow(vm.isLeapMonth, { vm.isLeapMonth = it }, "윤달")
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 InkField(
                     value = vm.hour,
                     onValueChange = { vm.hour = it.filter(Char::isDigit).take(2) },
@@ -309,7 +310,7 @@ private fun RegionRow(vm: NamingViewModel) {
             Text("출생 지역", style = MaterialTheme.typography.bodyMedium)
             Hint(regionHint(vm))
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(InkSpace.s8))
         OutlinedButton(onClick = { open = true }, shape = InkShape.medium) {
             Text(vm.city.name, style = MaterialTheme.typography.labelLarge)
         }
@@ -339,17 +340,17 @@ private fun regionHint(vm: NamingViewModel): String {
 private fun SubmitBar(vm: NamingViewModel) {
     Column(Modifier.fillMaxWidth()) {
         InkStroke(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            Modifier.fillMaxWidth().padding(horizontal = InkSpace.gutter),
             color = MaterialTheme.colorScheme.onSurface,
             alpha = 0.16f,
         )
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s12)) {
             vm.errorMessage?.let {
                 Text(
                     it,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = InkSpace.s8),
                 )
             }
             Button(
@@ -423,7 +424,7 @@ private fun SwitchRow(
             .fillMaxWidth()
             .clip(InkShape.medium)
             .clickable { onChange(!checked) }
-            .padding(vertical = 2.dp),
+            .padding(vertical = InkSpace.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -436,7 +437,7 @@ private fun SwitchRow(
                 )
             }
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(InkSpace.s8))
         Switch(checked = checked, onCheckedChange = onChange)
     }
 }

@@ -34,6 +34,7 @@ import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ThemeMode
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.oheng.BaleumSchool
 
@@ -55,14 +56,14 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = InkSpace.gutter),
+        verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
     ) {
         Text(
             "설정",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = InkSpace.s16),
         )
 
         InkCard {
@@ -83,7 +84,7 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(InkSpace.s2))
             Text(
                 "화면 모드",
                 style = MaterialTheme.typography.bodyMedium,
@@ -109,7 +110,7 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
                             style = MaterialTheme.typography.labelSmall,
                             color = InkTheme.colors.gold,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = InkSpace.s8, vertical = InkSpace.s2),
                         )
                     }
                 }
@@ -151,7 +152,7 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 6.dp),
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(InkSpace.s16))
     }
 
     if (showLicenses) {
@@ -169,7 +170,7 @@ private fun SettingsRow(label: String, value: String? = null, onClick: (() -> Un
             .fillMaxWidth()
             .clip(InkShape.medium)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
-            .padding(vertical = 8.dp, horizontal = 2.dp),
+            .padding(vertical = InkSpace.s8, horizontal = InkSpace.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
@@ -209,8 +210,8 @@ private fun LicensesDialog(onDismiss: () -> Unit) {
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(
-                Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                Modifier.padding(horizontal = InkSpace.gutter, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
             ) {
                 Text(
                     "글꼴·오픈소스 라이선스",

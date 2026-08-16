@@ -52,6 +52,7 @@ import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.eval.AxisVerdict
 import com.naminghouse.engine.eval.NameEvaluation
@@ -114,8 +115,8 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
         )
 
         LazyColumn(
-            Modifier.fillMaxSize().padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.fillMaxSize().padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
         ) {
             vm.saju?.let { saju ->
                 item { SajuCard(saju) }
@@ -148,7 +149,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             },
                         )
                     }
-                    item { Spacer(Modifier.height(28.dp)) }
+                    item { Spacer(Modifier.height(InkSpace.s28)) }
                 }
 
                 AppMode.HANJA -> {
@@ -172,7 +173,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             },
                         )
                     }
-                    item { Spacer(Modifier.height(28.dp)) }
+                    item { Spacer(Modifier.height(InkSpace.s28)) }
                 }
 
                 // 감명은 목록 없이 상세로 바로 간다 — 이 화면에 올 일이 없다.
@@ -184,7 +185,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
 
 @Composable
 private fun ListCaption(title: String, hint: String) {
-    Column(Modifier.padding(top = 2.dp, bottom = 2.dp)) {
+    Column(Modifier.padding(top = InkSpace.s2, bottom = InkSpace.s2)) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Text(
             hint,
@@ -211,7 +212,7 @@ private fun CandidateRow(
 ) {
     InkCard(
         onClick = onClick,
-        contentPadding = PaddingValues(start = 12.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+        contentPadding = PaddingValues(start = InkSpace.s12, end = InkSpace.s4, top = InkSpace.s12, bottom = InkSpace.s12),
         spacing = 0.dp,
         modifier = modifier,
     ) {
@@ -292,8 +293,8 @@ private fun CandidateRow(
 @Composable
 private fun AxisMarks(eval: NameEvaluation, stat: NameStat?) {
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(InkSpace.s4),
+        verticalArrangement = Arrangement.spacedBy(InkSpace.s4),
     ) {
         AxisMark("수리", eval.suriVerdict)
         AxisMark("발음", eval.baleumVerdict)
@@ -305,7 +306,7 @@ private fun AxisMarks(eval: NameEvaluation, stat: NameStat?) {
                 Box(
                     Modifier
                         .background(InkTheme.colors.goldSoft, InkShape.small)
-                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                        .padding(horizontal = 5.dp, vertical = InkSpace.s2)
                 ) {
                     Text(
                         "인기 ${rank}위",
@@ -333,7 +334,7 @@ private fun AxisMark(label: String, verdict: AxisVerdict) {
     Box(
         Modifier
             .background(color.copy(alpha = 0.13f), InkShape.small)
-            .padding(horizontal = 5.dp, vertical = 2.dp)
+            .padding(horizontal = 5.dp, vertical = InkSpace.s2)
     ) {
         Text(
             label,
@@ -365,7 +366,7 @@ fun SajuCard(saju: SajuSummary) {
         }
 
         // 4주 표 — [년, 월, 일, 시]
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8), modifier = Modifier.fillMaxWidth()) {
             val labels = listOf("년주", "월주", "일주", "시주")
             saju.ganzis.forEachIndexed { i, ganzi ->
                 Column(
@@ -446,8 +447,8 @@ fun SajuCard(saju: SajuSummary) {
         )
 
         AnimatedVisibility(open) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Spacer(Modifier.height(2.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
+                Spacer(Modifier.height(InkSpace.s2))
                 OhengBarChart(sajuCounts = saju.simpleCounts)
                 if (saju.unknownTime) {
                     Text(

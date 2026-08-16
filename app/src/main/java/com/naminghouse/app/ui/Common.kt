@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.app.ui.theme.hanjaAwareFamily
 import com.naminghouse.engine.eval.AxisVerdict
@@ -90,7 +91,7 @@ fun SectionCard(title: String, help: String? = null, content: @Composable () -> 
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.padding(horizontal = InkSpace.s8, vertical = InkSpace.s2),
                     )
                 }
             }
@@ -195,7 +196,7 @@ fun OhengBarChart(
                     fontWeight = FontWeight.Bold,
                     color = if (added > 0) color else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(InkSpace.s4))
                 Box(
                     Modifier.height(maxBarHeight).width(32.dp),
                     contentAlignment = Alignment.BottomCenter,
@@ -388,7 +389,7 @@ fun HanjaPickerDialog(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = 18.dp)) {
                 Text(
                     "'$syllable' 인명용 한자",
                     style = MaterialTheme.typography.titleLarge,
@@ -456,7 +457,7 @@ fun HanjaPickerDialog(
                         }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(InkSpace.s8))
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
                     Text("닫기")
                 }
@@ -533,7 +534,7 @@ fun CityPickerDialog(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = 18.dp)) {
                 Text(
                     "출생 지역",
                     style = MaterialTheme.typography.titleLarge,
@@ -555,7 +556,7 @@ fun CityPickerDialog(
                             Modifier
                                 .fillMaxWidth()
                                 .clickable { onSelect(c) }
-                                .padding(vertical = 12.dp),
+                                .padding(vertical = InkSpace.s12),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
@@ -575,7 +576,7 @@ fun CityPickerDialog(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(InkSpace.s8))
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
                     Text("닫기")
                 }

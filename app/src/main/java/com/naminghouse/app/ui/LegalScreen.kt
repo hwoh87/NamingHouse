@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.naminghouse.app.ui.theme.InkSpace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -48,7 +49,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
 
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 4.dp, end = 20.dp, top = 6.dp, bottom = 2.dp),
+            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = 6.dp, bottom = InkSpace.s2),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
             IconButton(onClick = { nav.popBackStack() }) {
@@ -65,15 +66,15 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s4),
         ) {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(InkSpace.s4))
             text.lines().forEach { line ->
                 when {
                     line.startsWith("# ") -> Unit // 문서 제목은 앱바가 대신한다
                     line.startsWith("## ") -> {
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(InkSpace.s12))
                         Text(
                             line.removePrefix("## "),
                             style = MaterialTheme.typography.titleMedium,
@@ -100,7 +101,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    line.isBlank() -> Spacer(Modifier.height(2.dp))
+                    line.isBlank() -> Spacer(Modifier.height(InkSpace.s2))
                     else -> Text(
                         line,
                         style = MaterialTheme.typography.bodyMedium,
@@ -108,7 +109,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
                     )
                 }
             }
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(InkSpace.s28))
         }
     }
 }

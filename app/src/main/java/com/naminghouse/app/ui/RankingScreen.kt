@@ -36,6 +36,7 @@ import androidx.navigation.NavHostController
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
 import com.naminghouse.app.Routes
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.gen.NameStat
 import com.samramanshang.manseryeok.orrery.model.Gender
@@ -81,14 +82,14 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
                 vm.loadError ?: "통계를 불러오는 중…",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier.padding(InkSpace.s20),
             )
             return
         }
 
         Column(
-            Modifier.padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s8),
         ) {
             InkSegmented(
                 options = listOf(Gender.M, Gender.F),
@@ -113,9 +114,9 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
         val thisYear = remember { LocalDate.now().year }
 
         LazyColumn(
-            Modifier.fillMaxSize().padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
+            Modifier.fillMaxSize().padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
+            contentPadding = PaddingValues(top = InkSpace.s12, bottom = InkSpace.s16),
         ) {
             if (chart.isEmpty()) {
                 item {
@@ -128,7 +129,7 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
             } else {
                 item {
                     InkCard(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 5.dp),
+                        contentPadding = PaddingValues(horizontal = InkSpace.s16, vertical = 5.dp),
                         spacing = 0.dp,
                     ) {
                         chart.forEachIndexed { i, (rank, stat) ->

@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.naminghouse.app.R
 import com.naminghouse.app.ui.theme.HanjaFamily
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.eval.meaningLine
@@ -41,7 +42,7 @@ fun EvaluationDetail(
     stat: NameStat? = null,
     showHero: Boolean = true,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
 
         if (showHero) DetailHero(eval)
 
@@ -73,7 +74,7 @@ fun EvaluationDetail(
             SuriRow("정격 (총운)", eval.suri.jeong)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
             ) {
                 Text(
                     "판정",
@@ -129,7 +130,7 @@ fun EvaluationDetail(
             help = "획수의 홀짝(수리음양)과 모음의 양성·음성(발음음양)이 한쪽으로 쏠리지 않고 " +
                 "섞였는지 봅니다. 전부 양이거나 전부 음이면 편중으로 봅니다.",
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         "수리음양  ${eval.strokeEumyang.display}" +
@@ -153,7 +154,7 @@ fun EvaluationDetail(
             help = "한자마다 부수와 뜻에서 오는 고유 오행(자원오행)이 있습니다. 사주에 부족하거나 " +
                 "필요한 기운(용신)을 이름 한자가 채워 주는지를 봅니다 — 사주 기반 작명의 핵심 축입니다.",
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 eval.givenHanja.forEach { h ->
                     ElementBall(h.char.toString(), h.element)
                 }
@@ -189,7 +190,7 @@ fun EvaluationDetail(
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
             ) {
                 Text(
                     "판정",
@@ -263,7 +264,7 @@ private fun DetailHero(eval: NameEvaluation) {
                 alpha = 0.13f,
             )
             Row(
-                Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp),
+                Modifier.fillMaxWidth().padding(top = InkSpace.s8, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
@@ -279,7 +280,7 @@ private fun DetailHero(eval: NameEvaluation) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(InkSpace.s12))
                 SealBadge(main = "${eval.score}", sub = eval.grade)
             }
         }
@@ -292,7 +293,7 @@ private fun DetailHero(eval: NameEvaluation) {
             "뜻  ${meaningLine(eval)}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = InkSpace.s8),
         )
     }
 }
@@ -300,7 +301,7 @@ private fun DetailHero(eval: NameEvaluation) {
 /** 총평의 강점·주의 한 줄 */
 @Composable
 private fun NoteLine(mark: String, text: String, color: androidx.compose.ui.graphics.Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
         Text(
             mark,
             color = color,
@@ -323,10 +324,10 @@ private fun BallRow(
     Row(verticalAlignment = Alignment.CenterVertically) {
         FlowRow(
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s8),
         ) { balls() }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(InkSpace.s8))
         verdictTrailing()
     }
 }
@@ -379,7 +380,7 @@ private fun SuriRow(label: String, meaning: SuriMeaning) {
             meaning.description,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = Modifier.padding(top = InkSpace.s2),
         )
     }
 }

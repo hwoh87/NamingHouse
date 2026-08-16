@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 
 /**
  * 삼라만상 만세력 앱 안내 — 형제 앱으로 건너가는 다리.
@@ -84,7 +85,7 @@ fun SamraBanner(
     InkCard(modifier = modifier, onClick = { openSamra(context) }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SamraMark()
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(InkSpace.s12))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(

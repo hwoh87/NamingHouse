@@ -29,6 +29,7 @@ import com.naminghouse.app.R
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import com.samramanshang.manseryeok.orrery.model.Gender
 
@@ -44,16 +45,16 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = InkSpace.gutter),
+        verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
     ) {
         // ── 머리 — 브랜드
         Row(
-            Modifier.padding(top = 18.dp, bottom = 4.dp),
+            Modifier.padding(top = 18.dp, bottom = InkSpace.s4),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             BrandMark(size = 46.dp)
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(InkSpace.s12))
             Column {
                 Text(
                     "작명하우스",
@@ -166,7 +167,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
         // ── 형제 앱 — 사주를 더 깊이 보고 싶은 사람에게
         SamraBanner()
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(InkSpace.s8))
     }
 }
 

@@ -54,6 +54,7 @@ import com.naminghouse.app.R
 import com.naminghouse.app.Routes
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
+import com.naminghouse.app.ui.theme.InkSpace
 import com.naminghouse.app.ui.theme.InkTheme
 import kotlin.math.PI
 import kotlin.math.pow
@@ -229,7 +230,7 @@ fun InkStroke(
 fun InkCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
+    contentPadding: PaddingValues = PaddingValues(InkSpace.s16),
     spacing: Dp = 10.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -267,7 +268,7 @@ fun SectionTitle(title: String, trailing: (@Composable () -> Unit)? = null) {
                 .size(width = 3.dp, height = 15.dp)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.75f), RoundedCornerShape(2.dp))
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(InkSpace.s8))
         Text(
             title,
             style = MaterialTheme.typography.titleMedium,
@@ -295,7 +296,7 @@ fun SealBadge(main: String, sub: String, modifier: Modifier = Modifier) {
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(4.dp)
+                .padding(InkSpace.s4)
                 .border(1.dp, ink.onSeal.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -368,7 +369,7 @@ fun InkNavBar(current: String?, onNavigate: (String) -> Unit) {
                         .weight(1f)
                         .clip(InkShape.medium)
                         .clickable { onNavigate(tab.route) }
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = InkSpace.s2),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
@@ -385,7 +386,7 @@ fun InkNavBar(current: String?, onNavigate: (String) -> Unit) {
                     )
                     if (on) {
                         InkStroke(
-                            Modifier.width(26.dp).padding(top = 2.dp),
+                            Modifier.width(26.dp).padding(top = InkSpace.s2),
                             color = MaterialTheme.colorScheme.primary,
                             alpha = 0.85f,
                             thickness = 4.dp,
