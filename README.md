@@ -108,6 +108,30 @@
 - 상세의 축 카드에는 제목 옆 ? 로 접이식 설명을 붙였다(넴유베 '알기쉬운 성명학'의 축소판).
   항상 펼쳐 두면 판정보다 설명이 화면을 먹어서, 궁금한 사람만 열게 했다.
 
+### 조형 규율과 가드
+
+토큰은 `ui/theme/Theme.kt` 에 셋 있다 — 색(`InkPalette`) · 모서리(`InkShape` 4단계) ·
+간격(`InkSpace`). 간격은 숫자 이름(`s8`)이 정본이고, 화면 좌우 거터만 `gutter`(=20dp)
+별칭을 쓴다. `size()` · 반경 · 획 두께는 간격이 아니라서 `InkSpace` 를 쓰지 않는다.
+
+```bash
+python3 tools/design-guard.py            # 검사 (실패 시 exit 1)
+python3 tools/design-guard.py --report   # 남은 원시값 분포와 자리까지
+```
+
+2026-08-16 감사 기준선: 간격 토큰 준수율 **65.2%**, 4dp 격자 이탈 **62건**.
+레퍼런스는 Gradle 캐시의 `material3-1.3.1` 샘플 소스를 같은 스크립트로 집계해 썼다
+(격자 이탈 3.6% · 8dp 이하 마이크로 25.3% · 16dp 49.4%). 이 앱은 마이크로에 쏠려
+있고 16dp 자리를 20dp 가 대신하고 있다.
+
+가드는 [HARD] 둘이다 — 토큰이 있는 값(2·4·8·12·16·20·24·28)을 원시 dp 로 되돌리면
+실패하고, 격자 이탈이 기준선보다 늘어도 실패한다. 격자 이탈을 줄였으면
+`OFFGRID_BASELINE` 상수를 낮춰 그 자리에서 잠근다.
+
+남은 격자 이탈 62건은 아직 스냅하지 않았다. `Spacer(6)` ×11 · `Spacer(10)` ×6 ·
+`Spacer(7)` ×4 처럼 관용구 15개로 뭉치는데, 여기부터는 시각 변화가 생기므로
+밀도 높은 화면(상세 감명서·결과 목록) 스크린샷을 대조하고 판단한다.
+
 ## 데이터 (`engine/src/main/assets`)
 
 | 파일 | 내용 | 출처 |
@@ -149,6 +173,7 @@ python3 tools/hanja-db/build_hanja_db.py \
 ```bash
 ./gradlew :app:assembleDebug          # APK
 ./gradlew :engine:testDebugUnitTest   # 엔진 테스트 (골든 패리티 + 데이터 무결성 포함)
+python3 tools/design-guard.py         # 조형 규율 검사
 ```
 
 스택: AGP 9.1.1 · Kotlin 2.2.10 · Compose BOM 2024.09 · minSdk 24 / targetSdk 36 (삼라와 동일 버전 유지).
