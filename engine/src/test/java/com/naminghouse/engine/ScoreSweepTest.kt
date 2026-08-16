@@ -124,6 +124,22 @@ class ScoreSweepTest {
                 100 * topHit / g.size, 100 * anyHit / g.size, 100 * gisin / g.size))
         }
 
+        // 실무 작명소가 내놓는 이름 = 용신 보강 + 기신 회피를 이미 만족한 이름.
+        // 그런 이름만 추리면 사주별 편차가 남는지 본다 — 남지 않으면 편차는
+        // '아무 이름이나 넣었을 때'만 나타나는 것이고, 실사용에는 영향이 없다.
+        println("\n── 작명소 조건(용신 보강 + 기신 회피)을 만족한 이름만")
+        for ((_, saju) in sajus) {
+            val g = all.filter { r ->
+                r.third.sajuFit?.targets == saju.targetElements &&
+                    r.third.sajuFit!!.matched.isNotEmpty() && r.third.sajuFit!!.gisinUsed.isEmpty()
+            }
+            if (g.isEmpty()) continue
+            val s = g.map { it.third.score }
+            println("  %-6s %4d건  총점 %5.1f  70↑ %3d%%".format(
+                saju.targetElements.joinToString("") { it.hanja }, g.size,
+                s.average(), 100 * s.count { it >= 70 } / s.size))
+        }
+
         // 오행별 공급량 — 위 적중률이 공급량을 그대로 따라가는지 대조한다
         val supply = db.entries.filter { it.usableForNaming && it.nameFit >= 3 }
             .groupingBy { it.element?.hanja ?: "미상" }.eachCount()
