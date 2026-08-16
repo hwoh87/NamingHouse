@@ -85,6 +85,8 @@ data class NameEvaluation(
  *    실무 작명은 용신 하나만 보강해도 충분하다고 보므로 하나만 맞아도 상당 점수를 준다.
  *    성씨 한자의 자원오행이 계산에서 통째로 빠져 있던 것도 함께 고쳤다 — 성이 이미
  *    용신을 갖고 있으면 이름은 다른 몫을 해도 된다.
+ *    이어서 기신 감점을 글자 수 비례에서 **여부**로 바꿨다 — 신약 사주는 기신이 3개,
+ *    신강은 2개라 개수로 곱해 깎으면 신약으로 태어난 것 자체가 감점이 됐다.
  * 2. **발음오행** — 상극이 하나라도 있으면 18점 중 4점(78% 감점)이었다. 성씨 초성만으로
  *    결과가 갈리는데(김씨는 실제 인기 이름의 79%가 상극, 이씨는 13%) 사용자가 바꿀 수
  *    없는 값이다. 게다가 작명왕이 상극 배열에 어떤 등급을 주는지는 실측하지 못했다
@@ -274,16 +276,24 @@ object NameEvaluator {
         // 자원오행·사주보완 25 — 이름이 직접 채운 몫(direct)을 성씨가 이미 채운 몫보다 높게 본다.
         val jawonScore: Double = if (sajuFit != null) {
             val direct = sajuFit.matched.size
-            val covered = sajuFit.covered.size
             val base = when {
-                direct >= 2 -> 25.0             // 이름 두 글자가 용신 둘을 보강
-                direct == 1 && covered >= 2 -> 25.0 // 이름 + 성씨로 용신 둘이 채워짐
-                direct == 1 -> 21.0             // 이름이 용신 하나 보강 — 실무 기준 '충분'
-                covered >= 1 -> 16.0            // 성씨가 이미 보완, 이름은 중립
+                direct >= 2 -> 25.0                          // 이름 두 글자가 용신 둘을 보강
+                direct == 1 && sajuFit.covered.size >= 2 -> 25.0 // 이름 + 성씨로 용신 둘이 채워짐
+                direct == 1 -> 22.0                          // 이름이 용신 하나 보강 — 실무 기준 '충분'
+                sajuFit.covered.isNotEmpty() -> 17.0         // 성씨가 이미 보완, 이름은 중립
                 sajuFit.targets.isEmpty() -> 15.0
-                else -> 8.0                     // 보완 대상을 아무도 채우지 못함
+                else -> 9.0                                  // 보완 대상을 아무도 채우지 못함
             }
-            (base - 4.0 * sajuFit.gisinUsed.size).coerceIn(0.0, 25.0)
+            // 기신은 '몇 글자에 들었나'가 아니라 '들었나'로만 본다.
+            //
+            // deriveYongGiShared 는 신약 사주에 기신 3개, 신강에 2개를 준다. 다섯 오행 중
+            // 셋이 기신이면 이름 글자가 걸릴 확률이 구조적으로 높아, 글자 수만큼 곱해 깎으면
+            // **신약으로 태어난 것 자체가 감점**이 된다. 실측에서 기신 사용률이 사주별로
+            // 11%~88%로 벌어졌고, 총점 편차 10.6점이 거의 그대로 이 항에서 나왔다.
+            // 삼라 engine-core 의 용신·기신 산출은 골든 테스트로 고정돼 있어 손대지 않고,
+            // 작명 쪽 배점에서 상한을 둬 흡수한다.
+            val gisinPenalty = if (sajuFit.gisinUsed.isEmpty()) 0.0 else 4.0
+            (base - gisinPenalty).coerceIn(0.0, 25.0)
         } else {
             when (jawonHarmonyVerdict(jawonElements)) {
                 AxisVerdict.GIL -> 22.0

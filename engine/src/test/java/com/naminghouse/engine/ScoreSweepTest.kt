@@ -107,15 +107,30 @@ class ScoreSweepTest {
                 100 * g.count { it.third.baleum?.hasSanggeuk == true } / g.size))
         }
 
-        println("\n── 사주별 (보완대상 / 평균 / 70점 이상)")
+        println("\n── 사주별 — 다른 축은 사주와 무관하므로 편차는 전부 자원 축에서 나온다")
+        println("  보완대상        총점   70↑   1순위적중  아무거나적중  기신사용")
         for ((birth, saju) in sajus) {
             val g = all.filter { it.third.sajuFit?.targets == saju.targetElements }
             if (g.isEmpty()) continue
             val s = g.map { it.third.score }
-            println("  ${birth.year}.${birth.month} ${if (saju.isStrong) "신강" else "신약"} " +
-                "용신 ${saju.targetElements.joinToString("") { it.hanja }}  " +
-                "%5.1f  %3d%%".format(s.average(), 100 * s.count { it >= 70 } / s.size))
+            val top = saju.targetElements.firstOrNull()
+            val topHit = g.count { r -> top != null && top in r.third.sajuFit!!.matched }
+            val anyHit = g.count { r -> r.third.sajuFit!!.matched.isNotEmpty() }
+            val gisin = g.count { r -> r.third.sajuFit!!.gisinUsed.isNotEmpty() }
+            println("  %-6s %-4s %5.1f  %3d%%     %3d%%       %3d%%        %3d%%".format(
+                saju.targetElements.joinToString("") { it.hanja },
+                if (saju.isStrong) "신강" else "신약",
+                s.average(), 100 * s.count { it >= 70 } / s.size,
+                100 * topHit / g.size, 100 * anyHit / g.size, 100 * gisin / g.size))
         }
+
+        // 오행별 공급량 — 위 적중률이 공급량을 그대로 따라가는지 대조한다
+        val supply = db.entries.filter { it.usableForNaming && it.nameFit >= 3 }
+            .groupingBy { it.element?.hanja ?: "미상" }.eachCount()
+        val supplyTotal = supply.values.sum()
+        println("  (인명용 한자 자원오행 공급량: " +
+            supply.entries.sortedByDescending { it.value }
+                .joinToString(" ") { "${it.key}${100 * it.value / supplyTotal}%" } + ")")
 
         // 축별 '만점 대비 손실' — 어느 축이 아직 점수를 먹고 있는지
         println("\n── 축별 평균 획득률")

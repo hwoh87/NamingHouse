@@ -91,12 +91,12 @@ class ScoreDiagnosticTest {
                     val base = when {
                         f.matched.size >= 2 -> 25.0
                         f.matched.size == 1 && f.covered.size >= 2 -> 25.0
-                        f.matched.size == 1 -> 21.0
-                        f.covered.isNotEmpty() -> 16.0
+                        f.matched.size == 1 -> 22.0
+                        f.covered.isNotEmpty() -> 17.0
                         f.targets.isEmpty() -> 15.0
-                        else -> 8.0
+                        else -> 9.0
                     }
-                    (base - 4.0 * f.gisinUsed.size).coerceIn(0.0, 25.0)
+                    (base - if (f.gisinUsed.isEmpty()) 0.0 else 4.0).coerceIn(0.0, 25.0)
                 } else when (e.jawonVerdict.name) { "GIL" -> 22.0; "BOTONG" -> 15.0; else -> 7.0 }
             }
             val n = rows.size
