@@ -38,6 +38,7 @@ DP = re.compile(r'(?<![\d.])(\d+)\.dp')
 TOKEN = re.compile(r'InkSpace\.[A-Za-z0-9]+')
 RAW_SP = re.compile(r'fontSize\s*=\s*(?<![\d.])\d+(?:\.\d+)?\.sp')
 RAW_SHAPE = re.compile(r'RoundedCornerShape\s*\(')
+ARGB = re.compile(r'0x[fF][fF][0-9a-fA-F]{6}')
 
 
 def call_span(src, i):
@@ -53,6 +54,24 @@ def call_span(src, i):
                 return i, j + 1
         j += 1
     return i, min(i + 120, len(src))
+
+
+def palette_dupes():
+    """팔레트에 이미 있는 색값을 다른 파일에서 리터럴로 다시 적었는지 본다.
+
+    2026-08-16 이전에는 감명서 PDF 가 같은 16개 값을 손으로 베껴 갖고 있었다.
+    팔레트만 고치면 화면은 바뀌고 유료 PDF 는 그대로 남는 구조였다.
+    """
+    theme = os.path.join(ROOT, 'ui/theme/Theme.kt')
+    known = {c.lower() for c in ARGB.findall(open(theme).read())}
+    hits = []
+    for path in sources():
+        src = open(path).read()
+        for i, line in enumerate(src.split('\n'), 1):
+            for c in ARGB.findall(line):
+                if c.lower() in known:
+                    hits.append((os.path.relpath(path, REPO), i, c))
+    return hits
 
 
 def sources():
@@ -117,6 +136,15 @@ def main():
 
     print(f'[INFO] 간격 토큰 준수율 {rate:.1f}%  (토큰 {tokens} / 원시 {sum(raw.values())})'
           '   · 2026-08-16 기준선 98.9%')
+    dupes = palette_dupes()
+    print('[HARD] Theme.kt 의 색값을 다른 파일에 리터럴로 다시 적지 않는다')
+    if dupes:
+        failed = True
+        for f, ln, c in dupes:
+            print(f'         FAIL {f}:{ln}  {c} — 팔레트를 참조할 것')
+    else:
+        print('         PASS  0건')
+
     print(f'[INFO] 원시 fontSize {other["raw_sp"]}건 · 원시 RoundedCornerShape '
           f'{other["raw_shape"]}건   · 2026-08-16 기준선 5 / 9')
 

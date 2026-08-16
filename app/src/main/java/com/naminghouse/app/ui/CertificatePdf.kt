@@ -11,8 +11,11 @@ import android.net.Uri
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.res.ResourcesCompat
 import com.naminghouse.app.R
+import com.naminghouse.app.ui.theme.BrandLight
+import com.naminghouse.app.ui.theme.LightInk
 import com.naminghouse.engine.eval.AxisVerdict
 import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.eval.meaningLine
@@ -37,27 +40,32 @@ private const val MARGIN = 50f
 private const val CONTENT_W = PAGE_W - MARGIN * 2
 private const val CONTENT_BOTTOM = PAGE_H - 62f
 
-// 인쇄용 색 — 라이트 잉크 팔레트의 값을 그대로 쓴다 (ui/theme/Theme.kt).
-private const val PAPER = 0xFFFDFAF2.toInt()
-private const val INK = 0xFF241F19.toInt()
-private const val MUTED = 0xFF67604F.toInt()
-private const val GOLD = 0xFFA5873F.toInt()
-private const val RULE = 0xFFD5CAB2.toInt()
-private const val SEAL = 0xFF9C3A2E.toInt()
-private const val ON_SEAL = 0xFFFBF3E7.toInt()
-private const val GIL = 0xFF2F6B4A.toInt()
-private const val BOTONG = 0xFF876A22.toInt()
-private const val HYUNG = 0xFF9E3A2F.toInt()
-private const val MALE = 0xFF3D6CB0.toInt()
-private const val FEMALE = 0xFFB1567A.toInt()
+// 인쇄용 색 — 값을 여기 다시 적지 않고 라이트 스킴·잉크 팔레트에서 가져온다.
+// 예전에는 같은 16개 값을 손으로 베껴 뒀는데, 팔레트만 고치면 화면은 바뀌고
+// PDF 는 그대로 남아 조용히 어긋나는 구조였다. 유료 산출물이라 더 위험했다.
+// 증서는 종이에 인쇄되므로 다크 팔레트는 쓰지 않는다 — 항상 라이트다.
+//
+// 정확한 ARGB 정수는 CertificatePdfColorTest 가 못 박고 있다. 팔레트를 손보면
+// 그 테스트가 먼저 깨져서, PDF 색이 함께 움직인다는 사실을 알려 준다.
+internal val INK = BrandLight.onSurface.toArgb()
+internal val MUTED = BrandLight.onSurfaceVariant.toArgb()
+internal val RULE = BrandLight.outlineVariant.toArgb()
+internal val GOLD = LightInk.gold.toArgb()
+internal val SEAL = LightInk.seal.toArgb()
+internal val ON_SEAL = LightInk.onSeal.toArgb()
+internal val GIL = LightInk.gil.toArgb()
+internal val BOTONG = LightInk.botong.toArgb()
+internal val HYUNG = LightInk.hyung.toArgb()
+internal val MALE = LightInk.male.toArgb()
+internal val FEMALE = LightInk.female.toArgb()
 
-private fun elementColor(e: Element): Int = when (e) {
-    Element.TREE -> 0xFF3F7A55.toInt()
-    Element.FIRE -> 0xFFB0463A.toInt()
-    Element.EARTH -> 0xFF9E7C33.toInt()
-    Element.METAL -> 0xFF6F7681.toInt()
-    Element.WATER -> 0xFF3A5F8A.toInt()
-}
+/**
+ * 본문 종이색만 팔레트에 대응하는 값이 없다. 화면의 한지(#F5EFE2)는 인쇄하면
+ * 누렇게 뜨고, surfaceContainerLowest(#FEFBF4)는 종이에서 푸른 기가 돈다.
+ */
+internal val PAPER = 0xFFFDFAF2.toInt()
+
+private fun elementColor(e: Element): Int = LightInk.of(e).toArgb()
 
 private fun verdictInk(v: AxisVerdict): Int = when (v) {
     AxisVerdict.GIL -> GIL

@@ -34,7 +34,12 @@ private val Hanji = Color(0xFFF5EFE2)       // 한지 바탕
 private val JuSa = Color(0xFF9C3A2E)        // 주사(朱砂) — 낙관
 private val GeumNi = Color(0xFFA5873F)      // 금니(金泥)
 
-private val BrandLight = lightColorScheme(
+/**
+ * 라이트 스킴. 감명서 PDF([com.naminghouse.app.ui.writeCertificatePdf])가 인쇄용 색을
+ * 여기서 그대로 가져다 쓰기 때문에 private 이 아니다 — 종이 위 증서는 항상 라이트다.
+ * 값을 바꾸면 화면과 PDF 가 같이 움직인다.
+ */
+internal val BrandLight = lightColorScheme(
     primary = CheongMuk,
     onPrimary = Color(0xFFF8F3E8),
     primaryContainer = Color(0xFFD5DCE2),
@@ -187,7 +192,8 @@ data class InkPalette(
     }
 }
 
-private val LightInk = InkPalette(
+/** 감명서 PDF 도 이 팔레트를 쓴다 — [BrandLight] 주석 참고. */
+internal val LightInk = InkPalette(
     seal = JuSa,
     onSeal = Color(0xFFFBF3E7),
     gold = GeumNi,
