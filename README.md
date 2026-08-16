@@ -87,7 +87,7 @@
 | 먹 그림 | 흰 종이 위 검은 먹 한 장만 두고 라이트는 `Multiply`, 다크는 반전 후 `Screen` 으로 얹는다 — 모드별 에셋을 두 벌 들고 다니지 않아도 된다 |
 | 획 | `InkStroke` — 양 끝이 뾰족하고 축이 흔들리는 붓 자국을 Path 로 그린다. 탭 밑줄·구분선 |
 | 낙관 | `SealBadge` — 점수 도장. 목록에는 쓰지 않고 이름 하나를 펼칠 때만 찍는다(60줄이 전부 붉으면 도장이 아니라 배경이 된다) |
-| 활자 | 이름·한자·제목은 시스템 serif(대개 Noto Serif CJK), 본문은 고딕. 폰트는 번들하지 않는다 |
+| 활자 | 세 벌을 번들한다(`res/font/`, 7.7MB) — 마루부리(한글 명조, 이름·제목) · 한자 명조(Noto Serif KR 600 서브셋) · 프리텐다드(본문·라벨 고딕). 시스템 serif 는 기기마다 다른 글꼴로 떨어져서(픽셀은 명조, 삼성은 고딕 폴백) 이름이 상품인 앱에서 활자를 운에 맡길 수 없다. 자세한 건 `ui/theme/Type.kt` |
 | 색 | 청묵 `#2C3640` 이 주색, 주사 `#9C3A2E` 는 낙관에만. 오행 다섯 색과 길흉 색은 라이트/다크에서 명도가 달라야 해서 `InkPalette` 로 두 벌 둔다 |
 
 레이아웃에서 손본 것:
@@ -194,11 +194,20 @@ python3 tools/hanja-db/build_hanja_db.py \
 python3 tools/design-guard.py         # 조형 규율 검사
 ```
 
-스택: AGP 9.1.1 · Kotlin 2.2.10 · Compose BOM 2024.09 · minSdk 24 / targetSdk 36 (삼라와 동일 버전 유지).
+스택: AGP 9.1.1 · Kotlin 2.2.10 · Compose BOM 2025.08.00 · minSdk 24 / targetSdk 36.
+
+Compose 는 BOM 위에 `runtime` 만 1.11.4 로 따로 강제한다. 런타임 강제가 클래스패스의
+`ui`/`foundation` 을 1.9.0 세대로 끌어올리기 때문에, 컴파일도 같은 세대로 맞추지 않으면
+`NoSuchMethodError` 가 난다(`gradle/libs.versions.toml` 주석 참고).
+
+Compose 버전은 삼라(2024.09.00)와 갈라져 있다. `:engine` 은 Compose 에 의존하지 않으므로
+이식한 사주 경로의 패리티와는 무관하다 — 그쪽은 `SajuGoldenTest` 가 삼라 골든 덤프로
+직접 보증한다.
 
 ### 릴리스 빌드
 
-R8 축소·리소스 축소가 켜져 있다(19MB → 1.6MB). 서명 키는 **저장소에 넣지 않고**
+R8 축소·리소스 축소가 켜져 있다 — 디버그 24.3MB → 릴리스 5.8MB(76% 축소, 2026-08-17 실측).
+대부분이 번들 활자(7.7MB)와 한자 데이터라 코드 축소만으로는 줄지 않는다. 서명 키는 **저장소에 넣지 않고**
 Gradle 프로퍼티로 주입한다 — `~/.gradle/gradle.properties` 에 두거나 CI 시크릿으로 넘긴다.
 
 ```bash
