@@ -118,7 +118,7 @@ fun VerdictBadge(verdict: AxisVerdict) {
             color = color,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = InkSpace.s8, vertical = InkSpace.s4),
         )
     }
 }
@@ -156,7 +156,7 @@ fun ElementBall(label: String, element: Element?, sub: String? = null) {
             sub ?: element?.let { "${it.hanja}(${it.ko})" } ?: "미상",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 3.dp),
+            modifier = Modifier.padding(top = InkSpace.s4),
         )
     }
 }
@@ -230,7 +230,7 @@ fun OhengBarChart(
                         }
                     }
                 }
-                Spacer(Modifier.height(5.dp))
+                Spacer(Modifier.height(InkSpace.s4))
                 Text(
                     "${el.hanja}(${el.ko})",
                     style = MaterialTheme.typography.labelSmall,
@@ -389,7 +389,7 @@ fun HanjaPickerDialog(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = 18.dp)) {
+            Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s20)) {
                 Text(
                     "'$syllable' 인명용 한자",
                     style = MaterialTheme.typography.titleLarge,
@@ -400,9 +400,9 @@ fun HanjaPickerDialog(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(InkSpace.s12))
                 InkStroke(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.primary, alpha = 0.25f)
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(InkSpace.s8))
 
                 if (candidates.isEmpty()) {
                     Text("해당 음의 인명용 한자가 없습니다", style = MaterialTheme.typography.bodyMedium)
@@ -413,7 +413,7 @@ fun HanjaPickerDialog(
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable { onSelect(entry) }
-                                    .padding(vertical = 10.dp),
+                                    .padding(vertical = InkSpace.s12),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
@@ -448,7 +448,7 @@ fun HanjaPickerDialog(
                                             color = Color.White,
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(7.dp),
+                                            modifier = Modifier.padding(InkSpace.s8),
                                         )
                                     }
                                 }
@@ -478,7 +478,7 @@ fun HanjaSlotButton(
     OutlinedButton(
         onClick = { open.value = true },
         shape = InkShape.medium,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = InkSpace.s16, vertical = InkSpace.s12),
     ) {
         if (selected == null) {
             Text("$syllable · 한자 고르기", style = MaterialTheme.typography.labelLarge)
@@ -489,20 +489,20 @@ fun HanjaSlotButton(
                 fontFamily = HanjaFamily,
                 fontWeight = FontWeight.Bold,
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(InkSpace.s8))
             Text(
                 "$syllable · ${selected.wonhoek}획",
                 style = MaterialTheme.typography.labelMedium,
             )
             selected.element?.let { el ->
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(InkSpace.s8))
                 Surface(shape = CircleShape, color = InkTheme.colors.of(el)) {
                     Text(
                         el.hanja,
                         color = Color.White,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(5.dp),
+                        modifier = Modifier.padding(InkSpace.s4),
                     )
                 }
             }
@@ -534,7 +534,7 @@ fun CityPickerDialog(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = 18.dp)) {
+            Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s20)) {
                 Text(
                     "출생 지역",
                     style = MaterialTheme.typography.titleLarge,
@@ -545,9 +545,9 @@ fun CityPickerDialog(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(InkSpace.s12))
                 InkStroke(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.primary, alpha = 0.25f)
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(InkSpace.s8))
 
                 LazyColumn(Modifier.weight(1f, fill = false)) {
                     items(CityRepository.KOREAN_CITIES) { c ->

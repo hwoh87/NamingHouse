@@ -129,7 +129,7 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
             } else {
                 item {
                     InkCard(
-                        contentPadding = PaddingValues(horizontal = InkSpace.s16, vertical = 5.dp),
+                        contentPadding = PaddingValues(horizontal = InkSpace.s16, vertical = InkSpace.s4),
                         spacing = 0.dp,
                     ) {
                         chart.forEachIndexed { i, (rank, stat) ->
@@ -172,7 +172,7 @@ private fun RankRow(rank: Int, stat: NameStat, prevRank: Int?, onClick: () -> Un
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 11.dp),
+            .padding(vertical = InkSpace.s12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

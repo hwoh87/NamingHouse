@@ -60,7 +60,7 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = InkSpace.s24)
                 .padding(bottom = InkSpace.s28),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s16),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -126,11 +126,11 @@ private fun FeatureLine(title: String, desc: String) {
     Row {
         Box(
             Modifier
-                .padding(top = 7.dp)
+                .padding(top = InkSpace.s8)
                 .size(6.dp)
                 .background(InkTheme.colors.gold, InkShape.circle)
         )
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(InkSpace.s12))
         Column {
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(

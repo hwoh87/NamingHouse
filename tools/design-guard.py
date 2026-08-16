@@ -23,8 +23,10 @@ ROOT = os.path.join(REPO, 'app/src/main/java/com/naminghouse/app')
 TOKENISED = {2, 4, 8, 12, 16, 20, 24, 28}
 
 # 격자 이탈 허용 상한 — 래칫. 줄이는 건 언제든 환영, 늘리는 건 실패.
-# 2026-08-16: 62건 (원시 64건에서 0dp 1건과 면제값 1dp 1건을 뺀 수). 준수율 65.2%.
-OFFGRID_BASELINE = 62
+# 2026-08-16 감사 직후 62건 -> 같은 날 ③ 스냅으로 0건. 잠갔다.
+# 이제 격자 밖 간격값은 하나도 못 들어온다. 정당한 예외가 생기면 값을
+# KEEP 에 넣고 왜 격자 밖이어야 하는지 여기 남길 것.
+OFFGRID_BASELINE = 0
 
 # 격자 밖이 정당한 자리. 광학 정렬 보정과 헤어라인은 격자를 따르면 오히려 틀어진다.
 OFFGRID_EXEMPT = {1}
@@ -114,7 +116,7 @@ def main():
         print(f'         PASS{"" if not slack else f"  기준선보다 {slack}건 줄었다 — 상수를 낮춰 잠글 것"}')
 
     print(f'[INFO] 간격 토큰 준수율 {rate:.1f}%  (토큰 {tokens} / 원시 {sum(raw.values())})'
-          '   · 2026-08-16 기준선 65.2%')
+          '   · 2026-08-16 기준선 98.9%')
     print(f'[INFO] 원시 fontSize {other["raw_sp"]}건 · 원시 RoundedCornerShape '
           f'{other["raw_shape"]}건   · 2026-08-16 기준선 5 / 9')
 

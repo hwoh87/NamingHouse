@@ -50,7 +50,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
     ) {
         // ── 머리 — 브랜드
         Row(
-            Modifier.padding(top = 18.dp, bottom = InkSpace.s4),
+            Modifier.padding(top = InkSpace.s20, bottom = InkSpace.s4),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             BrandMark(size = 46.dp)
@@ -130,7 +130,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
             if (vm.favorites.isEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     InkArt(R.drawable.ink_plum, Modifier.size(72.dp), alpha = 0.4f)
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(InkSpace.s12))
                     Text(
                         "추천 목록에서 별을 누르면\n여기 모입니다",
                         style = MaterialTheme.typography.bodySmall,
@@ -145,7 +145,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                         )
-                        Spacer(Modifier.width(7.dp))
+                        Spacer(Modifier.width(InkSpace.s8))
                         Text(
                             f.hanja,
                             style = MaterialTheme.typography.labelLarge,
@@ -184,7 +184,7 @@ private fun ModeCard(glyph: String, title: String, desc: String, onClick: () -> 
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(InkSpace.s12))
             Column(Modifier.weight(1f)) {
                 Text(
                     title,

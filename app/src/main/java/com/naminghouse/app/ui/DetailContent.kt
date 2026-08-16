@@ -224,7 +224,7 @@ fun EvaluationDetail(
             (eval.surnameHanja + eval.givenHanja).forEachIndexed { i, h ->
                 val role = if (i < eval.surnameHanja.size) "성" else "이름"
                 Row(
-                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    Modifier.fillMaxWidth().padding(vertical = InkSpace.s4),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -264,7 +264,7 @@ private fun DetailHero(eval: NameEvaluation) {
                 alpha = 0.13f,
             )
             Row(
-                Modifier.fillMaxWidth().padding(top = InkSpace.s8, bottom = 10.dp),
+                Modifier.fillMaxWidth().padding(top = InkSpace.s8, bottom = InkSpace.s12),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
@@ -355,7 +355,7 @@ private fun RelationArrow(relation: OhengRelation) {
 
 @Composable
 private fun SuriRow(label: String, meaning: SuriMeaning) {
-    Column(Modifier.padding(bottom = 6.dp)) {
+    Column(Modifier.padding(bottom = InkSpace.s8)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 label,

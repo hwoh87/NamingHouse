@@ -124,7 +124,7 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
                     shape = InkShape.medium,
                 ) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(InkSpace.s8))
                     Text("공유")
                 }
             }
@@ -152,7 +152,7 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
             vm.favorites.forEach { f ->
                 InkCard(
                     onClick = { notReady = !vm.openFavorite(f) },
-                    contentPadding = PaddingValues(14.dp),
+                    contentPadding = PaddingValues(InkSpace.s16),
                     spacing = 4.dp,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

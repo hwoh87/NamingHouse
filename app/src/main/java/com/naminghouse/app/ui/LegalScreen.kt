@@ -49,7 +49,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
 
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = 6.dp, bottom = InkSpace.s2),
+            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = InkSpace.s8, bottom = InkSpace.s2),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
             IconButton(onClick = { nav.popBackStack() }) {
@@ -94,7 +94,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold,
                         )
-                        Spacer(Modifier.width(7.dp))
+                        Spacer(Modifier.width(InkSpace.s8))
                         Text(
                             line.removePrefix("- "),
                             style = MaterialTheme.typography.bodyMedium,

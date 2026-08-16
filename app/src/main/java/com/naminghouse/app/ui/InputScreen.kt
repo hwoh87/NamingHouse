@@ -69,7 +69,7 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
 
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = 6.dp, bottom = InkSpace.s2),
+            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = InkSpace.s8, bottom = InkSpace.s2),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { nav.popBackStack() }) {

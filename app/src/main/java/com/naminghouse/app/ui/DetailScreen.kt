@@ -265,7 +265,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                         modifier = Modifier.size(18.dp),
                         tint = if (isFav) InkTheme.colors.gold else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(InkSpace.s8))
                     Text(if (isFav) "담아둠" else "담아두기", style = MaterialTheme.typography.labelLarge)
                 }
                 Button(
@@ -283,7 +283,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                     modifier = Modifier.weight(1.4f).height(50.dp),
                 ) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(7.dp))
+                    Spacer(Modifier.width(InkSpace.s8))
                     Text(
                         "감명서 공유",
                         style = MaterialTheme.typography.titleMedium,
@@ -362,14 +362,14 @@ private fun JokjaCard(
             // 모서리 장식 — 표구의 귀. 금니 두 줄로 긋는다.
             CornerMarks(
                 color = colors.corner,
-                modifier = Modifier.matchParentSize().padding(10.dp),
+                modifier = Modifier.matchParentSize().padding(InkSpace.s12),
             )
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = InkSpace.s16),
+                Modifier.fillMaxWidth().padding(horizontal = InkSpace.s24, vertical = InkSpace.s16),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 JokjaRod(colors.rod)
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(InkSpace.s20))
 
                 Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.Top) {
                     // 이름 — 세로 한 줄. 성명인은 서명 아래 찍는 것이 정석이라 이 열에 단다.
@@ -384,7 +384,7 @@ private fun JokjaCard(
                             )
                         }
                         if (sealName != null) {
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(InkSpace.s12))
                             NameSeal(sealName)
                         }
                     }
@@ -406,7 +406,7 @@ private fun JokjaCard(
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(InkSpace.s16))
                 Text(
                     meaningLine(eval),
                     style = MaterialTheme.typography.bodyMedium,
@@ -481,11 +481,11 @@ private fun NameSeal(name: String) {
         Box(
             Modifier
                 .matchParentSize()
-                .padding(3.dp)
+                .padding(InkSpace.s4)
                 .border(1.dp, ink.onSeal.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
         )
         Column(
-            Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
+            Modifier.padding(horizontal = InkSpace.s8, vertical = InkSpace.s8),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             name.forEach { ch ->
@@ -532,7 +532,7 @@ private fun JokjaStyleRow(selected: JokjaStyle, onSelect: (JokjaStyle) -> Unit) 
                             InkShape.circle,
                         )
                 )
-                Spacer(Modifier.width(5.dp))
+                Spacer(Modifier.width(InkSpace.s4))
                 Text(
                     s.label,
                     style = MaterialTheme.typography.labelMedium,

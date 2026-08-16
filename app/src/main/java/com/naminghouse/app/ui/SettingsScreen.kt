@@ -150,7 +150,7 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
             "만든 곳 · 삼라만상",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 6.dp),
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = InkSpace.s8),
         )
         Spacer(Modifier.height(InkSpace.s16))
     }
@@ -210,7 +210,7 @@ private fun LicensesDialog(onDismiss: () -> Unit) {
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(
-                Modifier.padding(horizontal = InkSpace.gutter, vertical = 18.dp),
+                Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s20),
                 verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
             ) {
                 Text(

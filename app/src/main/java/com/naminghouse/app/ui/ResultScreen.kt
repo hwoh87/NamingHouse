@@ -236,7 +236,7 @@ private fun CandidateRow(
                         )
                     } else {
                         Text(hangul, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.width(7.dp))
+                        Spacer(Modifier.width(InkSpace.s8))
                         Text(
                             hanja,
                             style = MaterialTheme.typography.titleMedium,
@@ -253,10 +253,10 @@ private fun CandidateRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(InkSpace.s8))
                 AxisMarks(eval, stat)
             }
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(InkSpace.s8))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 // 이름(titleLarge 22sp)보다 점수가 크면 상품인 이름이 숫자에 밀린다.
                 // 같은 크기로 내리고 강조는 색에 맡긴다.
@@ -306,7 +306,7 @@ private fun AxisMarks(eval: NameEvaluation, stat: NameStat?) {
                 Box(
                     Modifier
                         .background(InkTheme.colors.goldSoft, InkShape.small)
-                        .padding(horizontal = 5.dp, vertical = InkSpace.s2)
+                        .padding(horizontal = InkSpace.s4, vertical = InkSpace.s2)
                 ) {
                     Text(
                         "인기 ${rank}위",
@@ -334,7 +334,7 @@ private fun AxisMark(label: String, verdict: AxisVerdict) {
     Box(
         Modifier
             .background(color.copy(alpha = 0.13f), InkShape.small)
-            .padding(horizontal = 5.dp, vertical = InkSpace.s2)
+            .padding(horizontal = InkSpace.s4, vertical = InkSpace.s2)
     ) {
         Text(
             label,
@@ -378,7 +378,7 @@ fun SajuCard(saju: SajuSummary) {
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(Modifier.height(3.dp))
+                    Spacer(Modifier.height(InkSpace.s4))
                     Surface(
                         shape = InkShape.medium,
                         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f),
@@ -391,7 +391,7 @@ fun SajuCard(saju: SajuSummary) {
                         val unknown = i == 3 && saju.unknownTime
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = InkSpace.s8),
                         ) {
                             Text(
                                 if (unknown) "모름" else ganzi,

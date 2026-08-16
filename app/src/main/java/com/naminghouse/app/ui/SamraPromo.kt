@@ -93,7 +93,7 @@ fun SamraBanner(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(InkSpace.s8))
                     Surface(
                         shape = InkShape.circle,
                         // 삼라 감색을 옅게 깔면 다크에서 배경과 붙어 사라진다 — 중립 면으로 둔다.
@@ -104,7 +104,7 @@ fun SamraBanner(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 1.dp),
+                            modifier = Modifier.padding(horizontal = InkSpace.s8, vertical = 1.dp),
                         )
                     }
                 }
@@ -114,7 +114,7 @@ fun SamraBanner(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(InkSpace.s8))
             Text(
                 "›",
                 style = MaterialTheme.typography.titleLarge,
