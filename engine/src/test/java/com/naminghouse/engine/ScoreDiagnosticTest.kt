@@ -1,7 +1,10 @@
 package com.naminghouse.engine
 
 import com.naminghouse.engine.data.BulyongHanja
+import com.naminghouse.engine.data.BulyongSeverity
 import com.naminghouse.engine.eval.NameEvaluator
+import com.naminghouse.engine.gen.NameGenerator
+import com.naminghouse.engine.gen.NamePool
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.saju.SajuNamingService
@@ -70,17 +73,30 @@ class ScoreDiagnosticTest {
             var jawonLoss = 0.0; var eumLoss = 0.0; var bulLoss = 0.0
             for ((_, _, e) in rows) {
                 suriLoss += 30 - 30.0 * e.suri.all.sumOf { g ->
-                    when (g.grade.name) { "DAEGIL" -> 1.0; "GIL" -> 0.85; "PYEONG" -> 0.4; "HYUNG" -> 0.05; else -> 0.0 }
+                    when (g.grade.name) { "DAEGIL" -> 1.0; "GIL" -> 0.9; "PYEONG" -> 0.6; "HYUNG" -> 0.35; else -> 0.2 }
                 } / 4.0
-                baleumLoss += 18 - when (e.baleumVerdict.name) { "GIL" -> 18.0; "BOTONG" -> 13.0; else -> 4.0 }
+                val sg = e.baleum?.relations?.count { it.name == "SANGGEUK" } ?: 0
+                baleumLoss += 18 - when {
+                    e.baleum == null -> 9.0
+                    sg > 0 -> (18.0 - 6.0 * sg).coerceAtLeast(5.0)
+                    e.baleumVerdict.name == "GIL" -> 18.0
+                    else -> 13.0
+                }
                 suriOhLoss += 12 - when (e.suriOhengVerdict.name) { "GIL" -> 12.0; "BOTONG" -> 8.0; else -> 2.0 }
                 eumLoss += 10 - ((if (e.strokeEumyang.isBalanced) 6.0 else 0.0) +
                     (if (e.soundEumyang?.isBalanced != false) 4.0 else 1.0))
-                bulLoss += if (e.bulyongWarnings.isEmpty()) 0.0 else 5.0 + 6.0 * e.bulyongWarnings.size
+                bulLoss += 5.0 * e.bulyongWarnings.count { it.second.severity.name == "GIPI" }
                 jawonLoss += 25 - if (e.sajuFit != null) {
-                    val top = e.sajuFit!!.targets.take(2)
-                    val cov = if (top.isEmpty()) 0.5 else e.sajuFit!!.matched.count { it in top }.toDouble() / top.size
-                    (25.0 * cov - 5.0 * e.sajuFit!!.gisinUsed.size).coerceIn(0.0, 25.0)
+                    val f = e.sajuFit!!
+                    val base = when {
+                        f.matched.size >= 2 -> 25.0
+                        f.matched.size == 1 && f.covered.size >= 2 -> 25.0
+                        f.matched.size == 1 -> 21.0
+                        f.covered.isNotEmpty() -> 16.0
+                        f.targets.isEmpty() -> 15.0
+                        else -> 8.0
+                    }
+                    (base - 4.0 * f.gisinUsed.size).coerceIn(0.0, 25.0)
                 } else when (e.jawonVerdict.name) { "GIL" -> 22.0; "BOTONG" -> 15.0; else -> 7.0 }
             }
             val n = rows.size
@@ -90,7 +106,9 @@ class ScoreDiagnosticTest {
             println("  수리오행 /12 : ${"%.1f".format(suriOhLoss / n)}")
             println("  자원·사주/25 : ${"%.1f".format(jawonLoss / n)}")
             println("  음양     /10 : ${"%.1f".format(eumLoss / n)}")
-            println("  불용한자 /5  : ${"%.1f".format(bulLoss / n)}  (경고시 -11 이상)")
+            println("  불용한자 /5  : ${"%.1f".format(bulLoss / n)}  (기피 등급만 감점)")
+            println("불용 경고가 뜬 이름: ${rows.count { it.third.bulyongWarnings.isNotEmpty() }}/$n " +
+                "(그중 감점 대상 '기피': ${rows.count { r -> r.third.bulyongWarnings.any { it.second.severity.name == "GIPI" } }}건)")
 
             println("하위 15건:")
             rows.sortedBy { it.third.score }.take(15).forEach { (name, cnt, e) ->
@@ -122,7 +140,7 @@ class ScoreDiagnosticTest {
             val sanggeuk = evals.count { it.baleumVerdict.name == "HYUNG" }
             println("$sur($surChar) — 조합 ${evals.size}개 | 평균 ${sc.average().toInt()} 중앙 ${sc[sc.size/2]} " +
                 "| 70점이상 ${100*sc.count{it>=70}/sc.size}% | 발음오행 상극 ${100*sanggeuk/evals.size}%" +
-                " | 자원25점 만점 ${100*evals.count{ e -> e.sajuFit!!.targets.take(2).all { it in e.sajuFit!!.matched } }/evals.size}%")
+                " | 자원 길판정 ${100*evals.count{ it.jawonVerdict.name == "GIL" }/evals.size}%")
         }
 
         // 발음오행: 성씨 초성 오행별로 실제 인기 이름의 상극률
@@ -133,6 +151,51 @@ class ScoreDiagnosticTest {
             }
             println("  $sur: ${bad}/${names.size} (${100*bad/names.size}%) 상극")
         }
+    }
+
+    /**
+     * 불용한자 목록의 등급 분포 — '속설'이 대부분이라는 전제를 지킨다.
+     * 감점 대상('기피')이 늘어나 실제 이름을 다시 덮기 시작하면 여기서 드러난다.
+     */
+    @Test
+    fun bulyongSeverityBreakdown() {
+        val bySeverity = BulyongHanja.map.values.groupingBy { it.severity }.eachCount()
+        println("\n불용한자 ${BulyongHanja.map.size}자 등급 분포: " +
+            bySeverity.entries.joinToString(" / ") { "${it.key.label} ${it.value}자" })
+
+        val syllables = popularNames(300).flatMap { it.first.map(Char::toString) }.distinct()
+        var total = 0; var gipi = 0; var sokseol = 0
+        val gipiChars = sortedSetOf<Char>()
+        for (s in syllables) for (e in db.candidatesFor(s).filter { it.nameFit >= 3 }) {
+            total++
+            when (BulyongHanja.map[e.char]?.severity) {
+                BulyongSeverity.GIPI -> { gipi++; gipiChars.add(e.char) }
+                BulyongSeverity.SOKSEOL -> sokseol++
+                null -> Unit
+            }
+        }
+        println("인기 이름 음절의 한자 ${total}자 중 — 감점되는 '기피' ${gipi}자" +
+            "(${"%.1f".format(100.0 * gipi / total)}%), " +
+            "참고만 하는 '속설' ${sokseol}자(${"%.1f".format(100.0 * sokseol / total)}%)")
+        println("감점 대상으로 남은 글자: ${gipiChars.joinToString("")}")
+    }
+
+    /**
+     * 완화 후에도 추천 목록이 변별되는지 — 우리 생성기가 뽑은 이름들이 전부 '대길'로
+     * 뭉개지면 등급 구간이 무의미해진다. 상·하위 점수가 벌어져 있어야 정상.
+     */
+    @Test
+    fun generatedCandidatesStillSpread() {
+        val pool = asset("names.tsv").bufferedReader().useLines { NamePool.parse(it) }
+        val generator = NameGenerator(db, pool)
+        val saju = SajuNamingService.analyze(BirthInput(2026, 3, 15, 9, 20, Gender.M))
+        val cands = generator.generate("김", listOf(db.byChar['金']!!), Gender.M, saju)
+        val sc = cands.map { it.evaluation.score }
+        println("\n생성기 추천 ${cands.size}건 — 최고 ${sc.max()} / 중앙 ${sc.sorted()[sc.size/2]} / 최저 ${sc.min()}")
+        println("  등급 분포: " + cands.groupingBy { it.evaluation.grade }.eachCount())
+        println("  상위 5: " + cands.take(5).joinToString(" ") {
+            "${it.givenName}(${it.hanja.joinToString(""){ h -> h.char.toString() }})${it.evaluation.score}"
+        })
     }
 
     /** 수정안 시뮬레이션 — 배점 곡선만 바꿨을 때 실제 이름들의 점수가 어디로 가는지 */

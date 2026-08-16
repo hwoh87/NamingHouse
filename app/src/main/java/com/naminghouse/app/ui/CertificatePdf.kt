@@ -1,5 +1,6 @@
 package com.naminghouse.app.ui
 
+import com.naminghouse.engine.data.BulyongSeverity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -715,6 +716,15 @@ private fun jawonSection(w: CertWriter, eval: NameEvaluation, saju: SajuSummary?
                 9f, spacingAfter = 1.5f,
             )
         }
+        if (fit.surnameCovered.isNotEmpty()) {
+            w.runsLine(
+                listOf(
+                    Run("성씨가 이미 갖춘 오행  ", MUTED),
+                    Run(fit.surnameCovered.joinToString(" · ") { "${it.hanja}(${it.ko})" }, INK),
+                ),
+                9f, spacingAfter = 1.5f,
+            )
+        }
         if (fit.gisinUsed.isNotEmpty()) {
             w.runsLine(
                 listOf(
@@ -738,12 +748,20 @@ private fun bulyongSection(w: CertWriter, eval: NameEvaluation) {
     if (eval.bulyongWarnings.isEmpty()) return
     w.sectionTitle("불용한자 참고")
     eval.bulyongWarnings.forEach { (ch, info) ->
+        val gipi = info.severity == BulyongSeverity.GIPI
         w.runsLine(
-            listOf(Run("$ch  ", HYUNG, bold = true), Run("[${info.category}] ${info.reason}", INK)),
+            listOf(
+                Run("$ch  ", if (gipi) HYUNG else MUTED, bold = true),
+                Run("[${info.category}·${info.severity.label}] ${info.reason}", if (gipi) INK else MUTED),
+            ),
             9f, spacingAfter = 1.5f,
         )
     }
-    w.paragraph("불용한자는 전통 속설로, 학파에 따라 이견이 있습니다.", size = 7.5f, color = MUTED)
+    w.paragraph(
+        "'속설'은 학파에 따라 이견이 커 점수에 반영하지 않고 참고로만 보여 줍니다. " +
+            "뜻이 명백히 좋지 않은 '기피' 글자만 감점합니다.",
+        size = 7.5f, color = MUTED,
+    )
     w.space(2f)
 }
 

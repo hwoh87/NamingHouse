@@ -1,10 +1,53 @@
 package com.naminghouse.engine.data
 
+/** 불용한자의 신뢰도 등급 — 감점 여부를 가른다. */
+enum class BulyongSeverity(val label: String) {
+    /**
+     * 뜻 자체가 부정적·비천해 유파를 막론하고 이름에 쓰지 않는 글자. 점수에서 감점한다.
+     * 死·病·惡·盜 처럼 어느 작명소에 물어도 답이 같은 것만 여기 둔다.
+     */
+    GIPI("기피"),
+
+    /**
+     * 유파·속설에 따라 갈리는 글자. **감점하지 않고 참고로만 보여 준다.**
+     *
+     * 이 등급이 목록의 대부분(204/238)이다. 특히 '길흉역설'(뜻이 너무 좋으면 오히려
+     * 흉하다는 속설)과 '자연물·식물' 계열은 英·榮·珍·明·秀·敏·星·光·玉·松 처럼 실제
+     * 출생신고에 가장 많이 쓰이는 글자를 통째로 덮는다. 실측에서 인기 이름 음절의
+     * 쓸 만한 한자 5%가 여기 걸렸는데, 걸리면 만점의 11%를 잃는 구조였다.
+     */
+    SOKSEOL("속설"),
+}
+
 /** 전통 성명학에서 기피하는 한자 목록. 법적 제한이 아니며 학파에 따라 이견이 있어 '경고' 용도로만 사용한다. */
-data class BulyongInfo(val category: String, val reason: String)
+data class BulyongInfo(
+    val category: String,
+    val reason: String,
+    val severity: BulyongSeverity = BulyongSeverity.SOKSEOL,
+)
 
 object BulyongHanja {
-    val map: Map<Char, BulyongInfo> = mapOf(
+
+    /**
+     * 뜻이 명백히 부정적이라 유파와 무관하게 기피하는 글자 — 이것만 감점한다.
+     * 나머지는 모두 속설 등급으로, 목록에 남겨 두되 점수에는 반영하지 않는다.
+     *
+     * 같은 카테고리 안에서도 갈린다는 점에 주의 —
+     * '동물'의 犬·豚은 기피지만 龍·虎·鶴·鳳은 흔한 이름자라 속설이고,
+     * '신체·질병'의 病·死는 기피지만 心·命·炳(病과 동음이라는 이유)은 속설이다.
+     */
+    private val GIPI_CHARS: Set<Char> = (
+        // 질병·신체 훼손
+        "病死弱尿盲骨" +
+            // 악덕·범죄·재앙
+            "毒亡敗破姦盜狂哭亂難奴乞惡凶殺犯哀汚" +
+            // 비천하게 보는 짐승
+            "犬豚鼠蛇猫猪猿" +
+            // 신격 — 사람 이름에 쓰지 않는다는 데 이견이 없는 축
+            "佛神靈"
+        ).toSet()
+
+    private val rawMap: Map<Char, BulyongInfo> = mapOf(
         // ─── 과대: 뜻이 지나치게 크거나 높아 감당하기 어렵다고 보는 글자 ───
         '大' to BulyongInfo("과대", "뜻이 지나치게 커 감당하기 어렵고 장남 외에는 기피한다고 봄"),
         '太' to BulyongInfo("과대", "맏이 뜻의 큰 글자라 장남 외에는 형을 극한다는 속설"),
@@ -259,4 +302,12 @@ object BulyongHanja {
         '玄' to BulyongInfo("기타", "검은빛 글자라 어둡고 박정하다는 속설"),
         '平' to BulyongInfo("기타", "경솔해 중도에 좌절한다는 속설"),
     )
+
+    val map: Map<Char, BulyongInfo> = rawMap.mapValues { (ch, info) ->
+        if (ch in GIPI_CHARS) info.copy(severity = BulyongSeverity.GIPI) else info
+    }
+
+    /** 감점 대상 — 뜻이 명백히 부정적인 글자만 */
+    fun gipiOf(chars: Iterable<Char>): List<Char> =
+        chars.filter { map[it]?.severity == BulyongSeverity.GIPI }
 }

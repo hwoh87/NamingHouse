@@ -1,5 +1,6 @@
 package com.naminghouse.app.ui
 
+import com.naminghouse.engine.data.BulyongSeverity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -180,6 +181,14 @@ fun EvaluationDetail(
                         color = InkTheme.colors.gil,
                     )
                 }
+                if (fit.surnameCovered.isNotEmpty()) {
+                    Text(
+                        "성씨가 이미 갖춘 오행  " +
+                            fit.surnameCovered.joinToString(" · ") { "${it.hanja}(${it.ko})" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (fit.gisinUsed.isNotEmpty()) {
                     Text(
                         "주의 · 기신 오행 사용  " + fit.gisinUsed.joinToString(" · ") { "${it.hanja}(${it.ko})" },
@@ -205,14 +214,17 @@ fun EvaluationDetail(
         if (eval.bulyongWarnings.isNotEmpty()) {
             SectionCard("불용한자 참고") {
                 eval.bulyongWarnings.forEach { (ch, info) ->
+                    val gipi = info.severity == BulyongSeverity.GIPI
                     Text(
-                        "$ch [${info.category}] ${info.reason}",
+                        "$ch [${info.category}·${info.severity.label}] ${info.reason}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                        color = if (gipi) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(
-                    "불용한자는 전통 속설로, 학파에 따라 이견이 있습니다.",
+                    "'속설'은 학파에 따라 이견이 커 점수에 반영하지 않고 참고로만 보여 줍니다. " +
+                        "뜻이 명백히 좋지 않은 '기피' 글자만 감점합니다.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

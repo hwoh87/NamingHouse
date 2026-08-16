@@ -1,5 +1,6 @@
 package com.naminghouse.engine.eval
 
+import com.naminghouse.engine.data.BulyongSeverity
 import com.naminghouse.engine.oheng.OhengRelation
 import com.samramanshang.manseryeok.orrery.model.Element
 
@@ -94,6 +95,9 @@ fun summarize(eval: NameEvaluation): NameSummary {
         if (fit.matched.isNotEmpty()) {
             strengths += "이름의 자원오행이 사주에 부족한 " +
                 fit.matched.joinToString("·") { it.hanja } + " 기운을 채웁니다."
+        } else if (fit.surnameCovered.isNotEmpty()) {
+            strengths += "성씨 한자가 이미 " + fit.surnameCovered.joinToString("·") { it.hanja } +
+                " 기운을 갖추고 있어 보완이 되어 있습니다."
         } else {
             cautions += "보완이 필요한 " + fit.targets.joinToString("·") { it.hanja } +
                 " 기운을 이름이 채우지 못합니다."
@@ -112,11 +116,11 @@ fun summarize(eval: NameEvaluation): NameSummary {
         strengths += "획수와 소리 모두 음양이 고르게 섞였습니다."
     }
 
-    // 불용한자
-    if (eval.bulyongWarnings.isNotEmpty()) {
-        cautions += "전통적으로 이름에 꺼리는 글자 " +
-            eval.bulyongWarnings.joinToString("·") { it.first.toString() } +
-            "이(가) 있습니다(학파에 따라 이견이 있는 속설)."
+    // 불용한자 — 감점 대상인 '기피'만 주의로 올린다. 속설 등급은 상세 화면의 참고 카드에만 둔다.
+    val gipi = eval.bulyongWarnings.filter { it.second.severity == BulyongSeverity.GIPI }
+    if (gipi.isNotEmpty()) {
+        cautions += "뜻이 좋지 않아 이름에 쓰지 않는 글자 " +
+            gipi.joinToString("·") { it.first.toString() } + "이(가) 있습니다."
     }
 
     // ── 개선 제안 — 주의점을 어떻게 풀지. 소리를 바꿔야 하는 축(발음)과 한자만
@@ -127,7 +131,7 @@ fun summarize(eval: NameEvaluation): NameSummary {
         suggestions += "네 격은 한자 획수에서 나옵니다 — 같은 이름이라도 획수가 다른 한자를 " +
             "고르면 달라지니, '한자 추천'에서 전길 조합을 찾아보세요."
     }
-    if (fit != null && (fit.matched.isEmpty() || fit.gisinUsed.isNotEmpty())) {
+    if (fit != null && (fit.covered.isEmpty() || fit.gisinUsed.isNotEmpty())) {
         suggestions += "보완 대상 오행(" + fit.targets.joinToString("·") { it.hanja } +
             ") 자원의 한자로 바꿔 보세요 — '한자 추천'이 사주 보완 순으로 정렬해 줍니다."
     }
@@ -149,9 +153,8 @@ fun summarize(eval: NameEvaluation): NameSummary {
             }
         }
     }
-    if (eval.bulyongWarnings.isNotEmpty()) {
-        suggestions += "불용한자가 마음에 걸리면 같은 음의 다른 한자로만 바꿔도 됩니다 — " +
-            "부르는 이름은 그대로 지킬 수 있습니다."
+    if (gipi.isNotEmpty()) {
+        suggestions += "같은 음의 다른 한자로만 바꿔도 됩니다 — 부르는 이름은 그대로 지킬 수 있습니다."
     }
 
     return NameSummary(verdict, strengths, cautions, suggestions.take(3))
