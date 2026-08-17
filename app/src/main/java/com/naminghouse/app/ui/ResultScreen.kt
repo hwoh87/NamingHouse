@@ -149,6 +149,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             },
                         )
                     }
+                    item { ResultListAd(vm) }
                     item { Spacer(Modifier.height(InkSpace.s28)) }
                 }
 
@@ -173,6 +174,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             },
                         )
                     }
+                    item { ResultListAd(vm) }
                     item { Spacer(Modifier.height(InkSpace.s28)) }
                 }
 

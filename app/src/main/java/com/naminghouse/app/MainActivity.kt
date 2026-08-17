@@ -23,6 +23,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.naminghouse.app.ads.AdsInit
+import com.naminghouse.app.ads.ConsentManager
 import com.naminghouse.app.ui.DetailScreen
 import com.naminghouse.app.ui.FavoritesScreen
 import com.naminghouse.app.ui.HanjiBackdrop
@@ -58,6 +60,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 동의를 받은 뒤에야 광고 SDK 를 켠다 — 순서가 뒤집히면 GDPR 위반이다.
+        // 광고 제거를 산 사람에게도 초기화 자체는 무해하다(배너 쪽에서 따로 막는다).
+        ConsentManager.gatherConsent(this) { AdsInit.ensureInitialized(this) }
         setContent {
             NamingHouseTheme(vm.themeMode) {
                 // 한지 결과 원산(遠山)은 화면 전체를 덮어 시스템 바 뒤까지 이어지게 하고,
