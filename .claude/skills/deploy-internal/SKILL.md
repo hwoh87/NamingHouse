@@ -116,6 +116,28 @@ The script prints the failing step and the tail of its log. Map it:
     `--version-code <higher>`.
   - *auth / service account*: `PLAY_SERVICE_ACCOUNT_JSON` or the signing secrets
     are missing/expired. The user must fix secrets; you can't.
+  - *"The caller does not have permission"*: the service account
+    (`astlane-supply@samra-play`) has **per-app** permissions, and being listed
+    under 사용자 및 권한 does NOT imply access to every app. Check
+    사용자 및 권한 → that account → 앱 권한 and confirm 작명하우스 is listed.
+    It currently holds test-track rights only (4 permissions: 앱 정보 보기,
+    알파 테스트 트랙으로 출시, 테스트 트랙 관리) — deliberately no production
+    release right, so a production promote would need it widened first.
+  - *"includes the AD_ID permission but your declaration … says your app doesn't
+    use advertising ID"*: the 앱 콘텐츠 → **광고 ID** declaration is a *third*
+    declaration, separate from 광고 and 데이터 보안. AdMob merges
+    `com.google.android.gms.permission.AD_ID` into the manifest, so all three
+    must say the app uses ads/ad ID. Adding ads to any app means updating the
+    whole trio — missing this one cost three failed runs on 2026-08-17.
+
+## Known trap: duplicate keys in ~/.gradle/gradle.properties
+
+That file defines `RELEASE_*` **twice**. Gradle uses the *last* definition; a
+naive `grep -m1` picks the first and yields a wrong password, which fails at
+`:app:signReleaseBundle` with "Keystore was tampered with, or password was
+incorrect". If you ever help set the secrets again, extract with
+`grep -E "^KEY=" … | tail -1`, and verify with `keytool -list -storepass` before
+uploading. Never print the values.
 
 After fixing CI-side issues, commit **only** the CI files — keep parallel
 app-code churn out of your commit — then re-run the script.

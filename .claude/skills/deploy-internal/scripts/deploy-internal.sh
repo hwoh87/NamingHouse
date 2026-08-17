@@ -187,7 +187,28 @@ note "완료까지 대기 중... (보통 ~7분)"
 # `gh run watch --exit-status` has been observed to exit 0 even on failure,
 # so don't trust its exit code — re-read the conclusion explicitly afterward.
 gh run watch "$run_id" --exit-status --interval 20 >/dev/null 2>&1 || true
-conclusion="$(gh run view "$run_id" --json conclusion --jq .conclusion)"
+
+# watch 가 조기 종료하는 경우가 있다(2026-08-17 GitHub 장애 중 두 번). 그때 곧바로
+# conclusion 을 읽으면 빈 문자열이 오고, 이를 실패로 단정하면 **아직 빌드 중인 런을
+# 실패로 오보**한다. 실제로 그날 성공한 배포 두 건이 실패로 보고됐다.
+# status 가 completed 가 될 때까지 다시 물어본다(최대 15분).
+conclusion=""
+for _ in $(seq 1 45); do
+  st="$(gh run view "$run_id" --json status,conclusion --jq '.status+"|"+(.conclusion // "")' 2>/dev/null || true)"
+  [ -z "$st" ] && { sleep 20; continue; }
+  if [ "${st%%|*}" = "completed" ]; then
+    conclusion="${st##*|}"
+    break
+  fi
+  sleep 20
+done
+if [ -z "$conclusion" ]; then
+  note ""
+  note "[미확정] 런이 아직 끝나지 않았거나 상태를 읽지 못했습니다 — 실패가 아닙니다."
+  note "   $run_url"
+  note "   확인: gh run view $run_id --json status,conclusion"
+  exit 2
+fi
 
 # --- Verify / triage ---------------------------------------------------------
 # `gh run view --log` 는 런이 끝난 뒤에도 한동안 **불완전한** 로그를 준다 —
