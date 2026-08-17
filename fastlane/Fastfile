@@ -1,0 +1,23 @@
+default_platform(:android)
+
+platform :android do
+  desc "Upload built AAB to Google Play internal testing track"
+  lane :internal_release do
+    aab_path = ENV["SUPPLY_AAB"] || File.expand_path("../app/build/outputs/bundle/release/app-release.aab", __dir__)
+    UI.user_error!("AAB not found at #{aab_path}") unless File.exist?(aab_path)
+
+    # 메타데이터·스크린샷은 건드리지 않는다 — 스토어 등록정보는 콘솔에서 관리하고
+    # 여기서는 바이너리만 올린다. 되돌리기 어려운 등록정보 덮어쓰기를 막는 안전장치다.
+    supply(
+      json_key_data: ENV["PLAY_SERVICE_ACCOUNT_JSON"],
+      aab: aab_path,
+      track: ENV["SUPPLY_TRACK"] || "internal",
+      skip_upload_apk: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      release_status: "completed",
+      in_app_update_priority: 2
+    )
+  end
+end
