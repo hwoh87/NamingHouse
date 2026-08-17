@@ -26,6 +26,14 @@
             </intent-filter>
         </activity>
 
+        <!--
+          AdMob 앱 ID. 광고 단위 ID 와 달리 이건 빌드 타입을 가리지 않는다 —
+          디버그/릴리즈 구분은 AdIds 의 단위 ID 쪽에서 한다.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1799447209671601~1608111589" />
+
         <!-- 감명서 이미지 공유 — 캐시의 shared/ 만 내보낸다 -->
         <provider
             android:name="androidx.core.content.FileProvider"

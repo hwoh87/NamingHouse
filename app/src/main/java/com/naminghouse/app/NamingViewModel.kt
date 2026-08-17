@@ -70,6 +70,10 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     val premium = PremiumManager(app, viewModelScope)
     var isPremium by mutableStateOf(false)
         private set
+
+    /** 광고를 지워야 하는가 — 광고 제거 단품 또는 프리미엄 소유. 배너가 이걸 본다. */
+    var isAdFree by mutableStateOf(false)
+        private set
     var jokjaStyle by mutableStateOf(JokjaStyle.BAEKJI)
         private set
 
@@ -210,6 +214,9 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         premium.start()
         viewModelScope.launch {
             premium.isPremium.collect { isPremium = it }
+        }
+        viewModelScope.launch {
+            premium.isAdFree.collect { isAdFree = it }
         }
         viewModelScope.launch {
             favoritesStore.flow.collect { favorites = it }

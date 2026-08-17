@@ -1,5 +1,6 @@
 package com.naminghouse.app.ui
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +52,8 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
     var showLicenses by remember { mutableStateOf(false) }
     var showPremium by remember { mutableStateOf(false) }
     val price by vm.premium.priceText.collectAsState()
+    val adFreePrice by vm.premium.adFreePriceText.collectAsState()
+    val activity = context as? Activity
 
     Column(
         Modifier
@@ -128,6 +131,20 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
                     } else {
                         showPremium = true
                     }
+                },
+            )
+            // 프리미엄이 광고 제거를 포함하므로, 이미 산 사람에게 이 줄은 파는 줄이 아니라
+            // 상태를 알리는 줄이다. 눌러도 결제가 열리지 않는다.
+            SettingsRow(
+                "광고 제거",
+                value = when {
+                    vm.isAdFree -> "적용 중"
+                    else -> adFreePrice
+                },
+                onClick = if (vm.isAdFree) {
+                    null
+                } else {
+                    { activity?.let { vm.premium.launchAdFreePurchase(it) } }
                 },
             )
             SettingsRow("구매 복원", onClick = { vm.premium.restore() })
