@@ -116,11 +116,18 @@ class DataIntegrationTest {
         // 다양성: 같은 첫 글자가 상위권을 도배하지 않아야 한다.
         // (사주 보완 오행에 딱 맞는 글자 하나 때문에 '김대영·김대호·김대현·김대운' 처럼
         //  쏠리던 것을 NameGenerator.diversify 가 완화한다)
-        val topFirstSyllables = candidates.take(20).groupingBy { it.givenName.first() }.eachCount()
-        val worst = topFirstSyllables.maxByOrNull { it.value }!!
+        //
+        // '글자당 2개 이하'로 못 박지 않는다 — 상한은 후보 풀이 허용하는 만큼이다.
+        // 김씨는 金(8획)에 4격 전길이 되는 획수 조합이 적어 후보가 44건뿐이고 첫 글자도
+        // 14종이라, 2개씩으로는 19개까지밖에 못 채운다. 지켜져야 할 성질은 '몇 개
+        // 이하'가 아니라 '상위권이 몇 가지 소리로 이뤄져 있는가'다.
+        val top = candidates.take(20)
+        val distinct = top.map { it.givenName.first() }.distinct().size
+        assertTrue("상위 ${top.size}개의 첫 글자가 ${distinct}종뿐 — 10종 이상이어야 함", distinct >= 10)
+        val worst = top.groupingBy { it.givenName.first() }.eachCount().maxByOrNull { it.value }!!
         assertTrue(
-            "상위 20개에서 '${worst.key}'로 시작하는 이름이 ${worst.value}개 — 2개 이하여야 함",
-            worst.value <= 2,
+            "상위 ${top.size}개에서 '${worst.key}'로 시작하는 이름이 ${worst.value}개 — 3개 이하여야 함",
+            worst.value <= 3,
         )
     }
 

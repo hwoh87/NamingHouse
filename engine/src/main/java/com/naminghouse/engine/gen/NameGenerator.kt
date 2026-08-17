@@ -195,13 +195,6 @@ class NameGenerator(
         }
     }
 
-    /**
-     * 첫 글자가 같은 이름이 상위에 몰리는 걸 완화한다.
-     *
-     * 사주 보완 오행에 딱 맞는 한 글자(예: 土가 필요할 때 垈)가 있으면 그 글자를 쓰는 이름이
-     * 죄다 만점 근처로 몰려 "김대영·김대호·김대현·김대운"처럼 첫인상이 단조로워진다.
-     * 점수 순서는 그대로 두되 같은 첫 글자가 [MAX_PER_SYLLABLE]개를 넘으면 뒤로 미룬다.
-     */
     /** 화면에 나가는 등급과 같은 구간 — [NameEvaluator.gradeOf] 와 경계를 맞춘다. */
     private fun gradeBand(score: Int): Int = when {
         score >= 85 -> 3
@@ -224,26 +217,42 @@ class NameGenerator(
         else -> 2                       // 출생신고 집계에 아예 없음
     }
 
+    /**
+     * 첫 글자가 같은 이름이 상위에 몰리는 걸 완화한다.
+     *
+     * 사주 보완 오행에 딱 맞는 한 글자(예: 土가 필요할 때 垈)가 있으면 그 글자를 쓰는 이름이
+     * 죄다 만점 근처로 몰려 "김대영·김대호·김대현·김대운"처럼 첫인상이 단조로워진다.
+     * 점수 순서는 그대로 두되 같은 첫 글자가 [MAX_PER_SYLLABLE]개를 넘으면 뒤로 미룬다.
+     *
+     * 제약을 못 지키게 되면 **한 번에 포기하지 않고 한 글자씩 허용치를 올린다.**
+     * 예전에는 미뤄둔 후보를 통째로 뒤에 붙였는데, 후보 풀이 얇아 1차 통과분이 화면
+     * 하나를 못 채우면 그 덩어리가 그대로 상위권에 올라와 제약이 무의미해졌다
+     * (김씨 남아 44건에서 서로 다른 첫 글자가 12개뿐이라 1차 통과분이 17건이었다).
+     * 회차마다 글자당 하나씩만 더 얹으면 넘치는 몫도 고르게 퍼진다.
+     */
     private fun diversify(ranked: List<NameCandidate>, limit: Int): List<NameCandidate> {
-        val picked = ArrayList<NameCandidate>(limit)
-        val deferred = ArrayList<NameCandidate>()
+        val target = minOf(limit, ranked.size)
+        val picked = ArrayList<NameCandidate>(target)
+        val taken = BooleanArray(ranked.size)
         val seen = HashMap<Char, Int>()
+        var allowance = MAX_PER_SYLLABLE
 
-        for (c in ranked) {
-            val first = c.givenName.first()
-            val n = seen.getOrDefault(first, 0)
-            if (n < MAX_PER_SYLLABLE) {
+        while (picked.size < target) {
+            var added = false
+            for (i in ranked.indices) {
+                if (taken[i]) continue
+                val first = ranked[i].givenName.first()
+                val n = seen.getOrDefault(first, 0)
+                if (n >= allowance) continue
                 seen[first] = n + 1
-                picked.add(c)
-                if (picked.size == limit) return picked
-            } else {
-                deferred.add(c)
+                taken[i] = true
+                picked.add(ranked[i])
+                added = true
+                if (picked.size == target) return picked
             }
-        }
-        // 다양성 제약으로 미뤄둔 후보로 남은 자리를 채운다(점수 순서 유지)
-        for (c in deferred) {
-            if (picked.size == limit) break
-            picked.add(c)
+            // 한 회차에 아무도 못 들어왔으면 허용치가 모자란 것 — 한 칸 올려 다시 돈다.
+            if (!added && allowance > ranked.size) break
+            allowance += 1
         }
         return picked
     }
