@@ -5,6 +5,7 @@ import com.naminghouse.engine.data.BulyongSeverity
 import com.naminghouse.engine.eval.NameEvaluator
 import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
+import com.naminghouse.engine.gen.NameStats
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.saju.SajuNamingService
@@ -187,15 +188,26 @@ class ScoreDiagnosticTest {
     @Test
     fun generatedCandidatesStillSpread() {
         val pool = asset("names.tsv").bufferedReader().useLines { NamePool.parse(it) }
-        val generator = NameGenerator(db, pool)
-        val saju = SajuNamingService.analyze(BirthInput(2026, 3, 15, 9, 20, Gender.M))
-        val cands = generator.generate("김", listOf(db.byChar['金']!!), Gender.M, saju)
-        val sc = cands.map { it.evaluation.score }
-        println("\n생성기 추천 ${cands.size}건 — 최고 ${sc.max()} / 중앙 ${sc.sorted()[sc.size/2]} / 최저 ${sc.min()}")
-        println("  등급 분포: " + cands.groupingBy { it.evaluation.grade }.eachCount())
-        println("  상위 5: " + cands.take(5).joinToString(" ") {
-            "${it.givenName}(${it.hanja.joinToString(""){ h -> h.char.toString() }})${it.evaluation.score}"
-        })
+        // 앱과 같은 조건 — NamingViewModel 은 name-stats.tsv 를 물려 준다.
+        val stats = asset("name-stats.tsv").bufferedReader().useLines { NameStats.parse(it) }
+        val generator = NameGenerator(db, pool, stats)
+        for ((sur, surChar, gender) in listOf(
+            Triple("김", '金', Gender.M), Triple("이", '李', Gender.F),
+        )) {
+            val saju = SajuNamingService.analyze(
+                BirthInput(2026, 3, 15, 9, 20, gender)
+            )
+            val cands = generator.generate(sur, listOf(db.byChar[surChar]!!), gender, saju)
+            val sc = cands.map { it.evaluation.score }
+            println("\n$sur($gender) 추천 ${cands.size}건 — 최고 ${sc.max()} / 중앙 ${sc.sorted()[sc.size / 2]} / 최저 ${sc.min()}")
+            println("  등급 분포: " + cands.groupingBy { it.evaluation.grade }.eachCount())
+            println("  출생신고 순위권 ${cands.count { it.stat?.latestRank != null }}건 / " +
+                "집계만 있음 ${cands.count { it.stat != null && it.stat!!.latestRank == null }}건 / " +
+                "집계 없음 ${cands.count { it.stat == null }}건")
+            println("  상위 10: " + cands.take(10).joinToString(" ") {
+                "${it.givenName}(${it.hanja.joinToString("") { h -> h.char.toString() }})${it.evaluation.score}"
+            })
+        }
     }
 
     /** 수정안 시뮬레이션 — 배점 곡선만 바꿨을 때 실제 이름들의 점수가 어디로 가는지 */

@@ -26,8 +26,17 @@ data class GeneratorOptions(
     val school: BaleumSchool = BaleumSchool.UNHAE,
     /** 후보 최대 개수 */
     val limit: Int = 60,
-    /** 이름 풀 tier 상한 (1=인기 이름만) */
-    val maxTier: Int = 3,
+    /**
+     * 이름 풀 tier 상한 (1=인기 이름만).
+     *
+     * 기본 2 — tier 3(두자 444개)은 경자·순자·옥순·판수처럼 지금은 아기에게
+     * 짓지 않는 옛 세대 이름이 대부분이라 두자 추천에서 뺀다. 성명학 조건만 보면
+     * 만점이 나올 수 있어서, 걸러 내지 않으면 추천 첫 화면에 올라온다.
+     *
+     * 외자는 예외다 — 출생신고 통계에 순위가 잡히지 않아 45개 중 34개가 tier 3 로
+     * 떨어진다. 외자 모드에서는 [NameGenerator.generate] 가 자동으로 3까지 연다.
+     */
+    val maxTier: Int = 2,
     /** 발음오행 상극 배열 이름 제외 */
     val excludeSanggeuk: Boolean = true,
     /** 불용한자 포함 조합 제외 */
@@ -76,7 +85,10 @@ class NameGenerator(
 
         val results = ArrayList<NameCandidate>(options.limit * 2)
 
-        for (pool in namePool.forGender(gender, options.maxTier)) {
+        // 외자는 통계 순위가 안 잡혀 대부분 tier 3 다 — 외자 모드에서는 상한을 열어 준다.
+        val tierCap = if (options.singleSyllable) maxOf(options.maxTier, 3) else options.maxTier
+
+        for (pool in namePool.forGender(gender, tierCap)) {
             if (pool.name.length != wantLength) continue
             if (wantLength == 2 && options.fixedSyllable != null) {
                 val at = if (options.fixedLast) 1 else 0
@@ -104,11 +116,21 @@ class NameGenerator(
             results.add(NameCandidate(pool.name, best, evaluation, pool.tier, stats[pool.name]))
         }
 
-        // 만점 후보가 여럿 나오므로 동점 처리가 곧 추천 순위다:
-        // 점수 → 실제 출생신고 순위 → 이름 대중성(tier) → 한자 친숙도 → 이름 순으로 가른다.
+        // 만점 후보가 여럿 나오므로 동점 처리가 곧 추천 순위다.
+        //
+        // 사용자에게 보이는 등급(대길·길·보통)으로 뭉갠 뒤, 그 안에서 '요즘 쓰는
+        // 이름인가'로 가른다. 96점과 99점은 성명학적으로 구분할 만한 차이가 아니고
+        // 화면에도 똑같이 '대길'로 나가는데, 점수를 1점 단위로 세우면 출생신고 실적이
+        // 없는 이름이 1점 차로 첫 화면을 차지한다.
+        // tier 로는 못 거른다 — 두환·백승은 손으로 매긴 tier 2 지만 통계에는 없다.
+        // 점수는 tier·한자 친숙도보다 앞에 둔다 — 통계를 안 넘긴 호출부에서는 대중성
+        // 신호가 전부 같아지므로, 그때는 예전처럼 점수가 순위를 결정해야 한다.
         val ranked = results.sortedWith(
-            compareByDescending<NameCandidate> { it.evaluation.score }
+            compareByDescending<NameCandidate> { gradeBand(it.evaluation.score) }
+                .thenBy { popularityBand(it) }
                 .thenBy { it.stat?.latestRank?.second ?: Int.MAX_VALUE }
+                .thenByDescending { it.stat?.total ?: 0 }
+                .thenByDescending { it.evaluation.score }
                 .thenBy { it.tier }
                 .thenByDescending { c -> c.hanja.sumOf { it.nameFit } }
                 .thenBy { it.givenName }
@@ -180,6 +202,28 @@ class NameGenerator(
      * 죄다 만점 근처로 몰려 "김대영·김대호·김대현·김대운"처럼 첫인상이 단조로워진다.
      * 점수 순서는 그대로 두되 같은 첫 글자가 [MAX_PER_SYLLABLE]개를 넘으면 뒤로 미룬다.
      */
+    /** 화면에 나가는 등급과 같은 구간 — [NameEvaluator.gradeOf] 와 경계를 맞춘다. */
+    private fun gradeBand(score: Int): Int = when {
+        score >= 85 -> 3
+        score >= 70 -> 2
+        score >= 50 -> 1
+        else -> 0
+    }
+
+    /**
+     * 요즘 쓰이는 이름인가 — 대법원 출생신고 집계 기준. 작을수록 앞.
+     *
+     * tier 는 손으로 매긴 값이 섞여 있어 이 판정에 쓸 수 없다(두환·백승이 tier 2 인데
+     * 집계에는 없다). 다만 집계 자체가 시도별 상위 20위 합산이라 213개밖에 안 되므로,
+     * 걸러 내는 조건이 아니라 **앞으로 끌어올리는** 신호로만 쓴다 — 필터로 쓰면 추천이
+     * 213개 안으로 갇힌다. 통계를 안 넘긴 호출부에서는 전부 2 가 되어 순위에 영향이 없다.
+     */
+    private fun popularityBand(c: NameCandidate): Int = when {
+        c.stat?.latestRank != null -> 0 // 최근 순위권에 든 이름
+        c.stat != null -> 1             // 집계엔 있으나 순위권 밖
+        else -> 2                       // 출생신고 집계에 아예 없음
+    }
+
     private fun diversify(ranked: List<NameCandidate>, limit: Int): List<NameCandidate> {
         val picked = ArrayList<NameCandidate>(limit)
         val deferred = ArrayList<NameCandidate>()

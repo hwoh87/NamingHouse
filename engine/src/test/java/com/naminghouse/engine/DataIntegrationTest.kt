@@ -4,6 +4,7 @@ import com.naminghouse.engine.eval.NameEvaluator
 import com.naminghouse.engine.gen.GeneratorOptions
 import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
+import com.naminghouse.engine.gen.NameStats
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.saju.SajuNamingService
@@ -121,6 +122,49 @@ class DataIntegrationTest {
             "상위 20개에서 '${worst.key}'로 시작하는 이름이 ${worst.value}개 — 2개 이하여야 함",
             worst.value <= 2,
         )
+    }
+
+    /**
+     * 출생신고 통계를 물리면 추천 상위가 '요즘 쓰는 이름'이어야 한다.
+     *
+     * 성명학 조건만 보면 판수(判樹)·백승(白承) 같은 옛 이름도 만점이 나와서, 예전에는
+     * 점수 1점 차이로 첫 화면을 차지했다. 등급 구간 안에서는 대중성이 앞선다.
+     */
+    @Test
+    fun `추천 파이프라인 - 통계를 물리면 요즘 쓰는 이름이 앞선다`() {
+        val stats = asset("name-stats.tsv").bufferedReader().useLines { NameStats.parse(it) }
+        val saju = SajuNamingService.analyze(BirthInput(2024, 2, 4, 16, 30, Gender.M))
+        val generator = NameGenerator(db, pool, stats)
+        val candidates = generator.generate("김", listOf(db.byChar.getValue('金')), Gender.M, saju)
+
+        assertTrue("후보가 최소 10개는 나와야 함", candidates.size >= 10)
+
+        // 최고 등급 구간 안에 출생신고 순위권 이름이 있다면, 1위도 순위권이어야 한다.
+        val topBand = candidates.filter { it.evaluation.score >= 85 }
+        if (topBand.any { it.stat?.latestRank != null }) {
+            assertNotNull(
+                "1위 ${candidates.first().givenName} 가 출생신고 순위권 이름이 아님",
+                candidates.first().stat?.latestRank,
+            )
+        }
+
+        // tier 3 은 경자·순자·판수 같은 옛 이름이라 두자 추천에 섞이면 안 된다.
+        candidates.forEach {
+            assertTrue("${it.givenName}: tier ${it.tier} — 두자 추천은 tier 2 이하여야 함", it.tier <= 2)
+        }
+    }
+
+    /** 외자는 통계 순위가 안 잡혀 대부분 tier 3 다 — 상한을 열어 주지 않으면 후보가 말라붙는다. */
+    @Test
+    fun `추천 파이프라인 - 외자 모드는 tier 3 까지 연다`() {
+        val generator = NameGenerator(db, pool)
+        val saju = SajuNamingService.analyze(BirthInput(2024, 2, 4, 16, 30, Gender.M))
+        val candidates = generator.generate(
+            "김", listOf(db.byChar.getValue('金')), Gender.M, saju,
+            GeneratorOptions(singleSyllable = true),
+        )
+        assertTrue("외자 후보가 나와야 함 (현재 ${candidates.size})", candidates.size >= 5)
+        candidates.forEach { assertEquals("외자여야 함", 1, it.givenName.length) }
     }
 
     @Test
