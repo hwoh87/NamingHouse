@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>81수리 길흉표 — 1수부터 81수까지 전체 뜻과 길흉 | 작명하우스</title>
+<meta name="description" content="성명학 81수리의 1수~81수 전체 표. 각 수의 격 이름·한자·길흉 등급과 두 문장 풀이, 그리고 이름 획수로 원형이정 4격을 계산하는 방법까지. 길수 40개·흉수 40개·반길반흉 1개.">
+<link rel="canonical" href="https://hwoh87.github.io/NamingHouse/suri81.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="81수리 길흉표 — 1수부터 81수까지 전체 뜻과 길흉">
+<meta property="og:description" content="성명학 81수리 전체 표와 원형이정 4격 계산법. 길수 40개·흉수 40개·반길반흉 1개를 한 페이지에.">
+<meta property="og:image" content="https://hwoh87.github.io/NamingHouse/assets/og.png">
+<meta property="og:url" content="https://hwoh87.github.io/NamingHouse/suri81.html">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-1:#27456F; --navy-2:#152941; --navy-3:#0E1C2E;
+    --gold:#E8C878; --gold-dim:rgba(232,200,120,.45);
+    --paper:#F5EFE2; --paper-2:#EFE7D5; --ink:#241F19; --ink-sub:#67604F;
+    --cream:#F7F1E3; --line:#E2D8C2;
+    --gil:#27456F; --hyung:#8C4A3C; --ban:#7A7264;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font-family:'Apple SD Gothic Neo','Pretendard','Malgun Gothic',sans-serif;
+         line-height:1.75; word-break:keep-all; }
+  .serif { font-family:'Noto Serif KR','AppleMyungjo','Nanum Myeongjo',Batang,serif; }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
+  section { padding:64px 0; }
+  h2 { font-family:'Noto Serif KR',serif; font-weight:900; font-size:clamp(23px,3.6vw,31px);
+       margin:0 0 12px; letter-spacing:-.5px; }
+  h3 { margin:0 0 6px; font-size:17px; }
+  .lead { color:var(--ink-sub); margin:0 0 28px; }
+  a { color:var(--navy-1); }
+  hr.gold { border:none; border-top:1px solid var(--gold-dim); margin:0 0 18px; width:64px; }
+
+  /* ── 머리 ── */
+  .top { background:linear-gradient(180deg,var(--navy-1),var(--navy-2)); color:var(--cream); padding:28px 0 64px; }
+  .crumb { font-size:14px; color:rgba(247,241,227,.6); margin-bottom:36px; }
+  .crumb a { color:var(--gold); text-decoration:none; }
+  .crumb a:hover { text-decoration:underline; }
+  .top h1 { font-family:'Noto Serif KR',serif; font-weight:900; font-size:clamp(30px,5.4vw,44px);
+            margin:0 0 14px; letter-spacing:-1px; color:var(--cream); }
+  .top p { color:rgba(247,241,227,.8); margin:0; max-width:620px; }
+  .counts { display:flex; gap:10px; flex-wrap:wrap; margin-top:26px; }
+  .count { background:rgba(247,241,227,.08); border:1px solid var(--gold-dim); border-radius:999px;
+           padding:6px 16px; font-size:14px; color:var(--cream); }
+  .count b { color:var(--gold); }
+
+  /* ── 설명 ── */
+  .four { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:26px 0 0; }
+  .gyeok { background:var(--cream); border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .gyeok .g-name { font-family:'Noto Serif KR',serif; font-weight:900; font-size:20px; color:var(--navy-1); }
+  .gyeok .g-when { display:block; font-size:13px; color:var(--ink-sub); margin:2px 0 10px; }
+  .gyeok .g-calc { font-size:14px; background:var(--paper-2); border-radius:8px; padding:8px 10px; }
+  .note { background:var(--paper-2); border-left:3px solid var(--gold); border-radius:0 10px 10px 0;
+          padding:16px 20px; margin:26px 0 0; font-size:14.5px; color:var(--ink-sub); }
+  .note b { color:var(--ink); }
+
+  /* ── 등급 범례 ── */
+  .legend { display:flex; gap:10px; flex-wrap:wrap; margin:0 0 8px; }
+  .grade { display:inline-block; border-radius:999px; font-size:12px; font-weight:700;
+           padding:2px 10px; vertical-align:middle; margin-left:2px; white-space:nowrap; }
+  .g-D { background:var(--navy-1); color:var(--gold); }
+  .g-G { background:transparent; color:var(--gil); border:1px solid var(--gil); }
+  .g-P { background:transparent; color:var(--ban); border:1px solid var(--ban); }
+  .g-H { background:transparent; color:var(--hyung); border:1px solid var(--hyung); }
+  .g-X { background:var(--hyung); color:var(--cream); }
+
+  /* ── 필터 ── */
+  .tools { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:0 0 24px;
+           position:sticky; top:0; background:var(--paper); padding:14px 0; z-index:5;
+           border-bottom:1px solid var(--line); }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; }
+  .filters button { font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+                    background:var(--cream); color:var(--ink-sub); border:1px solid var(--line);
+                    border-radius:999px; padding:7px 16px; }
+  .filters button[aria-pressed="true"] { background:var(--navy-1); color:var(--cream); border-color:var(--navy-1); }
+  .tools input { font:inherit; font-size:14px; border:1px solid var(--line); border-radius:999px;
+                 padding:7px 16px; background:var(--cream); color:var(--ink); width:150px; }
+  .tools .hit { font-size:13.5px; color:var(--ink-sub); margin-left:auto; }
+
+  /* ── 81수 목록 ── */
+  .list { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+  .suri { display:flex; gap:16px; background:var(--cream); border:1px solid var(--line);
+          border-radius:14px; padding:18px 20px; }
+  .suri[hidden] { display:none; }
+  .suri .num { flex:0 0 44px; height:44px; border-radius:10px; background:var(--paper-2);
+               color:var(--navy-1); font-weight:900; font-size:19px;
+               display:flex; align-items:center; justify-content:center; }
+  .suri[data-kind="hyung"] .num { color:var(--hyung); }
+  .suri .body { flex:1; min-width:0; }
+  .suri .hanja { color:var(--ink-sub); font-weight:600; font-size:15px; }
+  .suri p { margin:6px 0 0; font-size:14.5px; color:var(--ink-sub); }
+  .empty { color:var(--ink-sub); padding:28px 0; }
+
+  /* ── CTA ── */
+  .cta { background:linear-gradient(180deg,var(--navy-2),var(--navy-3)); color:var(--cream); }
+  .cta h2 { color:var(--cream); }
+  .cta .lead { color:rgba(247,241,227,.72); }
+  .btn-play { display:inline-flex; align-items:center; gap:10px; background:var(--gold); color:var(--navy-3);
+              font-weight:800; font-size:17px; padding:14px 26px; border-radius:12px; text-decoration:none;
+              box-shadow:0 6px 24px rgba(0,0,0,.35); }
+  .btn-play svg { width:20px; height:20px; }
+
+  footer { background:var(--navy-3); color:rgba(247,241,227,.6); padding:44px 0 60px; font-size:14px; }
+  footer .wrap { display:flex; flex-direction:column; gap:10px; }
+  footer a { color:var(--gold); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+  .foot-links { display:flex; gap:20px; flex-wrap:wrap; }
+
+  @media (max-width:720px) {
+    section { padding:48px 0; }
+    .tools .hit { margin-left:0; width:100%; }
+    .list { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <nav class="crumb"><a href="./">작명하우스</a> · 성명학 자료</nav>
+    <h1>81수리 길흉표</h1>
+    <p>이름의 획수를 네 격으로 나눠 1수부터 81수까지의 뜻에 대응시키는 것이 수리사격입니다.
+       각 수의 격 이름과 길흉, 그리고 그 수가 무엇을 말하는지를 전부 펼쳐 두었습니다.</p>
+    <div class="counts">
+      <span class="count">길수 <b>40</b></span>
+      <span class="count">흉수 <b>40</b></span>
+      <span class="count">반길반흉 <b>1</b></span>
+      <span class="count">합계 <b>81</b></span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <hr class="gold">
+    <h2>수리사격 — 원형이정 네 격</h2>
+    <p class="lead">성과 이름 각 글자의 <b>원획</b>(한자 본래 획수)을 더해 네 개의 수를 만들고,
+      그 네 수를 각각 81수리표에서 찾아 읽습니다. 아래는 이름이 두 글자일 때의 기준식입니다.</p>
+
+    <div class="four">
+      <div class="gyeok">
+        <span class="g-name serif">원격 元</span>
+        <span class="g-when">초년운</span>
+        <div class="g-calc">이름 첫 자 + 이름 끝 자</div>
+      </div>
+      <div class="gyeok">
+        <span class="g-name serif">형격 亨</span>
+        <span class="g-when">청년운 · 인격</span>
+        <div class="g-calc">성 + 이름 첫 자</div>
+      </div>
+      <div class="gyeok">
+        <span class="g-name serif">이격 利</span>
+        <span class="g-when">중년운 · 외격</span>
+        <div class="g-calc">성 + 이름 끝 자</div>
+      </div>
+      <div class="gyeok">
+        <span class="g-name serif">정격 貞</span>
+        <span class="g-when">총운</span>
+        <div class="g-calc">성 + 이름 전체</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <p style="margin:0 0 8px"><b>외자·세 글자 이름은 식이 달라집니다.</b>
+        외자는 원격이 이름 한 글자, 이격이 성 한 글자가 되고 정격은 형격과 값이 같아집니다.
+        이름이 세 글자면 원격은 이름 세 자의 합, 형격은 성+첫 자, 이격은 성+끝 자입니다.</p>
+      <p style="margin:0 0 8px"><b>합이 81을 넘으면</b> 81을 뺀 나머지로 환원해 읽습니다.
+        예를 들어 85수는 4수로 봅니다.</p>
+      <p style="margin:0"><b>한국식은 허수를 넣지 않습니다.</b>
+        일본 유파처럼 성이나 이름이 한 글자일 때 가상의 1획을 더하는 방식은 쓰지 않습니다.</p>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <hr class="gold">
+    <h2>1수 ~ 81수 전체</h2>
+    <p class="lead">등급은 길흉 이분을 기준으로 하고, 통용 해설에 따라 최길수·최흉수를 대길·대흉으로 세분했습니다.</p>
+    <div class="legend">
+      <span class="grade g-D">대길</span><span class="grade g-G">길</span>
+      <span class="grade g-P">반길반흉</span><span class="grade g-H">흉</span><span class="grade g-X">대흉</span>
+    </div>
+
+    <div class="tools">
+      <div class="filters">
+        <button type="button" data-f="all" aria-pressed="true">전체 81</button>
+        <button type="button" data-f="gil" aria-pressed="false">길수 40</button>
+        <button type="button" data-f="hyung" aria-pressed="false">흉수 40</button>
+        <button type="button" data-f="ban" aria-pressed="false">반길반흉 1</button>
+      </div>
+      <input id="q" type="search" inputmode="numeric" placeholder="수·격 이름 검색" aria-label="수 또는 격 이름 검색">
+      <span class="hit" id="hit">81개 표시 중</span>
+    </div>
+
+    <div class="list" id="list">
+      <article class="suri" data-kind="gil" data-n="1" data-name="태초격">
+        <div class="num serif">1</div>
+        <div class="body">
+          <h3>태초격 <span class="hanja serif">太初格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>만물이 비롯되는 첫 수로, 뜻을 세우면 하늘이 돕는다는 부귀장수의 수입니다. 굳은 의지로 큰 뜻을 이루어 이름을 오래 남깁니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="2" data-name="분리격">
+        <div class="num serif">2</div>
+        <div class="body">
+          <h3>분리격 <span class="hanja serif">分離格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>모이면 흩어지기 쉬운 기운이라 사람·재물과의 인연이 오래가기 어렵습니다. 고독과 역경이 따르기 쉬워 매사 안정이 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="3" data-name="명예격">
+        <div class="num serif">3</div>
+        <div class="body">
+          <h3>명예격 <span class="hanja serif">名譽格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>재주와 도량이 함께 큰 수로, 일찍이 뜻을 이뤄 이름을 떨칩니다. 지도자의 자질을 갖춰 명예와 복록을 두루 누립니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="4" data-name="부정격">
+        <div class="num serif">4</div>
+        <div class="body">
+          <h3>부정격 <span class="hanja serif">否定格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>애써 이룬 것이 허물어지기 쉬운 수로, 성패의 굴곡이 잦습니다. 꾸준함과 신중함이 없으면 곤고함이 따르기 쉽습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="5" data-name="복덕격">
+        <div class="num serif">5</div>
+        <div class="body">
+          <h3>복덕격 <span class="hanja serif">福德格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>음양이 화합해 복과 덕이 저절로 모이는 수입니다. 심신이 건강하고 가정이 화목하며 부귀영화가 따릅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="6" data-name="계승격">
+        <div class="num serif">6</div>
+        <div class="body">
+          <h3>계승격 <span class="hanja serif">繼承格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>윗사람과 조상의 덕을 이어받아 기반이 튼튼한 수입니다. 성실하게 지켜 나가면 가문과 재산이 넉넉해집니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="7" data-name="독립격">
+        <div class="num serif">7</div>
+        <div class="body">
+          <h3>독립격 <span class="hanja serif">獨立格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>의지가 굳세고 추진력이 강해 홀로 서서 일가를 이루는 수입니다. 다만 고집이 지나치면 화합을 잃기 쉬워 유연함이 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="8" data-name="발달격">
+        <div class="num serif">8</div>
+        <div class="body">
+          <h3>발달격 <span class="hanja serif">發達格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>부지런히 갈고닦아 어려움을 뚫고 나아가는 수입니다. 인내와 노력이 결실을 맺어 점차 크게 발전합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="9" data-name="궁박격">
+        <div class="num serif">9</div>
+        <div class="body">
+          <h3>궁박격 <span class="hanja serif">窮迫格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>재주는 있으나 때를 만나지 못해 뜻대로 풀리지 않기 쉬운 수입니다. 성패가 무상하여 궁박함이 따를 수 있습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="10" data-name="공허격">
+        <div class="num serif">10</div>
+        <div class="body">
+          <h3>공허격 <span class="hanja serif">空虛格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>애쓴 보람이 헛되이 돌아가기 쉬운 허무의 수입니다. 건강과 재물 모두 기복이 커 안정을 얻기 어렵습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="11" data-name="신성격">
+        <div class="num serif">11</div>
+        <div class="body">
+          <h3>신성격 <span class="hanja serif">新成格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>마른 땅에 단비가 내리듯 집안을 새로 일으키는 수입니다. 온화하고 착실하여 부귀와 명망이 점점 두터워집니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="12" data-name="박약격">
+        <div class="num serif">12</div>
+        <div class="body">
+          <h3>박약격 <span class="hanja serif">薄弱格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>뜻은 크나 힘이 미치지 못해 중도에 꺾이기 쉬운 수입니다. 심신이 허약해지기 쉬워 무리한 확장은 삼가야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="13" data-name="지모격">
+        <div class="num serif">13</div>
+        <div class="body">
+          <h3>지모격 <span class="hanja serif">智謀格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>총명하고 지략이 뛰어나 어떤 일도 슬기롭게 풀어 가는 수입니다. 임기응변에 능해 큰일을 맡아 공을 세웁니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="14" data-name="이산격">
+        <div class="num serif">14</div>
+        <div class="body">
+          <h3>이산격 <span class="hanja serif">離散格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>모은 것이 흩어지고 정든 것과 헤어지기 쉬운 수입니다. 가족·재물과의 인연이 박해 늘 신중한 관리가 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="15" data-name="통솔격">
+        <div class="num serif">15</div>
+        <div class="body">
+          <h3>통솔격 <span class="hanja serif">統率格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>덕과 지혜를 두루 갖춰 뭇사람을 이끄는 수입니다. 상하의 신망을 얻어 부귀와 공명을 크게 이룹니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="16" data-name="덕망격">
+        <div class="num serif">16</div>
+        <div class="body">
+          <h3>덕망격 <span class="hanja serif">德望格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>너그럽고 후덕하여 사람이 절로 모이는 수입니다. 귀인의 도움으로 큰일을 이루고 존경을 받습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="17" data-name="건창격">
+        <div class="num serif">17</div>
+        <div class="body">
+          <h3>건창격 <span class="hanja serif">健暢格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>의지가 굳고 기상이 건실해 막힘을 뚫고 나아가는 수입니다. 강직함이 마찰로 번지지 않게 다스리면 반드시 뜻을 이룹니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="18" data-name="발전격">
+        <div class="num serif">18</div>
+        <div class="body">
+          <h3>발전격 <span class="hanja serif">發展格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>진취적 기상으로 계획한 일을 힘 있게 밀고 나가는 수입니다. 유연함을 함께 갖추면 발전이 더욱 커집니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="19" data-name="고난격">
+        <div class="num serif">19</div>
+        <div class="body">
+          <h3>고난격 <span class="hanja serif">苦難格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>재주와 활동력은 있으나 뜻밖의 장애가 따르기 쉬운 수입니다. 성공 뒤에 고난이 숨어 있어 늘 대비가 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="20" data-name="허망격">
+        <div class="num serif">20</div>
+        <div class="body">
+          <h3>허망격 <span class="hanja serif">虛望格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>공들인 탑이 무너지듯 일이 허사로 돌아가기 쉬운 수입니다. 건강과 가정운도 기복이 커 각별한 주의가 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="21" data-name="두령격">
+        <div class="num serif">21</div>
+        <div class="body">
+          <h3>두령격 <span class="hanja serif">頭領格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>뭇사람 위에 우뚝 서는 우두머리의 수입니다. 스스로 일어나 큰 조직을 이끌며 부귀공명을 누립니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="22" data-name="중절격">
+        <div class="num serif">22</div>
+        <div class="body">
+          <h3>중절격 <span class="hanja serif">中折格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>일이 중도에서 꺾여 용두사미가 되기 쉬운 수입니다. 꾸준함을 기르고 주변의 도움을 얻어야 결실을 봅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="23" data-name="공명격">
+        <div class="num serif">23</div>
+        <div class="body">
+          <h3>공명격 <span class="hanja serif">功名格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>아침 해가 솟듯 기세가 융성하여 공명을 떨치는 수입니다. 지도력이 뛰어나 낮은 자리에서 시작해도 크게 오릅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="24" data-name="입신격">
+        <div class="num serif">24</div>
+        <div class="body">
+          <h3>입신격 <span class="hanja serif">立身格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>맨손으로 시작해 재산을 모으고 입신하는 수입니다. 근검과 재략으로 말년까지 부귀가 이어집니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="25" data-name="안전격">
+        <div class="num serif">25</div>
+        <div class="body">
+          <h3>안전격 <span class="hanja serif">安全格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>재주가 건실하고 처세가 원만해 순탄하게 자리를 잡는 수입니다. 성실히 쌓아 가면 평안한 복록을 누립니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="26" data-name="영웅시비격">
+        <div class="num serif">26</div>
+        <div class="body">
+          <h3>영웅시비격 <span class="hanja serif">英雄是非格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>그릇은 크나 파란이 많아 영웅적 기복을 겪는 수입니다. 큰 성취 뒤에 시비와 곡절이 따르기 쉬워 절제가 중요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="27" data-name="중단격">
+        <div class="num serif">27</div>
+        <div class="body">
+          <h3>중단격 <span class="hanja serif">中斷格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>일이 도중에 막히고 구설이 따르기 쉬운 수입니다. 자만을 경계하고 마무리에 힘써야 실패를 면합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="28" data-name="파란격">
+        <div class="num serif">28</div>
+        <div class="body">
+          <h3>파란격 <span class="hanja serif">波瀾格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>풍파가 잦아 일신이 편안하기 어려운 수입니다. 가족과의 인연도 기복이 있어 신중한 처신이 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="29" data-name="성공격">
+        <div class="num serif">29</div>
+        <div class="body">
+          <h3>성공격 <span class="hanja serif">成功格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>지혜와 활동력을 두루 갖춰 계획한 바를 이루는 수입니다. 재물운이 왕성하나 욕심이 지나치면 탈이 나기 쉽습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="30" data-name="부몽격">
+        <div class="num serif">30</div>
+        <div class="body">
+          <h3>부몽격 <span class="hanja serif">浮夢格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>길흉이 반반이라 크게 얻는 듯하다가도 꿈처럼 흩어지기 쉬운 수입니다. 요행을 멀리하고 착실함을 지켜야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="31" data-name="융창격">
+        <div class="num serif">31</div>
+        <div class="body">
+          <h3>융창격 <span class="hanja serif">隆昌格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>지혜와 용기, 덕을 모두 갖춰 나날이 융성하는 수입니다. 뭇사람을 이끌어 부귀영화를 오래 누립니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="32" data-name="순풍격">
+        <div class="num serif">32</div>
+        <div class="body">
+          <h3>순풍격 <span class="hanja serif">順風格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>순풍에 돛을 단 듯 하는 일마다 순조로운 수입니다. 윗사람의 도움까지 더해져 가문이 크게 일어납니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="33" data-name="승천격">
+        <div class="num serif">33</div>
+        <div class="body">
+          <h3>승천격 <span class="hanja serif">昇天格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>떠오르는 해처럼 기세가 왕성하여 크게 이름을 떨치는 수입니다. 기세가 강한 만큼 겸손을 지켜야 오래갑니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="34" data-name="파멸격">
+        <div class="num serif">34</div>
+        <div class="body">
+          <h3>파멸격 <span class="hanja serif">破滅格</span>
+            <span class="grade g-X">대흉</span></h3>
+          <p>예기치 못한 재난이 겹치기 쉽다고 보는 대표적인 흉수입니다. 이름에는 쓰지 않는 것이 좋다고 여겨 온 수입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="35" data-name="태평격">
+        <div class="num serif">35</div>
+        <div class="body">
+          <h3>태평격 <span class="hanja serif">泰平格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>온화하고 성실하여 큰 풍파 없이 평온하게 성취하는 수입니다. 학문·기예 방면에서 특히 결실이 좋습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="36" data-name="영웅격">
+        <div class="num serif">36</div>
+        <div class="body">
+          <h3>영웅격 <span class="hanja serif">英雄格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>의협심이 강해 남을 돕다 풍파를 자초하기 쉬운 수입니다. 파란이 거듭되기 쉬워 분수를 지키는 것이 관건입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="37" data-name="인덕격">
+        <div class="num serif">37</div>
+        <div class="body">
+          <h3>인덕격 <span class="hanja serif">仁德格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>충직하고 덕이 있어 하늘과 사람의 도움을 함께 받는 수입니다. 홀로 서도 큰일을 이루며 명망이 높아집니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="38" data-name="문예격">
+        <div class="num serif">38</div>
+        <div class="body">
+          <h3>문예격 <span class="hanja serif">文藝格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>글과 재주, 예술적 감각이 빼어난 수입니다. 큰 권세보다는 학문·문예의 길에서 이름을 얻습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="39" data-name="안락격">
+        <div class="num serif">39</div>
+        <div class="body">
+          <h3>안락격 <span class="hanja serif">安樂格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>풍파가 지나간 뒤의 고요처럼 평안과 위엄을 함께 누리는 수입니다. 부귀와 자손의 복이 두루 따릅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="40" data-name="무상격">
+        <div class="num serif">40</div>
+        <div class="body">
+          <h3>무상격 <span class="hanja serif">無常格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>덕보다 재주가 앞서 얻고 잃음이 무상한 수입니다. 부침이 잦으니 겸손과 절제가 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="41" data-name="대공격">
+        <div class="num serif">41</div>
+        <div class="body">
+          <h3>대공격 <span class="hanja serif">大功格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>덕망과 재략을 겸비해 큰 공을 세우는 수입니다. 앞길을 내다보는 밝음이 있어 만인의 본보기가 됩니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="42" data-name="고행격">
+        <div class="num serif">42</div>
+        <div class="body">
+          <h3>고행격 <span class="hanja serif">苦行格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>재주가 많으나 한 우물을 파지 못해 이루기 어려운 수입니다. 뜻을 하나로 모아야 곤고함을 면합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="43" data-name="미혹격">
+        <div class="num serif">43</div>
+        <div class="body">
+          <h3>미혹격 <span class="hanja serif">迷惑格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>겉은 화려하나 속이 허하기 쉬운 수입니다. 유혹에 흔들려 재물이 흩어지기 쉬우니 중심을 지켜야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="44" data-name="마장격">
+        <div class="num serif">44</div>
+        <div class="body">
+          <h3>마장격 <span class="hanja serif">魔障格</span>
+            <span class="grade g-X">대흉</span></h3>
+          <p>장애가 끼어 되는 일이 없다고 이르는 대표적인 흉수입니다. 뜻밖의 재액이 잦다고 보아 이름에는 피하는 수입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="45" data-name="대지격">
+        <div class="num serif">45</div>
+        <div class="body">
+          <h3>대지격 <span class="hanja serif">大智格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>큰 지혜로 시류를 꿰뚫어 대업을 순조롭게 이루는 수입니다. 한때의 곤경도 결국 성공의 밑거름이 됩니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="46" data-name="미운격">
+        <div class="num serif">46</div>
+        <div class="body">
+          <h3>미운격 <span class="hanja serif">未運格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>뜻은 높으나 기초가 약해 때를 만나기 어려운 수입니다. 인내로 실력을 쌓아야 늦게라도 빛을 봅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="47" data-name="출세격">
+        <div class="num serif">47</div>
+        <div class="body">
+          <h3>출세격 <span class="hanja serif">出世格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>꽃이 피어 열매를 맺듯 성취가 뚜렷한 출세의 수입니다. 귀인의 도움이 많아 자손에게까지 복이 이어집니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="48" data-name="유덕격">
+        <div class="num serif">48</div>
+        <div class="body">
+          <h3>유덕격 <span class="hanja serif">有德格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>덕과 지혜가 깊어 만인의 스승이 되는 수입니다. 이름과 이익을 함께 얻고 평생 존경을 받습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="49" data-name="은퇴격">
+        <div class="num serif">49</div>
+        <div class="body">
+          <h3>은퇴격 <span class="hanja serif">隱退格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>길흉이 갈마들어 한때 성해도 물러남이 빠르기 쉬운 수입니다. 얻었을 때 지키는 지혜가 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="50" data-name="상반격">
+        <div class="num serif">50</div>
+        <div class="body">
+          <h3>상반격 <span class="hanja serif">相半格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>한 번 이루고 한 번 잃는 상반의 수입니다. 성공 뒤의 쇠퇴를 미리 대비해야 말년이 평안합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="51" data-name="춘추격">
+        <div class="num serif">51</div>
+        <div class="body">
+          <h3>춘추격 <span class="hanja serif">春秋格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>봄가을이 갈마들 듯 성쇠가 교차하는 수입니다. 어려움 속에서도 때를 만나면 크게 일어섭니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="52" data-name="승룡격">
+        <div class="num serif">52</div>
+        <div class="body">
+          <h3>승룡격 <span class="hanja serif">昇龍格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>용이 여의주를 얻어 하늘로 오르는 형상의 수입니다. 앞을 내다보는 눈이 밝아 큰 뜻을 이루고 이름을 떨칩니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="53" data-name="내허격">
+        <div class="num serif">53</div>
+        <div class="body">
+          <h3>내허격 <span class="hanja serif">內虛格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>겉은 넉넉해 보이나 안이 허하기 쉬운 수입니다. 전반이 길하면 후반이 흉하기 쉬워 내실을 다져야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="54" data-name="무공격">
+        <div class="num serif">54</div>
+        <div class="body">
+          <h3>무공격 <span class="hanja serif">無功格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>애는 쓰나 공이 서지 않기 쉬운 수입니다. 횡액과 장애가 따르기 쉬워 무리한 도모는 삼가야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="55" data-name="미달격">
+        <div class="num serif">55</div>
+        <div class="body">
+          <h3>미달격 <span class="hanja serif">未達格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>겉은 성한 듯하나 뜻한 바에 미치지 못하기 쉬운 수입니다. 끈기로 부족함을 메워야 결실을 봅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="56" data-name="부족격">
+        <div class="num serif">56</div>
+        <div class="body">
+          <h3>부족격 <span class="hanja serif">不足格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>의욕이 부족해 일을 벌여도 끝맺기 어려운 수입니다. 작은 일부터 이뤄 자신감을 쌓는 것이 먼저입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="57" data-name="노력격">
+        <div class="num serif">57</div>
+        <div class="body">
+          <h3>노력격 <span class="hanja serif">努力格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>한때의 시련을 노력으로 이겨 내면 크게 형통하는 수입니다. 굳센 의지가 복을 부릅니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="58" data-name="후복격">
+        <div class="num serif">58</div>
+        <div class="body">
+          <h3>후복격 <span class="hanja serif">後福格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>먼저는 고되나 뒤에 복이 오는 수입니다. 인내 끝에 만년의 안락과 번영을 누립니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="59" data-name="재화격">
+        <div class="num serif">59</div>
+        <div class="body">
+          <h3>재화격 <span class="hanja serif">災禍格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>뜻밖의 재액으로 이룬 것을 잃기 쉬운 수입니다. 용기와 인내가 부족하면 실의에 빠지기 쉽습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="60" data-name="동요격">
+        <div class="num serif">60</div>
+        <div class="body">
+          <h3>동요격 <span class="hanja serif">動搖格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>중심이 흔들려 되는 일이 없기 쉬운 수입니다. 계획 없이 움직이면 풍파가 따르니 신중해야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="61" data-name="재리격">
+        <div class="num serif">61</div>
+        <div class="body">
+          <h3>재리격 <span class="hanja serif">財利格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>재물과 이익이 따르는 영달의 수입니다. 다만 오만하면 불화가 생기니 덕을 함께 닦아야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="62" data-name="쇠퇴격">
+        <div class="num serif">62</div>
+        <div class="body">
+          <h3>쇠퇴격 <span class="hanja serif">衰退格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>안팎의 신망을 잃어 점차 기울기 쉬운 수입니다. 뜻밖의 어려움이 겹치기 쉬워 화합에 힘써야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="63" data-name="순성격">
+        <div class="num serif">63</div>
+        <div class="body">
+          <h3>순성격 <span class="hanja serif">順成格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>만물이 비를 만난 듯 순조롭게 자라 이루는 수입니다. 자손의 복이 두텁고 재난을 면한다는 길수입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="64" data-name="침체격">
+        <div class="num serif">64</div>
+        <div class="body">
+          <h3>침체격 <span class="hanja serif">沈滯格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>부침이 잦아 애쓴 일이 가라앉기 쉬운 수입니다. 가까운 이와의 인연도 박하기 쉬워 근신이 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="65" data-name="흥가격">
+        <div class="num serif">65</div>
+        <div class="body">
+          <h3>흥가격 <span class="hanja serif">興家格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>집안을 일으키고 만사가 순탄한 수입니다. 부귀와 장수가 함께한다는 길수로 꼽힙니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="66" data-name="쇠망격">
+        <div class="num serif">66</div>
+        <div class="body">
+          <h3>쇠망격 <span class="hanja serif">衰亡格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>나아가지도 물러서지도 못하는 형국의 수입니다. 손실과 재액이 겹치기 쉬워 내실을 지켜야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="67" data-name="천복격">
+        <div class="num serif">67</div>
+        <div class="body">
+          <h3>천복격 <span class="hanja serif">天福格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>하늘의 복을 받아 하는 일이 막힘없이 통하는 수입니다. 부지런하면 가업이 크게 일어납니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="68" data-name="명지격">
+        <div class="num serif">68</div>
+        <div class="body">
+          <h3>명지격 <span class="hanja serif">明智格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>생각이 치밀하고 판단이 밝아 뜻을 이루는 수입니다. 창의와 근면으로 두터운 신망을 얻습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="69" data-name="종말격">
+        <div class="num serif">69</div>
+        <div class="body">
+          <h3>종말격 <span class="hanja serif">終末格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>정체와 궁핍이 따르기 쉬운 수입니다. 기운이 불안정하니 큰 도모보다 안정이 우선입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="70" data-name="적막격">
+        <div class="num serif">70</div>
+        <div class="body">
+          <h3>적막격 <span class="hanja serif">寂寞格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>쓸쓸함이 감돌아 애써도 보람이 적기 쉬운 수입니다. 근심이 잦으니 몸과 마음을 아껴야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="71" data-name="만달격">
+        <div class="num serif">71</div>
+        <div class="body">
+          <h3>만달격 <span class="hanja serif">晩達格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>견실하나 발복이 늦어 답답함이 따르기 쉬운 수입니다. 꾸준함을 지키면 만년에는 형통합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="72" data-name="후곤격">
+        <div class="num serif">72</div>
+        <div class="body">
+          <h3>후곤격 <span class="hanja serif">後困格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>먼저는 순탄하나 뒤에 곤란이 오기 쉬운 수입니다. 좋은 때에 아껴 두어야 말년이 평안합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="73" data-name="평길격">
+        <div class="num serif">73</div>
+        <div class="body">
+          <h3>평길격 <span class="hanja serif">平吉格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>큰 영화는 아니어도 큰 화도 없는 평온의 수입니다. 분수를 지키면 의식이 넉넉하고 무탈합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="74" data-name="우매격">
+        <div class="num serif">74</div>
+        <div class="body">
+          <h3>우매격 <span class="hanja serif">愚昧格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>지혜가 어두워 세상일에 어둡기 쉬운 수입니다. 배움을 가까이해야 헛된 세월을 면합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="75" data-name="평화격">
+        <div class="num serif">75</div>
+        <div class="body">
+          <h3>평화격 <span class="hanja serif">平和格</span>
+            <span class="grade g-G">길</span></h3>
+          <p>온순하고 화평하여 순리대로 이루는 수입니다. 서두르지 않고 차근차근 가면 탈이 없습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="76" data-name="선곤격">
+        <div class="num serif">76</div>
+        <div class="body">
+          <h3>선곤격 <span class="hanja serif">先困格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>앞길에 곤란이 먼저 오기 쉬운 수입니다. 중년의 어려움을 견디면 말년에는 안정을 찾습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="ban" data-n="77" data-name="전후격">
+        <div class="num serif">77</div>
+        <div class="body">
+          <h3>전후격 <span class="hanja serif">前後格</span>
+            <span class="grade g-P">반길반흉</span></h3>
+          <p>전반이 길하면 후반이 흉하고, 전반이 흉하면 후반이 길한 반반의 수입니다. 좋은 때에 미리 대비를 갖추는 것이 관건입니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="78" data-name="선길후흉격">
+        <div class="num serif">78</div>
+        <div class="body">
+          <h3>선길후흉격 <span class="hanja serif">先吉後凶格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>젊어서는 발전하나 중년 이후 기울기 쉬운 수입니다. 이른 성취에 안주하지 말아야 합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="79" data-name="종극격">
+        <div class="num serif">79</div>
+        <div class="body">
+          <h3>종극격 <span class="hanja serif">終極格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>기력이 다해 뜻에 미치지 못하는 형국의 수입니다. 정신이 흐트러지기 쉬워 절제가 필요합니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="hyung" data-n="80" data-name="종결격">
+        <div class="num serif">80</div>
+        <div class="body">
+          <h3>종결격 <span class="hanja serif">終結格</span>
+            <span class="grade g-H">흉</span></h3>
+          <p>일생의 파란 끝에 물러남을 택하기 쉬운 수입니다. 일찍부터 안정을 도모하면 화를 덜 수 있습니다.</p>
+        </div>
+      </article>
+      <article class="suri" data-kind="gil" data-n="81" data-name="환원격">
+        <div class="num serif">81</div>
+        <div class="body">
+          <h3>환원격 <span class="hanja serif">還元格</span>
+            <span class="grade g-D">대길</span></h3>
+          <p>모든 수가 다시 근본으로 돌아오는 환원의 수로, 1수와 같은 최상의 길수입니다. 막혔던 운이 트여 부귀와 영예가 새로 시작됩니다.</p>
+        </div>
+      </article>
+    </div>
+    <p class="empty" id="empty" hidden>조건에 맞는 수가 없습니다.</p>
+
+    <div class="note">
+      격의 이름은 유파마다 이칭이 있어 표시용입니다. 길수 40개·흉수 40개와 77수를 반길반흉으로 보는
+      구분은 인터넷한국작명연구원의 공식 표를 기준으로 삼았습니다. 풀이문은 여러 유파에 공통되는
+      골자만 남긴 요약이며, 흉수라 해서 이름을 못 쓴다는 뜻이 아니라 네 격 전체의 배열과
+      발음오행·자원오행을 함께 보아 판단합니다.
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap">
+    <hr class="gold">
+    <h2>내 이름의 네 격은 몇 수일까</h2>
+    <p class="lead">획수를 직접 세지 않아도 됩니다. 성과 이름의 한자를 넣으면
+      원형이정 네 격의 수와 풀이를 한 번에 보여 드립니다.
+      사주에 부족한 오행까지 함께 보는 작명·감명은 앱에서 무료로 쓸 수 있습니다.</p>
+    <a class="btn-play" href="https://play.google.com/store/apps/details?id=com.naminghouse.app&amp;referrer=utm_source%3Dsuri81%26utm_medium%3Dlanding">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3 13.7 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Zm1.6-.6c.2 0 .5.1.7.2l11 6.2-2.6 2.5L5.2 1.7Zm11.7 6.9 3.2 1.8c1 .6 1 1.6 0 2.2l-3.2 1.8-2.9-2.9 2.9-2.9ZM16.9 17 5.9 23.1c-.2.1-.5.2-.7.2l9.1-8.9 2.6 2.6Z"/></svg>
+      Google Play에서 받기
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-links">
+      <a href="./">작명하우스 소개</a>
+      <a href="legal/terms.html">이용약관</a>
+      <a href="legal/privacy.html">개인정보 처리방침</a>
+      <a href="mailto:ohy3264@gmail.com">문의</a>
+    </div>
+    <span>작명 결과와 풀이는 전통 성명학 이론에 따른 참고 자료입니다.</span>
+    <span>© 2026 오효컴퍼니 · 사주 계산은 삼라만상 만세력 엔진을 사용합니다.</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var list = document.getElementById('list');
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.suri'));
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('.filters button'));
+  var q = document.getElementById('q');
+  var hit = document.getElementById('hit');
+  var empty = document.getElementById('empty');
+  var filter = 'all';
+
+  function apply() {
+    var term = q.value.trim();
+    var shown = 0;
+    cards.forEach(function (c) {
+      var kindOk = filter === 'all' || c.dataset.kind === filter;
+      var termOk = !term || c.dataset.n === term || c.dataset.name.indexOf(term) !== -1;
+      var ok = kindOk && termOk;
+      c.hidden = !ok;
+      if (ok) shown++;
+    });
+    hit.textContent = shown + '개 표시 중';
+    empty.hidden = shown !== 0;
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      filter = b.dataset.f;
+      buttons.forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+})();
+</script>
+
+</body>
+</html>
