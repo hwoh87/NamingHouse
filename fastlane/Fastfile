@@ -20,4 +20,48 @@ platform :android do
       in_app_update_priority: 2
     )
   end
+
+  desc "Promote an already-uploaded internal release to production (no rebuild)"
+  lane :production_promote do
+    version_code = (ENV["PROMOTE_VERSION_CODE"] || "").to_i
+    UI.user_error!("PROMOTE_VERSION_CODE (승격할 내부 트랙 versionCode) is required") if version_code <= 0
+
+    rollout = (ENV["PROMOTE_ROLLOUT"] || "0.2").strip
+    full = %w[1 1.0 100 100% full].include?(rollout)
+    # draft: 프로덕션 트랙에 릴리스를 '초안'으로만 얹는다(공개 안 됨).
+    #   Play 는 아직 한 번도 공개되지 않은 **초안 앱**에 대해 draft 외의 릴리스 생성을 거부한다
+    #   ("Only releases with status draft may be created on draft app"). 첫 출시는 Console 에서
+    #   해야 하므로, 그 전에 검증된 AAB 를 프로덕션 트랙에 미리 얹어 두는 용도.
+    draft = rollout.casecmp("draft").zero?
+
+    # 재빌드하지 않는다 — 내부 테스터가 검증한 그 바이너리를 트랙만 옮긴다.
+    # 등록정보는 internal_release 와 같은 이유로 전부 건드리지 않는다.
+    params = {
+      json_key_data: ENV["PLAY_SERVICE_ACCOUNT_JSON"],
+      track: "internal",
+      track_promote_to: "production",
+      version_code: version_code,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+      # in_app_update_priority 는 여기서 주지 않는다 — 승격 대상은 내부 트랙에서 **이미 출시된**
+      # 릴리스라 Play 가 값 변경을 거부한다("cannot be modified for a release that has already
+      # been rolled out"). 우선순위는 internal_release 업로드 시점에 박힌 값이 그대로 따라간다.
+    }
+    # **track_promote_release_status** 를 쓴다(release_status 가 아니라).
+    #   release_status 는 *원본* 트랙(internal)의 릴리스에 적용돼서, 이미 출시된 내부 릴리스를
+    #   수정하려 들다가 Play 에 거부당한다. 승격되는 쪽(production)의 상태는 이 키가 정한다.
+    if draft
+      params[:track_promote_release_status] = "draft"
+    elsif full
+      params[:track_promote_release_status] = "completed"
+    else
+      params[:track_promote_release_status] = "inProgress"
+      params[:rollout] = rollout
+    end
+    supply(params)
+  end
 end

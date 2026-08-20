@@ -1,0 +1,65 @@
+name: Android Production Promote
+
+# 내부 테스트 트랙에 **이미 올라간** 릴리스를 프로덕션으로 승격한다(재빌드 없음).
+#
+# 재빌드하지 않는 게 핵심이다 — 내부 테스터가 검증한 그 바이너리 그대로 프로덕션에 간다.
+# 다시 빌드하면 versionCode 가 바뀌고 검증한 것과 다른 산출물이 나가므로, fastlane
+# `production_promote` 레인이 track_promote_to 로 트랙만 옮긴다.
+#
+# 트리거: workflow_dispatch 뿐이다. 프로덕션 공개는 사람이 명시적으로 눌러야 하는 일이라
+# push/tag 자동 트리거를 일부러 달지 않았다.
+#
+# 주의 ①: **아직 한 번도 공개되지 않은 초안 앱**은 rollout=draft 만 통한다. Play 가 초안 앱의
+# 첫 프로덕션 출시를 Console UI 로 강제하기 때문이다("Only releases with status draft may be
+# created on draft app"). 첫 출시를 Console 에서 한 뒤부터 rollout=1 승격이 동작한다.
+#
+# 주의 ②: 서비스 계정(astlane-supply@samra-play)은 이 앱에 **테스트 트랙 권한만** 갖고 있다
+# (앱 정보 보기 / 알파 테스트 트랙으로 출시 / 테스트 트랙 관리). 프로덕션 출시 권한은 콘솔
+# 사용자 및 권한에서 넓혀야 하며, 그 전에는 여기서 "The caller does not have permission" 이 난다.
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "승격할 내부 트랙 versionCode (정수). 내부 배포 런이 출력한 값."
+        required: true
+      rollout:
+        description: "0.2=20% 단계적, 1=전체 공개, draft=프로덕션 트랙에 초안만 올림(비공개)."
+        required: false
+        default: "1"
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        shell: bash
+        env:
+          IN_CODE: ${{ github.event.inputs.version_code }}
+          IN_ROLLOUT: ${{ github.event.inputs.rollout }}
+        run: |
+          if ! [[ "$IN_CODE" =~ ^[0-9]+$ ]] || [ "$IN_CODE" -le 0 ]; then
+            echo "::error::version_code 는 양의 정수여야 합니다 (받은 값: '$IN_CODE')"; exit 1
+          fi
+          echo "versionCode=$IN_CODE 를 rollout=${IN_ROLLOUT:-1} 로 프로덕션 승격합니다."
+
+      - name: Set up Ruby (fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          # 내부 배포 워크플로우와 같은 이유로 Gemfile.lock 을 커밋하지 않는다 —
+          # 옛 Ruby 에서 굳은 락이 Ruby 3.3 을 거부하는 젬을 고정해 이 단계를 깨뜨린다.
+          bundler: latest
+          bundler-cache: true
+          cache-version: 1
+
+      - name: Promote internal → production
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PROMOTE_VERSION_CODE: ${{ github.event.inputs.version_code }}
+          PROMOTE_ROLLOUT: ${{ github.event.inputs.rollout }}
+        run: bundle exec fastlane production_promote
