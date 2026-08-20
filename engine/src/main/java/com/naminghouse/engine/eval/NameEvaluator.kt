@@ -102,6 +102,21 @@ data class NameEvaluation(
  *    처럼 실제 출생신고 최다 빈출 글자를 덮는다. 뜻이 명백히 부정적인 34자
  *    ([BulyongSeverity.GIPI])만 감점하고 나머지는 참고 표시로 남긴다 — 이 파일이 원래
  *    주석에 써 둔 "'경고' 용도로만 사용한다"는 방침과 코드를 일치시킨 것이다.
+ *
+ * ## 2차 조정 (2026-08)
+ *
+ * 축별 획득률을 다시 재 보니 수리오행이 12점 만점에 평균 5.9점(49%)이었고, 분포가
+ * **12점 36% / 2점 60%** 였다. 인접 쌍이 상극일 확률 2/5 로 계산한 이론값(상극 0개
+ * 36% · 1개 48% · 2개 16%)과 그대로 맞는다 — 이 축은 획수 끝자리라 배열이 균등
+ * 무작위여서, 이름의 60%가 동전던지기로 최저점을 받고 있었다. 발음오행만 상극 개수
+ * 비례로 고쳐 놓고 여기는 flat 2점으로 남겨 둔 것도 앞뒤가 안 맞았다. 같은 규칙으로
+ * 통일했다. 음양도 수리음양이 편중이면 6점을 통째로 0 으로 주던 것을 바닥 2점으로
+ * 바꿨다 — 다른 축은 모두 바닥을 남겨 뒀는데 여기만 all-or-nothing 이었다.
+ *
+ * 수리사격은 더 손대지 않는다. 격별 흉수 비율을 재 보니 원격 36% · 형격 37% ·
+ * 이격 39% · 정격 45% 로 고른 편이라 특정 격에 가중치를 몰아 줄 근거가 없고,
+ * 실제 이름의 4격 길수 분포가 `2개 35% · 3개 37% · 4개 10%` 인 것은 왜곡할 대상이
+ * 아니라 수리성명학 자체의 성질이다. (근거: CalibrationAuditTest)
  */
 object NameEvaluator {
 
@@ -160,6 +175,7 @@ object NameEvaluator {
             baleumQuality = baleumQuality,
             baleumSanggeuk = baleum?.relations?.count { it == OhengRelation.SANGGEUK } ?: 0,
             suriOhengQuality = suriOhengQuality,
+            suriOhengSanggeuk = suriOheng.relations.count { it == OhengRelation.SANGGEUK },
             strokeEumyang = strokeEumyang,
             soundEumyang = soundEumyang,
             jawonElements = jawonElements,
@@ -236,6 +252,7 @@ object NameEvaluator {
         baleumQuality: ArrangementQuality?,
         baleumSanggeuk: Int,
         suriOhengQuality: ArrangementQuality,
+        suriOhengSanggeuk: Int,
         strokeEumyang: EumYangResult,
         soundEumyang: EumYangResult?,
         jawonElements: List<Element?>,
@@ -266,11 +283,18 @@ object NameEvaluator {
             else -> 13.0 // 전부 비화 — 유파 이견이 커 중간
         }
 
-        // 수리오행 12
-        val suriOhengScore = when (suriOhengQuality) {
-            ArrangementQuality.SANGSAENG -> 12.0
-            ArrangementQuality.BIHWA_ONLY -> 8.0
-            ArrangementQuality.SANGGEUK -> 2.0
+        // 수리오행 12 — 발음오행과 같은 규칙으로 상극 '개수'에 비례해 깎는다.
+        //
+        // 이 축은 획수 끝자리를 오행으로 환산하므로 배열이 사실상 균등 무작위다.
+        // 인접 쌍 하나가 상극일 확률이 2/5 라, 세 글자 이름은 이론상 상극 0개 36% ·
+        // 1개 48% · 2개 16% 로 갈린다. 실측 분포(12점 36% / 2점 60%)가 이론값과
+        // 그대로 맞아떨어졌다 — 즉 **이름의 60%가 동전던지기로 최저점을 받고 있었다.**
+        // 발음오행은 상극 개수 비례로 고쳐 놓고 여기만 flat 2점으로 남아 있던 것도
+        // 앞뒤가 안 맞는다. 같은 규칙을 적용한다.
+        val suriOhengScore = when {
+            suriOhengSanggeuk > 0 -> (12.0 - 4.0 * suriOhengSanggeuk).coerceAtLeast(4.0)
+            suriOhengQuality == ArrangementQuality.SANGSAENG -> 12.0
+            else -> 9.0 // 전부 비화 — 유파 이견이 커 중간
         }
 
         // 자원오행·사주보완 25 — 이름이 직접 채운 몫(direct)을 성씨가 이미 채운 몫보다 높게 본다.
@@ -302,9 +326,13 @@ object NameEvaluator {
             }
         }
 
-        // 음양 10 (수리 6 + 발음 4)
+        // 음양 10 (수리 6 + 발음 4) — 편중이어도 바닥은 남긴다.
+        //
+        // 순양·순음을 흉으로 보는 것은 맞지만, 수리음양이 6점 통째로 0 이던 것은 다른
+        // 축과 앞뒤가 안 맞았다(발음오행 바닥 5, 수리사격 흉수 0.35, 수리오행 바닥 4).
+        // 세 글자 획수가 전부 홀수거나 전부 짝수일 확률이 1/4 이라 적지도 않다.
         val eumyangScore =
-            (if (strokeEumyang.isBalanced) 6.0 else 0.0) + (if (soundEumyang?.isBalanced != false) 4.0 else 1.0)
+            (if (strokeEumyang.isBalanced) 6.0 else 2.0) + (if (soundEumyang?.isBalanced != false) 4.0 else 1.5)
 
         // 불용한자 5 — '기피'(뜻이 명백히 부정적인 34자)만 감점하고 '속설'은 감점하지 않는다.
         val bulyongScore = 5.0 - 5.0 * bulyongGipiCount
