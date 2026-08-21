@@ -35,6 +35,11 @@ import com.naminghouse.engine.suri.SuriMeaning
 /**
  * 이름 하나의 종합 감명 패널 — 상세 화면 공용.
  * 상세 화면은 머리에 족자를 따로 그리므로 [showHero] 를 끈다.
+ *
+ * [locked] 가 참이면 **결론은 남기고 풀이만 가린다** — 점수·등급·총평 한 줄·이름 통계·
+ * 발음오행·수리오행·음양은 그대로 두고, 근거에 해당하는 대목(총평 풀이·수리사격 4격·
+ * 사주 보완·글자 풀이·불용한자)만 [LockedBlock] 으로 덮는다. 가린 자리에는 진짜 값을
+ * 아예 그리지 않고 몇 줄이 있었는지만 센다.
  */
 @Composable
 fun EvaluationDetail(
@@ -42,6 +47,8 @@ fun EvaluationDetail(
     saju: SajuSummary?,
     stat: NameStat? = null,
     showHero: Boolean = true,
+    locked: Boolean = false,
+    onUnlock: () -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
 
@@ -51,10 +58,21 @@ fun EvaluationDetail(
         val summary = summarize(eval)
         SectionCard("총평") {
             Text(summary.verdict, style = MaterialTheme.typography.bodyLarge)
-            summary.strengths.forEach { NoteLine("✓", it, InkTheme.colors.gil) }
-            summary.cautions.forEach { NoteLine("!", it, InkTheme.colors.hyung) }
-            // 주의점을 어떻게 풀지 — 경고만 쌓지 말고 다음 행동을 알려 준다
-            summary.suggestions.forEach { NoteLine("→", it, InkTheme.colors.botong) }
+            val noteCount =
+                summary.strengths.size + summary.cautions.size + summary.suggestions.size
+            if (locked && noteCount > 0) {
+                LockedBlock(
+                    teaser = "강점 ${summary.strengths.size} · 주의 ${summary.cautions.size} · " +
+                        "제안 ${summary.suggestions.size}",
+                    lines = noteCount.coerceIn(2, 4),
+                    onUnlock = onUnlock,
+                )
+            } else {
+                summary.strengths.forEach { NoteLine("✓", it, InkTheme.colors.gil) }
+                summary.cautions.forEach { NoteLine("!", it, InkTheme.colors.hyung) }
+                // 주의점을 어떻게 풀지 — 경고만 쌓지 말고 다음 행동을 알려 준다
+                summary.suggestions.forEach { NoteLine("→", it, InkTheme.colors.botong) }
+            }
         }
 
         // ── 이름 통계 (대법원 출생신고)
@@ -69,20 +87,29 @@ fun EvaluationDetail(
             help = "성과 이름의 획수를 네 가지로 조합해(원격·형격·이격·정격) 초년·청년·중년·" +
                 "총운을 보는 이론입니다. 각 격의 수를 81수리 길흉표에 대조해 판정합니다.",
         ) {
+            // 잠겼을 때도 원격 한 격은 진짜로 보여 준다 — 무엇을 사는지 알려면 표본이 있어야 한다.
             SuriRow("원격 (초년)", eval.suri.won)
-            SuriRow("형격 (청년)", eval.suri.hyeong)
-            SuriRow("이격 (중년)", eval.suri.i)
-            SuriRow("정격 (총운)", eval.suri.jeong)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
-            ) {
-                Text(
-                    "판정",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (locked) {
+                LockedBlock(
+                    teaser = "형격(청년) · 이격(중년) · 정격(총운) 과 종합 판정",
+                    lines = 4,
+                    onUnlock = onUnlock,
                 )
-                VerdictBadge(eval.suriVerdict)
+            } else {
+                SuriRow("형격 (청년)", eval.suri.hyeong)
+                SuriRow("이격 (중년)", eval.suri.i)
+                SuriRow("정격 (총운)", eval.suri.jeong)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
+                ) {
+                    Text(
+                        "판정",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    VerdictBadge(eval.suriVerdict)
+                }
             }
         }
 
@@ -160,80 +187,104 @@ fun EvaluationDetail(
                     ElementBall(h.char.toString(), h.element)
                 }
             }
-            // 사주 분포 위에 이름의 자원오행을 얹어 어느 칸이 채워지는지 보인다
-            if (saju != null) {
-                val nameCounts = eval.jawonElements.filterNotNull()
-                    .groupingBy { it }.eachCount()
-                OhengBarChart(sajuCounts = saju.simpleCounts, nameCounts = nameCounts)
-            }
-            val fit = eval.sajuFit
-            if (fit != null) {
-                Text(
-                    "보완 대상 오행  " + fit.targets.joinToString(" · ") { "${it.hanja}(${it.ko})" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (locked) {
+                LockedBlock(
+                    teaser = if (saju != null) "이 이름이 사주에서 부족한 기운을 채우는지 · 보완 판정"
+                        else "자원오행 종합 판정",
+                    lines = if (saju != null) 4 else 2,
+                    onUnlock = onUnlock,
                 )
-                if (fit.matched.isNotEmpty()) {
-                    Text(
-                        "이름이 채워주는 오행  " + fit.matched.joinToString(" · ") { "${it.hanja}(${it.ko})" },
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = InkTheme.colors.gil,
-                    )
+            } else {
+                // 사주 분포 위에 이름의 자원오행을 얹어 어느 칸이 채워지는지 보인다
+                if (saju != null) {
+                    val nameCounts = eval.jawonElements.filterNotNull()
+                        .groupingBy { it }.eachCount()
+                    OhengBarChart(sajuCounts = saju.simpleCounts, nameCounts = nameCounts)
                 }
-                if (fit.surnameCovered.isNotEmpty()) {
+                val fit = eval.sajuFit
+                if (fit != null) {
                     Text(
-                        "성씨가 이미 갖춘 오행  " +
-                            fit.surnameCovered.joinToString(" · ") { "${it.hanja}(${it.ko})" },
+                        "보완 대상 오행  " + fit.targets.joinToString(" · ") { "${it.hanja}(${it.ko})" },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (fit.matched.isNotEmpty()) {
+                        Text(
+                            "이름이 채워주는 오행  " + fit.matched.joinToString(" · ") { "${it.hanja}(${it.ko})" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = InkTheme.colors.gil,
+                        )
+                    }
+                    if (fit.surnameCovered.isNotEmpty()) {
+                        Text(
+                            "성씨가 이미 갖춘 오행  " +
+                                fit.surnameCovered.joinToString(" · ") { "${it.hanja}(${it.ko})" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (fit.gisinUsed.isNotEmpty()) {
+                        Text(
+                            "주의 · 기신 오행 사용  " + fit.gisinUsed.joinToString(" · ") { "${it.hanja}(${it.ko})" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
-                if (fit.gisinUsed.isNotEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
+                ) {
                     Text(
-                        "주의 · 기신 오행 사용  " + fit.gisinUsed.joinToString(" · ") { "${it.hanja}(${it.ko})" },
+                        "판정",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    VerdictBadge(eval.jawonVerdict)
                 }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
-            ) {
-                Text(
-                    "판정",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                VerdictBadge(eval.jawonVerdict)
             }
         }
 
         // ── 불용한자 경고
         if (eval.bulyongWarnings.isNotEmpty()) {
             SectionCard("불용한자 참고") {
-                eval.bulyongWarnings.forEach { (ch, info) ->
-                    val gipi = info.severity == BulyongSeverity.GIPI
+                if (locked) {
+                    // 몇 자가 걸렸는지는 알려 준다 — 이 카드는 '있다'는 사실 자체가 값이다.
+                    val gipiCount = eval.bulyongWarnings.count {
+                        it.second.severity == BulyongSeverity.GIPI
+                    }
+                    LockedBlock(
+                        teaser = "주의할 글자 ${eval.bulyongWarnings.size}자" +
+                            if (gipiCount > 0) " · 그중 기피 ${gipiCount}자" else "",
+                        lines = eval.bulyongWarnings.size.coerceIn(1, 3),
+                        onUnlock = onUnlock,
+                    )
+                } else {
+                    eval.bulyongWarnings.forEach { (ch, info) ->
+                        val gipi = info.severity == BulyongSeverity.GIPI
+                        Text(
+                            "$ch [${info.category}·${info.severity.label}] ${info.reason}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (gipi) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
-                        "$ch [${info.category}·${info.severity.label}] ${info.reason}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (gipi) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        "'속설'은 학파에 따라 이견이 커 점수에 반영하지 않고 참고로만 보여 줍니다. " +
+                            "뜻이 명백히 좋지 않은 '기피' 글자만 감점합니다.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text(
-                    "'속설'은 학파에 따라 이견이 커 점수에 반영하지 않고 참고로만 보여 줍니다. " +
-                        "뜻이 명백히 좋지 않은 '기피' 글자만 감점합니다.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
 
         // ── 글자 풀이
         SectionCard("글자 풀이") {
-            (eval.surnameHanja + eval.givenHanja).forEachIndexed { i, h ->
+            // 잠겼을 때는 성씨 글자까지만 — 이름 글자의 뜻·획수·자원오행이 이 카드의 값이다.
+            val shown = if (locked) eval.surnameHanja else eval.surnameHanja + eval.givenHanja
+            shown.forEachIndexed { i, h ->
                 val role = if (i < eval.surnameHanja.size) "성" else "이름"
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = InkSpace.s4),
@@ -255,6 +306,14 @@ fun EvaluationDetail(
                         )
                     }
                 }
+            }
+            if (locked) {
+                LockedBlock(
+                    // 자원오행은 바로 위 카드의 구슬에 이미 나와 있다 — 없는 걸 판다고 하지 않는다.
+                    teaser = "이름 글자 ${eval.givenHanja.size}자의 뜻 · 원획 · 필획",
+                    lines = eval.givenHanja.size.coerceIn(1, 3),
+                    onUnlock = onUnlock,
+                )
             }
         }
     }

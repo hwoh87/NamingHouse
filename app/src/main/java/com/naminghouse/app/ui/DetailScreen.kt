@@ -73,6 +73,7 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import com.naminghouse.app.JokjaStyle
 import com.naminghouse.app.NamingViewModel
+import com.naminghouse.app.ads.RewardedAds
 import com.naminghouse.app.ui.theme.HanjaFamily
 import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkSpace
@@ -109,6 +110,13 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
     val shareLayer = rememberGraphicsLayer()
     val exportLayer = rememberGraphicsLayer()
     var showPremium by remember { mutableStateOf(false) }
+    var showUnlock by remember { mutableStateOf(false) }
+
+    // 감명서 풀이를 다 볼 수 있는가 — 프리미엄이거나, 이 이름을 따로 열어 두었거나.
+    val unlocked = vm.isUnlocked(eval)
+
+    // 잠긴 감명서에서만 보상형 광고가 쓰인다 — 필요할 때 당겨 두어야 버튼이 즉시 뜬다.
+    LaunchedEffect(unlocked) { if (!unlocked) RewardedAds.preload(context) }
 
     // 표구는 프리미엄에서만 산다 — 소유가 꺼져 있으면(환불 등) 백지로 되돌린다.
     val style = if (vm.isPremium) vm.jokjaStyle else JokjaStyle.BAEKJI
@@ -236,7 +244,14 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
 
             vm.saju?.let { SajuCard(it) }
 
-            EvaluationDetail(eval, vm.saju, stat, showHero = false)
+            EvaluationDetail(
+                eval = eval,
+                saju = vm.saju,
+                stat = stat,
+                showHero = false,
+                locked = !unlocked,
+                onUnlock = { showUnlock = true },
+            )
 
             Spacer(Modifier.height(InkSpace.s4))
         }
@@ -331,6 +346,9 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
 
     if (showPremium) {
         PremiumSheet(vm, onDismiss = { showPremium = false })
+    }
+    if (showUnlock) {
+        UnlockSheet(vm, eval, onDismiss = { showUnlock = false })
     }
 }
 

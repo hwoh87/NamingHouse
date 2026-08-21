@@ -14,12 +14,20 @@ import android.content.pm.ApplicationInfo
 object AdIds {
     // https://developers.google.com/admob/android/test-ads
     private const val TEST_BANNER = "ca-app-pub-3940256099942544/9214589741"
+    private const val TEST_REWARDED = "ca-app-pub-3940256099942544/5224354917"
 
     /** AdMob 콘솔의 '결과목록 하단 배너' (pub-1799447209671601). */
     private const val PROD_BANNER = "ca-app-pub-1799447209671601/7459204066"
 
+    /** AdMob 콘솔의 '감명서 열람 보상형' (pub-1799447209671601). */
+    private const val PROD_REWARDED = "ca-app-pub-1799447209671601/1685865142"
+
     fun bannerUnitId(context: Context): String =
         if (isDebuggable(context)) TEST_BANNER else PROD_BANNER
+
+    /** 운영 단위를 비워 두면 null — 부르는 쪽이 광고로 열기 버튼을 감춘다. */
+    fun rewardedUnitId(context: Context): String? =
+        if (isDebuggable(context)) TEST_REWARDED else PROD_REWARDED.ifEmpty { null }
 
     private fun isDebuggable(context: Context): Boolean =
         (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0

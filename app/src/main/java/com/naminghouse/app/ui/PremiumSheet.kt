@@ -35,9 +35,12 @@ import com.naminghouse.app.ui.theme.InkTheme
 /**
  * 프리미엄 감명서 구매 시트.
  *
- * 핵심 기능은 전부 무료라는 것이 이 앱의 자리다 — 여기서 파는 것은 기능이
- * 아니라 소장품(인쇄급 PDF·낙관 각인·표구)이다. 가격은 반드시 Play 가 준
- * 현지 표시 가격을 쓴다(콘솔 등록 전이나 오프라인이면 글자 없이 버튼만).
+ * 이름을 짓고 점수를 보는 데까지는 무료다 — 파는 것은 **풀이의 전량 공개**와
+ * 소장품(인쇄급 PDF·낙관 각인·표구)이다. 이름 하나만 열고 싶은 사람에게는
+ * [UnlockSheet] 쪽에 무료 1회와 광고 해제가 따로 있다.
+ *
+ * 가격은 반드시 Play 가 준 현지 표시 가격을 쓴다(콘솔 등록 전이나 오프라인이면
+ * 글자 없이 버튼만).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,10 +87,14 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
                 alpha = 0.25f,
             )
 
+            FeatureLine(
+                "모든 이름의 감명서 전체 공개",
+                "총평 풀이 · 수리사격 4격 · 사주 보완 · 글자 풀이 · 불용한자까지, 이름 수 제한 없이",
+            )
             FeatureLine("인쇄급 PDF 저장", "감명서 족자를 고해상도 PDF 로 — 인화·액자·출생 기록용")
             FeatureLine("낙관에 이름 각인", "족자 낙관 자리에 아이 이름이 전각 도장으로 찍힙니다")
             FeatureLine("표구 두 종 추가", "감지금니·다갈 — 족자의 종이와 먹빛을 바꿉니다")
-            FeatureLine("한 번으로 평생", "재구매 없음 — 둘째, 셋째 이름도 그대로 씁니다")
+            FeatureLine("한 번으로 평생", "재구매 없음 · 광고 없음 — 둘째, 셋째 이름도 그대로 씁니다")
 
             Spacer(Modifier.height(InkSpace.s2))
 

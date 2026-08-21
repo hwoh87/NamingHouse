@@ -77,6 +77,42 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     var jokjaStyle by mutableStateOf(JokjaStyle.BAEKJI)
         private set
 
+    // ── 감명서 해제 (프리미엄이 아닌 사람의 개별 공개)
+    private val unlockStore = UnlockStore(app)
+
+    /** 개별로 열어 둔 이름들 — 무료 1회와 광고 해제가 같이 들어 있다. */
+    var unlockedNames by mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    /** 무료 1회를 이미 썼는가 — 안 썼으면 잠긴 카드에 '무료로 열기'가 뜬다. */
+    var freeUnlockUsed by mutableStateOf(false)
+        private set
+
+    /**
+     * 감명서 해제의 신원 — 이름 + 한자.
+     *
+     * 즐겨찾기와 같은 기준이다(점수는 사주에 따라 달라져 신원이 될 수 없다).
+     */
+    fun nameKey(eval: NameEvaluation): String {
+        val hanja = (eval.surnameHanja + eval.givenHanja).joinToString("") { it.char.toString() }
+        return "${eval.surname}${eval.givenName}|$hanja"
+    }
+
+    /** 이 이름의 감명서를 전부 보여 줘도 되는가. */
+    fun isUnlocked(eval: NameEvaluation): Boolean =
+        isPremium || nameKey(eval) in unlockedNames
+
+    /** 무료 1회를 이 이름에 쓴다. 이미 썼으면 아무 일도 하지 않는다. */
+    fun claimFreeUnlock(eval: NameEvaluation) {
+        if (freeUnlockUsed || isUnlocked(eval)) return
+        viewModelScope.launch { unlockStore.unlock(nameKey(eval), consumeFree = true) }
+    }
+
+    /** 보상형 광고를 끝까지 본 대가로 이 이름을 연다. */
+    fun grantAdUnlock(eval: NameEvaluation) {
+        viewModelScope.launch { unlockStore.unlock(nameKey(eval), consumeFree = false) }
+    }
+
     fun onJokjaStyleChanged(style: JokjaStyle) {
         jokjaStyle = style
         viewModelScope.launch { settingsStore.saveJokjaStyle(style) }
@@ -220,6 +256,12 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             favoritesStore.flow.collect { favorites = it }
+        }
+        viewModelScope.launch {
+            unlockStore.flow.collect {
+                unlockedNames = it.keys
+                freeUnlockUsed = it.freeUsed
+            }
         }
         // 저장된 입력 복원. 성씨 한자만은 DB가 있어야 하므로 문자열로 들고 있다가
         // 아래 로딩 완료 쪽과 늦게 끝나는 쪽이 되살린다(둘 다 메인 스레드라 경합 없음).
