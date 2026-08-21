@@ -97,14 +97,14 @@ class ScoreSweepTest {
         println("점수 히스토그램:")
         println(histogram(scores))
 
-        println("\n── 성씨별 (평균 / 70점 이상 / 발음 상극률)")
+        println("\n── 성씨별 (평균 / 70점 이상 / 발음 상극률 — 받침 경로까지 본 최종)")
         SURNAMES.forEach { (sur, _) ->
             val g = all.filter { it.first == sur }
             if (g.isEmpty()) return@forEach
             val s = g.map { it.third.score }
             println("  $sur  %5.1f  %3d%%  %3d%%".format(
                 s.average(), 100 * s.count { it >= 70 } / s.size,
-                100 * g.count { it.third.baleum?.hasSanggeuk == true } / g.size))
+                100 * g.count { it.third.baleum?.path?.name == "NONE" } / g.size))
         }
 
         println("\n── 사주별 — 다른 축은 사주와 무관하므로 편차는 전부 자원 축에서 나온다")

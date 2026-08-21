@@ -1,6 +1,7 @@
 package com.naminghouse.engine.eval
 
 import com.naminghouse.engine.data.BulyongSeverity
+import com.naminghouse.engine.oheng.BaleumPath
 import com.naminghouse.engine.oheng.OhengRelation
 import com.samramanshang.manseryeok.orrery.model.Element
 
@@ -68,6 +69,9 @@ fun summarize(eval: NameEvaluation): NameSummary {
     eval.baleum?.let { b ->
         val chain = b.elements.joinToString("→") { it.hanja }
         when {
+            b.rescuedByJongseong ->
+                strengths += "발음오행은 초성만 보면 $chain 이지만, 성씨 받침(${eval.surname}의 " +
+                    "받침)까지 세는 방식으로는 상극 없이 이어집니다."
             b.hasSanggeuk -> cautions += "발음오행 $chain 배열에 상극이 있어 소리의 흐름이 끊깁니다."
             b.relations.all { it == OhengRelation.SANGSAENG } ->
                 strengths += "발음오행이 $chain${particleOf(b.elements.last())} 이어져 소리가 서로를 살립니다."
@@ -135,7 +139,7 @@ fun summarize(eval: NameEvaluation): NameSummary {
         suggestions += "보완 대상 오행(" + fit.targets.joinToString("·") { it.hanja } +
             ") 자원의 한자로 바꿔 보세요 — '한자 추천'이 사주 보완 순으로 정렬해 줍니다."
     }
-    if (eval.baleum?.hasSanggeuk == true) {
+    if (eval.baleum?.path == BaleumPath.NONE) {
         suggestions += "발음오행은 소리에서 나와 한자로는 고칠 수 없습니다 — " +
             "'이름 추천'에서 상생 배열의 이름을 받아 보세요."
     }

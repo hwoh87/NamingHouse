@@ -6,6 +6,7 @@ import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
 import com.naminghouse.engine.gen.NameStats
 import com.naminghouse.engine.hanja.HanjaDb
+import com.naminghouse.engine.oheng.BaleumPath
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.saju.SajuNamingService
 import com.samramanshang.manseryeok.orrery.model.BirthInput
@@ -100,8 +101,14 @@ class DataIntegrationTest {
         candidates.forEach { cand ->
             // 기본 옵션: 수리 4격 전부 길수
             assertTrue("${cand.givenName}: 4격 전부 길수여야 함", cand.evaluation.suri.allGood)
-            // 기본 옵션: 발음오행 상극 없음
-            assertTrue("${cand.givenName}: 발음 상극 배열 금지", cand.evaluation.baleum?.hasSanggeuk != true)
+            // 기본 옵션: 발음오행 상극 없음.
+            // 초성 연쇄가 아니라 '어느 경로로도 안 풀리는가'로 본다 — 성씨 받침을 시작점으로
+            // 삼는 경로까지 셋 중 하나만 만족하면 실무 다수 유파는 상생으로 본다.
+            // (김승호는 초성으로 木金土 상극이지만 김의 받침 ㅁ(水)으로 水金土 상생이다)
+            assertTrue(
+                "${cand.givenName}: 어느 경로로도 안 풀리는 상극 배열 금지",
+                cand.evaluation.baleum?.path != BaleumPath.NONE,
+            )
             // 기본 옵션: 불용한자 제외
             assertTrue("${cand.givenName}: 불용한자 없어야 함", cand.evaluation.bulyongWarnings.isEmpty())
             // 벽자·부적합 한자가 추천에 섞이면 안 됨

@@ -5,6 +5,7 @@ import com.naminghouse.engine.data.BulyongInfo
 import com.naminghouse.engine.data.BulyongSeverity
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.oheng.BaleumOheng
+import com.naminghouse.engine.oheng.BaleumPath
 import com.naminghouse.engine.oheng.BaleumResult
 import com.naminghouse.engine.oheng.BaleumSchool
 import com.naminghouse.engine.oheng.ArrangementQuality
@@ -144,7 +145,15 @@ object NameEvaluator {
         // ── 발음오행
         val fullName = surname + givenName
         val baleum = BaleumOheng.evaluate(fullName, school)
-        val baleumQuality = baleum?.let { arrangementQualityOf(it.relations) }
+        // 판정은 받침 경로까지 본 '최종' 결과로 낸다 — 초성만으로 상극이어도 성씨 받침으로
+        // 풀리면 실무 다수 유파는 상생으로 본다(BaleumPath).
+        val baleumQuality = baleum?.let {
+            when {
+                it.path == BaleumPath.NONE -> ArrangementQuality.SANGGEUK
+                it.rescuedByJongseong -> ArrangementQuality.SANGSAENG
+                else -> arrangementQualityOf(it.relations)
+            }
+        }
         val baleumVerdict = baleumQuality?.let(::verdictOf) ?: AxisVerdict.BOTONG
 
         // ── 수리오행 (글자별 획수 → 오행 배열)
@@ -173,7 +182,8 @@ object NameEvaluator {
         val score = score(
             suri = suri,
             baleumQuality = baleumQuality,
-            baleumSanggeuk = baleum?.relations?.count { it == OhengRelation.SANGGEUK } ?: 0,
+            baleumSanggeuk = baleum?.effectiveSanggeuk ?: 0,
+            baleumRescued = baleum?.rescuedByJongseong == true,
             suriOhengQuality = suriOhengQuality,
             suriOhengSanggeuk = suriOheng.relations.count { it == OhengRelation.SANGGEUK },
             strokeEumyang = strokeEumyang,
@@ -251,6 +261,7 @@ object NameEvaluator {
         suri: SuriGyeok,
         baleumQuality: ArrangementQuality?,
         baleumSanggeuk: Int,
+        baleumRescued: Boolean,
         suriOhengQuality: ArrangementQuality,
         suriOhengSanggeuk: Int,
         strokeEumyang: EumYangResult,
@@ -279,6 +290,8 @@ object NameEvaluator {
         val baleumScore = when {
             baleumQuality == null -> 9.0 // 한글 이름이 아니라 판정 불가
             baleumSanggeuk > 0 -> (18.0 - 6.0 * baleumSanggeuk).coerceAtLeast(5.0)
+            // 성씨 받침 경로로 풀린 배열 — 실무상 상생이지만 초성만 보는 유파도 많아 한 급 아래.
+            baleumRescued -> 16.0
             baleumQuality == ArrangementQuality.SANGSAENG -> 18.0
             else -> 13.0 // 전부 비화 — 유파 이견이 커 중간
         }

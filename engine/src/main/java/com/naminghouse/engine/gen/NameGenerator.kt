@@ -6,6 +6,7 @@ import com.naminghouse.engine.eval.NameEvaluator
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.oheng.BaleumOheng
+import com.naminghouse.engine.oheng.BaleumPath
 import com.naminghouse.engine.oheng.BaleumSchool
 import com.naminghouse.engine.saju.SajuSummary
 import com.naminghouse.engine.suri.SuriCalculator
@@ -97,7 +98,8 @@ class NameGenerator(
 
             val full = surname + pool.name
             val baleum = BaleumOheng.evaluate(full, options.school) ?: continue
-            if (options.excludeSanggeuk && baleum.hasSanggeuk) continue
+            // 성씨 받침 경로로 풀리는 배열은 실무상 상생이므로 후보에서 빼지 않는다.
+            if (options.excludeSanggeuk && baleum.path == BaleumPath.NONE) continue
 
             val best = if (wantLength == 1) {
                 bestHanjaSingle(pool.name, validSingles, targets, gisin, options)

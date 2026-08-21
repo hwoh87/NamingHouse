@@ -47,9 +47,10 @@ class CalibrationAuditTest {
                 val e = NameEvaluator.evaluate(s, nm, listOf(sh), listOf(c1[0], c2[0]), sj)
                 suri += 30.0 * e.suri.all.sumOf { g -> when (g.grade.name) {
                     "DAEGIL" -> 1.0; "GIL" -> 0.9; "PYEONG" -> 0.6; "HYUNG" -> 0.35; else -> 0.2 } } / 4.0
-                val sg = e.baleum?.relations?.count { it.name == "SANGGEUK" } ?: 0
+                val sg = e.baleum?.effectiveSanggeuk ?: 0
                 bal += when { e.baleum == null -> 9.0
                     sg > 0 -> (18.0 - 6.0 * sg).coerceAtLeast(5.0)
+                    e.baleum!!.rescuedByJongseong -> 16.0
                     e.baleumVerdict.name == "GIL" -> 18.0; else -> 13.0 }
                 val ssg = e.suriOheng.relations.count { it.name == "SANGGEUK" }
                 soh += when { ssg > 0 -> (12.0 - 4.0 * ssg).coerceAtLeast(4.0)
