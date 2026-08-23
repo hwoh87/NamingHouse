@@ -9,13 +9,8 @@ name: Android Production Promote
 # 트리거: workflow_dispatch 뿐이다. 프로덕션 공개는 사람이 명시적으로 눌러야 하는 일이라
 # push/tag 자동 트리거를 일부러 달지 않았다.
 #
-# 주의 ①: **아직 한 번도 공개되지 않은 초안 앱**은 rollout=draft 만 통한다. Play 가 초안 앱의
-# 첫 프로덕션 출시를 Console UI 로 강제하기 때문이다("Only releases with status draft may be
-# created on draft app"). 첫 출시를 Console 에서 한 뒤부터 rollout=1 승격이 동작한다.
-#
-# 주의 ②: 서비스 계정(astlane-supply@samra-play)은 이 앱에 **테스트 트랙 권한만** 갖고 있다
-# (앱 정보 보기 / 알파 테스트 트랙으로 출시 / 테스트 트랙 관리). 프로덕션 출시 권한은 콘솔
-# 사용자 및 권한에서 넓혀야 하며, 그 전에는 여기서 "The caller does not have permission" 이 난다.
+# 이 앱은 프로덕션 첫 출시를 이미 마쳤으므로 rollout=1 승격이 그대로 동작한다
+# (초안 앱만 rollout=draft 를 강제받는다 — 여기 해당 없음).
 on:
   workflow_dispatch:
     inputs:

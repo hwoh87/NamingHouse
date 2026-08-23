@@ -120,9 +120,11 @@ The script prints the failing step and the tail of its log. Map it:
     (`astlane-supply@samra-play`) has **per-app** permissions, and being listed
     under 사용자 및 권한 does NOT imply access to every app. Check
     사용자 및 권한 → that account → 앱 권한 and confirm 작명하우스 is listed.
-    It currently holds test-track rights only (4 permissions: 앱 정보 보기,
-    알파 테스트 트랙으로 출시, 테스트 트랙 관리) — deliberately no production
-    release right, so a production promote would need it widened first.
+    **Confirmed 2026-08-22**: this account has no production release right on
+    작명하우스 — run 32542174224 died on `The caller does not have permission`
+    while the same account's internal upload had just succeeded. It *does*
+    promote fine on 삼라만상/마이타로, so the gap is per-app, not the account.
+    Only the user can widen it (사용자 및 권한 → 앱 권한 → 작명하우스).
   - *"includes the AD_ID permission but your declaration … says your app doesn't
     use advertising ID"*: the 앱 콘텐츠 → **광고 ID** declaration is a *third*
     declaration, separate from 광고 and 데이터 보안. AdMob merges
@@ -142,12 +144,26 @@ uploading. Never print the values.
 After fixing CI-side issues, commit **only** the CI files — keep parallel
 app-code churn out of your commit — then re-run the script.
 
-## Not covered here
+## Production promote
 
-Production promote is not wired up in this repo (삼라만상 has an
-`android-production-promote.yml` + a `production_promote` fastlane lane). If the
-user asks to promote to production, that workflow needs porting first — say so
-rather than improvising a production push.
+Wired up as of 2026-08-22: `.github/workflows/android-production-promote.yml` +
+the `production_promote` fastlane lane, ported from 마이타로. It re-uses the AAB
+already on the internal track (no rebuild), so the binary testers verified is the
+one that ships.
+
+```bash
+gh workflow run android-production-promote.yml --ref main \
+  -f version_code=<internal versionCode> -f rollout=1     # 0.2 for a 20% staged rollout
+```
+
+The app has already had its first production release, so `rollout=1` works — the
+`draft`-only restriction applies to never-published apps and not to this one.
+This is a public release: get an explicit go-ahead for the specific versionCode
+and rollout before triggering it, never infer it from a request to "deploy".
+
+**Blocked today**: the service account lacks the production release right on this
+app (see the permission entry above), so this workflow fails in ~3s until the
+user widens it in Play Console. Until then the console is the only promote path.
 
 ## Manual fallback
 
