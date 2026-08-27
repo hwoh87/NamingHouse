@@ -39,7 +39,8 @@ import com.naminghouse.app.ui.theme.InkSpace
  * 동의·SDK 초기화가 끝나 있어야 한다([AdsInit.adsReady]). 둘 중 하나라도 아니면 자리도 차지하지 않는다
  * — 빈 상자가 잠깐 떴다 사라지면 목록이 튄다.
  *
- * 광고를 목록 '사이'가 아니라 맨 끝에만 두는 건 의도다. 이름을 고르는 흐름을 끊지 않는다.
+ * 자리는 목록 위쪽 한 번과 맨 끝 한 번(자세한 배치는 ResultScreen 의 `rowsWithAd`). 첫 화면은
+ * 이름만으로 두되, 끝자리에만 두었을 때처럼 60개를 다 내린 사람만 보게 되지는 않게 한다.
  */
 @Composable
 fun ResultListAd(vm: NamingViewModel, modifier: Modifier = Modifier) {

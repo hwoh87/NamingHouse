@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -136,9 +137,9 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             "수리사격 · 발음오행 · 수리오행 · 자원오행 · 음양을 종합해 점수순으로 놓았습니다",
                         )
                     }
-                    itemsIndexed(vm.candidates) { i, cand ->
+                    rowsWithAd(vm, vm.candidates) { rank, cand ->
                         CandidateRow(
-                            rank = i + 1,
+                            rank = rank,
                             eval = cand.evaluation,
                             stat = cand.stat,
                             isFavorite = vm.isFavorite(cand.evaluation),
@@ -149,8 +150,6 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             },
                         )
                     }
-                    item { ResultListAd(vm) }
-                    item { Spacer(Modifier.height(InkSpace.s28)) }
                 }
 
                 AppMode.HANJA -> {
@@ -160,9 +159,9 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             "같은 소리에 붙일 수 있는 인명용 한자를 점수순으로 놓았습니다",
                         )
                     }
-                    itemsIndexed(vm.hanjaCombos) { i, eval ->
+                    rowsWithAd(vm, vm.hanjaCombos) { rank, eval ->
                         CandidateRow(
-                            rank = i + 1,
+                            rank = rank,
                             eval = eval,
                             stat = vm.nameStats[eval.givenName],
                             emphasizeHanja = true,
@@ -174,8 +173,6 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             },
                         )
                     }
-                    item { ResultListAd(vm) }
-                    item { Spacer(Modifier.height(InkSpace.s28)) }
                 }
 
                 // 감명은 목록 없이 상세로 바로 간다 — 이 화면에 올 일이 없다.
@@ -183,6 +180,41 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
             }
         }
     }
+}
+
+/**
+ * 배너를 끼울 자리 — 상위 몇 개를 훑은 직후.
+ *
+ * 첫 화면에는 이름만 놓는다(광고가 먼저 보이면 무슨 앱인지부터 흐려진다). 대신 스크롤을
+ * 시작한 사람은 반드시 한 번 지나가게 둔다 — 끝자리에만 두면 60개를 다 내린 사람만 보게 되어
+ * 사실상 아무에게도 노출되지 않았다.
+ */
+private const val AD_SLOT_AFTER = 5
+
+/** 끝자리 배너를 살려 둘 최소 간격 — 이보다 짧으면 위 배너와 한 화면에 겹친다. */
+private const val AD_TAIL_MIN_GAP = 10
+
+/**
+ * 후보 줄을 깔면서 [AD_SLOT_AFTER] 번째 뒤와 목록 끝에 배너를 끼운다.
+ *
+ * 추천·한자 두 모드가 같은 배치를 쓰도록 여기 한 곳에 모은다 — 한쪽만 고치면 자리가 어긋난다.
+ * 배너 자체가 광고 제거 구매자·초기화 전에는 자리를 차지하지 않으므로([ResultListAd])
+ * 여기서 따로 가리지 않는다.
+ */
+private fun <T> LazyListScope.rowsWithAd(
+    vm: NamingViewModel,
+    items: List<T>,
+    row: @Composable (rank: Int, item: T) -> Unit,
+) {
+    val head = items.take(AD_SLOT_AFTER)
+    val tail = items.drop(AD_SLOT_AFTER)
+
+    itemsIndexed(head) { i, item -> row(i + 1, item) }
+    // 목록이 [AD_SLOT_AFTER] 보다 짧으면 이 자리가 곧 끝자리다 — 그래도 한 번은 나온다.
+    if (items.isNotEmpty()) item { ResultListAd(vm) }
+    itemsIndexed(tail) { i, item -> row(AD_SLOT_AFTER + i + 1, item) }
+    if (tail.size >= AD_TAIL_MIN_GAP) item { ResultListAd(vm) }
+    item { Spacer(Modifier.height(InkSpace.s28)) }
 }
 
 @Composable
