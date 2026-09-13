@@ -24,6 +24,8 @@ object RewardedAds {
 
     private var ad: RewardedAd? = null
     private var loading = false
+    private var showing = false
+    private var loadedAt = 0L
 
     private val _ready = MutableStateFlow(false)
 
@@ -34,7 +36,11 @@ object RewardedAds {
     fun available(context: Context): Boolean = AdIds.rewardedUnitId(context) != null
 
     fun preload(context: Context) {
-        if (loading || ad != null) return
+        if (loading || showing) return
+        if (ad != null && android.os.SystemClock.elapsedRealtime() - loadedAt < AdPolicy.CACHE_TTL_MS) return
+        ad = null
+        _ready.value = false
+        if (!AdFrequency(context).rewardAllowed()) return
         val unitId = AdIds.rewardedUnitId(context) ?: return
         if (!AdsInit.adsReady.value) return // 동의 전에는 요청하지 않는다
         loading = true
@@ -45,6 +51,7 @@ object RewardedAds {
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(loaded: RewardedAd) {
                     ad = loaded
+                    loadedAt = android.os.SystemClock.elapsedRealtime()
                     loading = false
                     _ready.value = true
                 }
@@ -64,6 +71,13 @@ object RewardedAds {
      * @param onUnavailable 아직 받아 둔 광고가 없을 때. 부르는 쪽이 안내하고 다시 받아 둔다.
      */
     fun show(activity: Activity, onReward: () -> Unit, onUnavailable: () -> Unit) {
+        if (showing || activity.isFinishing || activity.isDestroyed) return
+        if (!AdsInit.adsReady.value || !AdFrequency(activity).rewardAllowed()) {
+            onUnavailable(); return
+        }
+        if (android.os.SystemClock.elapsedRealtime() - loadedAt >= AdPolicy.CACHE_TTL_MS) {
+            ad = null; _ready.value = false
+        }
         val loaded = ad
         if (loaded == null) {
             preload(activity)
@@ -73,13 +87,19 @@ object RewardedAds {
         // 다음 요청을 막지 않도록 손에서 먼저 놓는다 — 같은 광고를 두 번 보여 줄 수 없다.
         ad = null
         _ready.value = false
+        showing = true
+        var rewarded = false
         loaded.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() = preload(activity)
+            override fun onAdShowedFullScreenContent() { AdFrequency(activity).record("reward") }
+            override fun onAdDismissedFullScreenContent() { showing = false; preload(activity) }
             override fun onAdFailedToShowFullScreenContent(error: com.google.android.gms.ads.AdError) {
+                showing = false
                 preload(activity)
                 onUnavailable()
             }
         }
-        loaded.show(activity) { onReward() }
+        loaded.show(activity) {
+            if (!rewarded) { rewarded = true; onReward() }
+        }
     }
 }

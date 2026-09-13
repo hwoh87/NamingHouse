@@ -69,6 +69,11 @@ jobs:
           bundler-cache: true
           cache-version: 1
 
+      - name: Verify release code
+        run: |
+          python3 tools/design-guard.py
+          ./gradlew :app:testDebugUnitTest :app:lintDebug
+
       - name: Decode Android Keystore
         shell: bash
         env:

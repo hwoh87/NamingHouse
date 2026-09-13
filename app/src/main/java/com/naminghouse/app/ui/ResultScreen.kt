@@ -33,6 +33,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,6 +84,12 @@ private fun ganziHangul(ganzi: String): String = buildString {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    val adsReady by com.naminghouse.app.ads.AdsInit.adsReady.collectAsState()
+    val entitlementLoaded by vm.premium.entitlementLoaded.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(adsReady, vm.isAdFree, entitlementLoaded) {
+        if (entitlementLoaded && activity != null) com.naminghouse.app.ads.InterstitialAds.preload(activity, vm.isAdFree)
+    }
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = {
@@ -101,6 +109,11 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
             },
             actions = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val next: () -> Unit = { nav.popBackStack(); Unit }
+                    if (activity != null && entitlementLoaded) com.naminghouse.app.ads.InterstitialAds.finishResults(activity, vm.isAdFree, next)
+                    else next()
+                }) { Text("조건 변경", style = MaterialTheme.typography.labelMedium) }
                 FavoritesAction(count = vm.favorites.size) {
                     nav.navigate(Routes.FAVORITES) {
                         popUpTo(Routes.HOME) { saveState = true }
@@ -189,13 +202,10 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
  * 시작한 사람은 반드시 한 번 지나가게 둔다 — 끝자리에만 두면 60개를 다 내린 사람만 보게 되어
  * 사실상 아무에게도 노출되지 않았다.
  */
-private const val AD_SLOT_AFTER = 5
-
-/** 끝자리 배너를 살려 둘 최소 간격 — 이보다 짧으면 위 배너와 한 화면에 겹친다. */
-private const val AD_TAIL_MIN_GAP = 10
+private const val AD_SLOT_AFTER = 8
 
 /**
- * 후보 줄을 깔면서 [AD_SLOT_AFTER] 번째 뒤와 목록 끝에 배너를 끼운다.
+ * 후보가 충분할 때 [AD_SLOT_AFTER] 번째 뒤에 배너 한 자리를 둔다.
  *
  * 추천·한자 두 모드가 같은 배치를 쓰도록 여기 한 곳에 모은다 — 한쪽만 고치면 자리가 어긋난다.
  * 배너 자체가 광고 제거 구매자·초기화 전에는 자리를 차지하지 않으므로([ResultListAd])
@@ -210,10 +220,10 @@ private fun <T> LazyListScope.rowsWithAd(
     val tail = items.drop(AD_SLOT_AFTER)
 
     itemsIndexed(head) { i, item -> row(i + 1, item) }
-    // 목록이 [AD_SLOT_AFTER] 보다 짧으면 이 자리가 곧 끝자리다 — 그래도 한 번은 나온다.
-    if (items.isNotEmpty()) item { ResultListAd(vm) }
+    // 짧은 목록은 광고 없이 읽는다. 한 목록에 배너는 한 자리만 둔다.
+    if (items.size > AD_SLOT_AFTER) item { ResultListAd(vm) }
     itemsIndexed(tail) { i, item -> row(AD_SLOT_AFTER + i + 1, item) }
-    if (tail.size >= AD_TAIL_MIN_GAP) item { ResultListAd(vm) }
+
     item { Spacer(Modifier.height(InkSpace.s28)) }
 }
 

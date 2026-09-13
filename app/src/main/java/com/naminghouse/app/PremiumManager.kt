@@ -17,6 +17,7 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -71,25 +72,33 @@ class PremiumManager(
     /** 일회성 안내문 — UI 가 토스트로 소비하고 null 로 되돌린다. */
     val message = MutableStateFlow<String?>(null)
 
+    val entitlementLoaded = MutableStateFlow(false)
+    val purchaseBusy = MutableStateFlow(false)
+    private var cacheJob: Job? = null
+    private val purchaseQueries = PurchaseQueryGuard()
+    private val connectionWaiters = mutableListOf<() -> Unit>()
+
     private val productDetailsById = mutableMapOf<String, ProductDetails>()
 
     private val client = BillingClient.newBuilder(app)
         .setListener(this)
+        .enableAutoServiceReconnection()
         .enablePendingPurchases(
             PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()
         )
         .build()
 
     fun start() {
-        scope.launch {
+        cacheJob = scope.launch {
             val cached = app.premiumStore.data.first()
             isPremium.value = cached[OWNED] == true
             hasAdFreeProduct.value = cached[AD_FREE] == true
             syncAdFree()
-        }
-        connect {
-            queryProducts()
-            refreshEntitlement()
+            entitlementLoaded.value = true
+            connect {
+                queryProducts()
+                refreshEntitlement()
+            }
         }
     }
 
@@ -109,12 +118,22 @@ class PremiumManager(
                 onReady()
                 return
             }
-            BillingClient.ConnectionState.CONNECTING -> return
+            BillingClient.ConnectionState.CONNECTING -> {
+                connectionWaiters.add(onReady)
+                return
+            }
             else -> Unit
         }
+        connectionWaiters.add(onReady)
         client.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) onReady()
+                val waiting = connectionWaiters.toList()
+                connectionWaiters.clear()
+                if (result.responseCode == BillingClient.BillingResponseCode.OK) waiting.forEach { it() }
+                else {
+                    purchaseBusy.value = false
+                    message.value = "Google Play에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."
+                }
             }
 
             override fun onBillingServiceDisconnected() = Unit
@@ -123,20 +142,27 @@ class PremiumManager(
 
     /** 시작·onResume 때 Play 구매 목록으로 소유를 다시 맞춘다 — 대기 결제 완료도 여기서 잡힌다. */
     fun refreshEntitlement() {
-        connect {
-            client.queryPurchasesAsync(
-                QueryPurchasesParams.newBuilder()
-                    .setProductType(BillingClient.ProductType.INAPP)
-                    .build()
-            ) { result, purchases ->
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                    purchases.forEach(::handlePurchase)
+        scope.launch {
+            cacheJob?.join()
+            connect {
+                val ticket = purchaseQueries.begin()
+                client.queryPurchasesAsync(
+                    QueryPurchasesParams.newBuilder()
+                        .setProductType(BillingClient.ProductType.INAPP)
+                        .build()
+                ) { result, purchases ->
+                    if (!purchaseQueries.isCurrent(ticket)) return@queryPurchasesAsync
+                    if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+                        reconcile(purchases)
+                    }
                 }
             }
         }
     }
 
-    private fun queryProducts() {
+    fun refreshProducts() = connect { queryProducts() }
+
+    private fun queryProducts(after: (() -> Unit)? = null) {
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(
                 ALL_PRODUCTS.map { id ->
@@ -148,10 +174,16 @@ class PremiumManager(
             )
             .build()
         client.queryProductDetailsAsync(params) { result, detailsResult ->
-            if (result.responseCode != BillingClient.BillingResponseCode.OK) return@queryProductDetailsAsync
+            if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                purchaseBusy.value = false
+                message.value = "상품 정보를 가져오지 못했습니다. 네트워크를 확인해 주세요."
+                return@queryProductDetailsAsync
+            }
+            productDetailsById.clear()
             detailsResult.productDetailsList.forEach { productDetailsById[it.productId] = it }
             priceText.value = formattedPrice(PRODUCT_ID)
             adFreePriceText.value = formattedPrice(AD_FREE_PRODUCT_ID)
+            after?.invoke()
         }
     }
 
@@ -165,29 +197,44 @@ class PremiumManager(
     fun launchAdFreePurchase(activity: Activity) = launchPurchase(activity, AD_FREE_PRODUCT_ID)
 
     private fun launchPurchase(activity: Activity, productId: String) {
-        val details = productDetailsById[productId]
-        if (details == null) {
-            message.value = "상품 정보를 불러오는 중입니다 — 잠시 후 다시 시도해 주세요"
-            connect { queryProducts() }
+        if (purchaseBusy.value) return
+        if (isPremium.value || (productId == AD_FREE_PRODUCT_ID && isAdFree.value)) {
+            message.value = "이미 이용 중인 상품입니다"
             return
         }
-        val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
-            .setProductDetails(details)
-            .build()
-        val result = client.launchBillingFlow(
-            activity,
-            BillingFlowParams.newBuilder()
-                .setProductDetailsParamsList(listOf(productParams))
-                .build()
-        )
-        if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-            message.value = "결제 화면을 열지 못했습니다 — Google Play 상태를 확인해 주세요"
+        purchaseBusy.value = true
+        com.naminghouse.app.ads.AdFrequency(app).suppressFullScreen()
+        connect {
+            queryProducts {
+                val details = productDetailsById[productId]
+                val offer = details?.oneTimePurchaseOfferDetailsList?.firstOrNull()
+                if (details == null || offer == null || activity.isFinishing || activity.isDestroyed) {
+                    purchaseBusy.value = false
+                    message.value = "현재 구매 가능한 상품이 없습니다. 잠시 후 다시 시도해 주세요."
+                    return@queryProducts
+                }
+                val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
+                    .setProductDetails(details)
+                    .apply { offer.offerToken?.let { setOfferToken(it) } }
+                    .build()
+                val result = client.launchBillingFlow(activity, BillingFlowParams.newBuilder()
+                    .setProductDetailsParamsList(listOf(productParams)).build())
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                    purchaseBusy.value = false
+                    message.value = "결제 화면을 열지 못했습니다 — Google Play 상태를 확인해 주세요"
+                }
+            }
         }
     }
 
     override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {
+        purchaseBusy.value = false
         when (result.responseCode) {
-            BillingClient.BillingResponseCode.OK -> purchases?.forEach(::handlePurchase)
+            BillingClient.BillingResponseCode.OK -> {
+                purchaseQueries.purchaseUpdated()
+                purchases?.forEach(::handlePurchase)
+                refreshEntitlement()
+            }
             BillingClient.BillingResponseCode.USER_CANCELED -> Unit
             BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
                 // 어느 상품인지는 응답에 없다 — 구매 목록을 다시 읽어 맞춘다.
@@ -219,6 +266,23 @@ class PremiumManager(
         }
     }
 
+    /** 성공한 전체 조회만 캐시를 대체한다. 실패/오프라인은 기존 권한을 유지한다. */
+    private fun reconcile(purchases: List<Purchase>) {
+        val active = purchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+            .flatMap { it.products }.toSet()
+        val next = Entitlements(isPremium.value, hasAdFreeProduct.value).reconcile(true, active)
+        isPremium.value = next.premium
+        hasAdFreeProduct.value = next.adFreeProduct
+        syncAdFree()
+        scope.launch {
+            app.premiumStore.edit {
+                it[OWNED] = PRODUCT_ID in active
+                it[AD_FREE] = AD_FREE_PRODUCT_ID in active
+            }
+        }
+        purchases.forEach(::handlePurchase)
+    }
+
     /** 이미 알고 있던 소유면 조용히 넘어간다 — 실행할 때마다 토스트가 뜨면 안 된다. */
     private fun own(productId: String) {
         when (productId) {
@@ -240,39 +304,33 @@ class PremiumManager(
 
     /** 설정의 '구매 복원' — 결과를 반드시 한 줄로 알린다(스토어 심사 요구이기도 하다). */
     fun restore() {
-        if (client.connectionState != BillingClient.ConnectionState.CONNECTED) {
-            client.startConnection(object : BillingClientStateListener {
-                private var replied = false
-                override fun onBillingSetupFinished(result: BillingResult) {
-                    if (replied) return
-                    replied = true
-                    if (result.responseCode == BillingClient.BillingResponseCode.OK) doRestore()
-                    else message.value = "Google Play 에 연결하지 못했습니다"
-                }
-
-                override fun onBillingServiceDisconnected() = Unit
-            })
-            return
+        scope.launch {
+            cacheJob?.join()
+            connect { doRestore() }
         }
-        doRestore()
     }
 
     private fun doRestore() {
+        val ticket = purchaseQueries.begin()
         client.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder()
                 .setProductType(BillingClient.ProductType.INAPP)
                 .build()
         ) { result, purchases ->
+            if (!purchaseQueries.isCurrent(ticket)) {
+                message.value = "구매 내역을 새로 확인 중입니다. 잠시 후 복원을 다시 눌러 주세요."
+                return@queryPurchasesAsync
+            }
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
                 message.value = "구매 내역을 확인하지 못했습니다 — 잠시 후 다시 시도해 주세요"
                 return@queryPurchasesAsync
             }
+            reconcile(purchases)
             val owned = purchases.any { purchase ->
                 purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
                     ALL_PRODUCTS.any { it in purchase.products }
             }
             if (owned) {
-                purchases.forEach(::handlePurchase)
                 message.value = "구매를 복원했습니다"
             } else {
                 message.value = "복원할 구매 내역이 없습니다"

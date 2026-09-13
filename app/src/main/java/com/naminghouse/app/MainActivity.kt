@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        com.naminghouse.app.ads.InterstitialAds.startSession(this)
         // 동의를 받은 뒤에야 광고 SDK 를 켠다 — 순서가 뒤집히면 GDPR 위반이다.
         // 광고 제거를 산 사람에게도 초기화 자체는 무해하다(배너 쪽에서 따로 막는다).
         ConsentManager.gatherConsent(this) { AdsInit.ensureInitialized(this) }

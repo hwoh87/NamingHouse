@@ -16,6 +16,9 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
+        // 전면 광고는 출시 기본값 OFF. 운영 단위와 활성 플래그를 모두 요구한다.
+        resValue("string", "interstitial_ad_unit", providers.gradleProperty("INTERSTITIAL_AD_UNIT").orElse("").get())
+        resValue("bool", "interstitial_ads_enabled", providers.gradleProperty("ENABLE_INTERSTITIAL_ADS").orElse("false").get())
         versionName = (project.findProperty("VERSION_NAME") as String?) ?: "1.0"
     }
 
@@ -53,6 +56,7 @@ android {
     }
     buildFeatures {
         compose = true
+        resValues = true
     }
 }
 

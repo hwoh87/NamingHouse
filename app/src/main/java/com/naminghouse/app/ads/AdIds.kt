@@ -29,6 +29,12 @@ object AdIds {
     fun rewardedUnitId(context: Context): String? =
         if (isDebuggable(context)) TEST_REWARDED else PROD_REWARDED.ifEmpty { null }
 
+    fun interstitialUnitId(context: Context): String? {
+        if (!context.resources.getBoolean(com.naminghouse.app.R.bool.interstitial_ads_enabled)) return null
+        return if (isDebuggable(context)) "ca-app-pub-3940256099942544/1033173712"
+        else context.getString(com.naminghouse.app.R.string.interstitial_ad_unit).ifBlank { null }
+    }
+
     private fun isDebuggable(context: Context): Boolean =
         (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 }

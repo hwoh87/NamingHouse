@@ -310,7 +310,7 @@ fun writeCertificatePdf(
     birthLine: String?,
     issuedDate: String,
 ) {
-    val soft = if (jokja.config == Bitmap.Config.HARDWARE) {
+    val soft = if (android.os.Build.VERSION.SDK_INT >= 26 && jokja.config == Bitmap.Config.HARDWARE) {
         jokja.copy(Bitmap.Config.ARGB_8888, false)
     } else {
         jokja

@@ -1,6 +1,8 @@
 package com.naminghouse.app.ui
 
 import android.app.Activity
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +49,8 @@ import com.naminghouse.app.ui.theme.InkTheme
 fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
     val activity = LocalContext.current as? Activity
     val price by vm.premium.priceText.collectAsState()
+    val busy by vm.premium.purchaseBusy.collectAsState()
+    LaunchedEffect(Unit) { vm.premium.refreshProducts() }
 
     // 결제가 끝나 소유가 켜지면 시트는 스스로 닫힌다.
     LaunchedEffect(vm.isPremium) {
@@ -61,6 +65,7 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
         Column(
             Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = InkSpace.s24)
                 .padding(bottom = InkSpace.s28),
             verticalArrangement = Arrangement.spacedBy(InkSpace.s16),
@@ -100,16 +105,21 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
 
             Button(
                 onClick = { activity?.let { vm.premium.launchPurchase(it) } },
+                enabled = price != null && !busy && activity != null,
                 shape = InkShape.medium,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 Text(
-                    price?.let { "$it · 프리미엄 열기" } ?: "프리미엄 열기",
+                    price?.let { "$it · 프리미엄 열기" } ?: "가격을 확인하고 있습니다",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
             }
 
+            if (price == null) {
+                TextButton(onClick = { vm.premium.refreshProducts() }) { Text("가격 다시 불러오기") }
+            }
+            Text("1회 결제 · 자동 갱신 없음", style = MaterialTheme.typography.labelMedium)
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

@@ -57,56 +57,35 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
             Spacer(Modifier.width(InkSpace.s12))
             Column {
                 Text(
-                    "작명하우스",
+                    "네이밍하우스",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "사주와 성명학으로 이름을 짓습니다",
+                    "NAMING HOUSE  ·  이름에 담는 마음",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
-        // ── 지난 작명 — 저장된 입력이 있을 때만
+        NamingHero(vm.hasSavedInput, onStart = {
+            vm.mode = AppMode.RECOMMEND
+            nav.navigate(Routes.INPUT)
+        })
         if (vm.hasSavedInput) {
-            InkCard {
-                SectionTitle("지난 작명")
-                Text(
-                    lastInputSummary(vm),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Button(
-                    onClick = {
-                        vm.mode = AppMode.RECOMMEND
-                        nav.navigate(Routes.INPUT)
-                    },
-                    shape = InkShape.medium,
-                    modifier = Modifier.fillMaxWidth().height(46.dp),
-                ) {
-                    Text(
-                        "이어서 이름 짓기",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
+            Text(lastInputSummary(vm), style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        // ── 모드 문패 셋
-        ModeCard(
-            glyph = "薦", title = "이름 추천",
-            desc = "사주에 맞는 이름을 점수순으로 찾아 드립니다",
-        ) { vm.mode = AppMode.RECOMMEND; nav.navigate(Routes.INPUT) }
-        ModeCard(
-            glyph = "字", title = "한자 추천",
-            desc = "정해 둔 한글 이름에 좋은 한자 조합을 붙입니다",
-        ) { vm.mode = AppMode.HANJA; nav.navigate(Routes.INPUT) }
-        ModeCard(
-            glyph = "鑑", title = "이름 감명",
-            desc = "지어 둔 이름의 풀이와 점수를 봅니다",
-        ) { vm.mode = AppMode.EVALUATE; nav.navigate(Routes.INPUT) }
+        SectionTitle("어디서부터 시작할까요?")
+        Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
+            NamingToolTile("字", "한자 찾기", "정해둔 이름에\n좋은 뜻을 더해요", {
+                vm.mode = AppMode.HANJA; nav.navigate(Routes.INPUT)
+            }, Modifier.weight(1f))
+            NamingToolTile("鑑", "이름 풀이", "이름에 담긴 뜻과\n조화를 살펴봐요", {
+                vm.mode = AppMode.EVALUATE; nav.navigate(Routes.INPUT)
+            }, Modifier.weight(1f))
+        }
         ModeCard(
             glyph = "譜", title = "인기 이름 순위",
             desc = "요즘 아기들이 많이 받는 이름을 순위로 봅니다",
@@ -163,6 +142,8 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
             }
         }
+
+        NamingTrustNote()
 
         // ── 형제 앱 — 사주를 더 깊이 보고 싶은 사람에게
         SamraBanner()

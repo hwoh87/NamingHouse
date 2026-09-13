@@ -1,6 +1,8 @@
 package com.naminghouse.app.ui
 
 import android.app.Activity
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -133,15 +135,18 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
     val context = LocalContext.current
     val activity = context as? Activity
     val price by vm.premium.priceText.collectAsState()
+    val busy by vm.premium.purchaseBusy.collectAsState()
+    LaunchedEffect(Unit) { vm.premium.refreshProducts() }
     val adReady by RewardedAds.ready.collectAsState()
-    val adUsable = activity != null && RewardedAds.available(context)
+    val adUsable = activity != null && !vm.isPremium && RewardedAds.available(context)
+    val adsReady by com.naminghouse.app.ads.AdsInit.adsReady.collectAsState()
     val name = eval.surname + eval.givenName
 
     // 열리는 순간 시트는 스스로 닫힌다 — 광고를 다 본 뒤 손이 한 번 덜 간다.
     LaunchedEffect(vm.isUnlocked(eval)) {
         if (vm.isUnlocked(eval)) onDismiss()
     }
-    LaunchedEffect(Unit) { RewardedAds.preload(context) }
+    LaunchedEffect(adsReady, vm.isPremium) { if (!vm.isPremium) RewardedAds.preload(context) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -151,6 +156,7 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
         Column(
             Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = InkSpace.s24)
                 .padding(bottom = InkSpace.s28),
             verticalArrangement = Arrangement.spacedBy(InkSpace.s16),
@@ -203,7 +209,9 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
                             activity = activity,
                             onReward = { vm.grantAdUnlock(eval) },
                             onUnavailable = {
-                                vm.premium.message.value = "광고를 준비하는 중입니다 — 잠시 후 다시 시도해 주세요"
+                                val frequency = com.naminghouse.app.ads.AdFrequency(context)
+                                vm.premium.message.value = if (!frequency.rewardAllowed()) frequency.rewardMessage()
+                                    else "광고를 불러오지 못했어요. 잠시 후 다시 시도하거나 무료 열람을 이용해 주세요."
                             },
                         )
                     },
@@ -217,12 +225,14 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
                     )
                     Spacer(Modifier.width(InkSpace.s8))
                     Text(
-                        if (adReady) "광고 보고 이 이름 열기" else "광고 준비 중",
+                        if (adReady) "광고 1회 보고 이 이름 열기" else "광고 다시 준비하기",
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
 
+            if (adUsable) Text("자발적 시청 · 하루 최대 5회 · 1분 간격\n완료하면 이 기기에 이 이름 풀이가 저장돼요. PDF는 프리미엄에 포함됩니다.",
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             InkStroke(
                 Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.onSurface,
@@ -244,16 +254,21 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
 
             Button(
                 onClick = { activity?.let { vm.premium.launchPurchase(it) } },
+                enabled = price != null && !busy && activity != null,
                 shape = InkShape.medium,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 Text(
-                    price?.let { "$it · 모든 이름 열기" } ?: "모든 이름 열기",
+                    price?.let { "$it · 모든 이름 열기" } ?: "가격을 확인하고 있습니다",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
             }
 
+            if (price == null) {
+                TextButton(onClick = { vm.premium.refreshProducts() }) { Text("가격 다시 불러오기") }
+            }
+            Text("1회 결제 · 자동 갱신 없음", style = MaterialTheme.typography.labelMedium)
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

@@ -139,14 +139,16 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
                 "광고 제거",
                 value = when {
                     vm.isAdFree -> "적용 중"
-                    else -> adFreePrice
+                    else -> adFreePrice ?: "가격 확인 중"
                 },
                 onClick = if (vm.isAdFree) {
                     null
                 } else {
-                    { activity?.let { vm.premium.launchAdFreePurchase(it) } }
+                    { if (adFreePrice == null) vm.premium.refreshProducts() else activity?.let { vm.premium.launchAdFreePurchase(it) } }
                 },
             )
+            Text("광고 제거는 배너·자동 전면 광고에 적용돼요. 감명서 열람용 광고는 원할 때만 선택할 수 있어요.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             SettingsRow("구매 복원", onClick = { vm.premium.restore() })
         }
 

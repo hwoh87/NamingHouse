@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -116,7 +117,8 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
     val unlocked = vm.isUnlocked(eval)
 
     // 잠긴 감명서에서만 보상형 광고가 쓰인다 — 필요할 때 당겨 두어야 버튼이 즉시 뜬다.
-    LaunchedEffect(unlocked) { if (!unlocked) RewardedAds.preload(context) }
+    val adsReady by com.naminghouse.app.ads.AdsInit.adsReady.collectAsState()
+    LaunchedEffect(unlocked, adsReady) { if (!unlocked) RewardedAds.preload(context) }
 
     // 표구는 프리미엄에서만 산다 — 소유가 꺼져 있으면(환불 등) 백지로 되돌린다.
     val style = if (vm.isPremium) vm.jokjaStyle else JokjaStyle.BAEKJI
