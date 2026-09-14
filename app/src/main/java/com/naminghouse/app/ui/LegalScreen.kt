@@ -48,19 +48,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = InkSpace.s8, bottom = InkSpace.s2),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = { nav.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
-            }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        SceneTopBar(title, { nav.popBackStack() })
 
         Column(
             Modifier
@@ -74,7 +62,7 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
                 when {
                     line.startsWith("# ") -> Unit // 문서 제목은 앱바가 대신한다
                     line.startsWith("## ") -> {
-                        Spacer(Modifier.height(InkSpace.s12))
+                        Spacer(Modifier.height(InkSpace.s24))
                         Text(
                             line.removePrefix("## "),
                             style = MaterialTheme.typography.titleMedium,
@@ -90,21 +78,21 @@ fun LegalScreen(title: String, assetPath: String, nav: NavHostController) {
                     line.startsWith("- ") -> Row {
                         Text(
                             "·",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Bold,
                         )
                         Spacer(Modifier.width(InkSpace.s8))
                         Text(
                             line.removePrefix("- "),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     line.isBlank() -> Spacer(Modifier.height(InkSpace.s2))
                     else -> Text(
                         line,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

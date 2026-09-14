@@ -62,12 +62,7 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
             .padding(horizontal = InkSpace.gutter),
         verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
     ) {
-        Text(
-            "설정",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = InkSpace.s16),
-        )
+        SceneHeading("나에게 맞는 이름책", "설정", "작명 기준과 화면, 이용 중인 혜택을 관리해요.")
 
         InkCard {
             SectionTitle("작명 기준")
@@ -189,7 +184,7 @@ private fun SettingsRow(label: String, value: String? = null, onClick: (() -> Un
             .fillMaxWidth()
             .clip(InkShape.medium)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
-            .padding(vertical = InkSpace.s8, horizontal = InkSpace.s2),
+            .padding(vertical = InkSpace.s16, horizontal = InkSpace.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))

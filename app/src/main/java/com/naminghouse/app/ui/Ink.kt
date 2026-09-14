@@ -6,6 +6,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -22,6 +26,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -129,20 +141,10 @@ fun HanjiBackdrop(modifier: Modifier = Modifier, content: @Composable BoxScope.(
                 painterResource(R.drawable.hanji_paper),
                 sizeToIntrinsics = false,
                 contentScale = ContentScale.Crop,
-                alpha = if (dark) 0.09f else 0.5f,
+                alpha = if (dark) 0.03f else 0.10f,
                 colorFilter = if (dark) InvertGrayFilter else null,
             )
     ) {
-        InkArt(
-            res = R.drawable.ink_ridge,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .height(300.dp),
-            // 제목과 앱바 아이콘이 이 위에 앉는다 — 먹이 진하면 글씨를 잡아먹으므로
-            // 봉우리 꼭대기까지 안개로 남을 만큼만 얹는다.
-            alpha = if (dark) 0.26f else 0.17f,
-        )
         // Surface 가 아니라 Box 로 배경을 깔기 때문에 기본 콘텐츠 색(검정)이 그대로 내려간다.
         // 다크 모드에서 색을 지정하지 않은 글씨가 검게 나오지 않도록 여기서 다시 잡아 준다.
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
@@ -230,13 +232,13 @@ fun InkStroke(
 fun InkCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    contentPadding: PaddingValues = PaddingValues(InkSpace.s16),
-    spacing: Dp = 10.dp,
+    contentPadding: PaddingValues = PaddingValues(InkSpace.card),
+    spacing: Dp = InkSpace.s12,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = InkShape.large
     // 반투명 면이라 Surface 가 대응하는 onColor 를 찾지 못한다 — 직접 지정한다.
-    val color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.82f)
+    val color = MaterialTheme.colorScheme.surfaceContainerLow
     val onColor = MaterialTheme.colorScheme.onSurface
     val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     val inner: @Composable () -> Unit = {
@@ -263,12 +265,6 @@ fun InkCard(
 @Composable
 fun SectionTitle(title: String, trailing: (@Composable () -> Unit)? = null) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier
-                .size(width = 3.dp, height = 15.dp)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.75f), RoundedCornerShape(2.dp))
-        )
-        Spacer(Modifier.width(InkSpace.s8))
         Text(
             title,
             style = MaterialTheme.typography.titleMedium,
@@ -317,12 +313,12 @@ fun BrandMark(modifier: Modifier = Modifier, size: Dp = 42.dp) {
     Box(
         modifier
             .size(size)
-            .background(Color(0xFF25313C), InkShape.medium),
+            .background(MaterialTheme.colorScheme.primary, InkShape.medium),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             "名",
-            color = Color(0xFFC9A44E),
+            color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.titleLarge,
             fontFamily = HanjaFamily,
             fontWeight = FontWeight.Bold,
@@ -338,65 +334,18 @@ fun BrandMark(modifier: Modifier = Modifier, size: Dp = 42.dp) {
  */
 @Composable
 fun InkNavBar(current: String?, onNavigate: (String) -> Unit) {
-    data class Tab(val route: String, val glyph: String, val label: String)
     val tabs = listOf(
-        Tab(Routes.HOME, "家", "홈"),
-        Tab(Routes.FAVORITES, "藏", "보관함"),
-        Tab(Routes.SETTINGS, "設", "설정"),
+        Triple(Routes.HOME, Icons.Outlined.Home, "홈"),
+        Triple(Routes.FAVORITES, Icons.Outlined.BookmarkBorder, "이름책"),
+        Triple(Routes.SETTINGS, Icons.Outlined.Tune, "설정"),
     )
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f))
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant)
-        )
-        Row(
-            Modifier
-                .navigationBarsPadding()
-                .padding(top = InkSpace.s8, bottom = InkSpace.s8)
-        ) {
-            tabs.forEachIndexed { i, tab ->
-                val on = tab.route == current
-                val color = if (on) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.onSurfaceVariant
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .clip(InkShape.medium)
-                        .clickable { onNavigate(tab.route) }
-                        .padding(vertical = InkSpace.s2),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        tab.glyph,
-                        fontFamily = HanjaFamily,
-                        fontSize = 17.sp,
-                        color = color.copy(alpha = if (on) 1f else 0.75f),
-                    )
-                    Text(
-                        tab.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
-                        color = color,
-                    )
-                    if (on) {
-                        InkStroke(
-                            Modifier.width(26.dp).padding(top = InkSpace.s2),
-                            color = MaterialTheme.colorScheme.primary,
-                            alpha = 0.85f,
-                            thickness = 4.dp,
-                            seed = i * 2.3f,
-                        )
-                    } else {
-                        Spacer(Modifier.height(InkSpace.s8))
-                    }
-                }
-            }
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest, tonalElevation = 0.dp) {
+        tabs.forEach { (route, icon, label) ->
+            NavigationBarItem(selected = route == current, onClick = { onNavigate(route) },
+                icon = { Icon(icon, null) }, label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary))
         }
     }
 }
@@ -417,7 +366,7 @@ fun <T> InkSegmented(
         contentColor = MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(Modifier.padding(InkSpace.s4)) {
+        Row(Modifier.padding(InkSpace.s4).selectableGroup()) {
             options.forEach { option ->
                 val on = option == selected
                 val fill = if (on) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -429,7 +378,8 @@ fun <T> InkSegmented(
                         .weight(1f)
                         .clip(InkShape.medium)
                         .background(fill)
-                        .clickable { onSelect(option) }
+                        .selectable(selected = on, role = Role.Tab, onClick = { onSelect(option) })
+                        .heightIn(min = 44.dp)
                         .padding(vertical = InkSpace.s8),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -438,7 +388,7 @@ fun <T> InkSegmented(
                         color = labelColor,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                 }
             }

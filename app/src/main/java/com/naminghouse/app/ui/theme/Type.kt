@@ -54,13 +54,13 @@ val InkTypography = Typography().run {
         headlineMedium = headlineMedium.copy(fontFamily = MaruBuri, letterSpacing = (-0.3).sp),
         headlineSmall = headlineSmall.copy(fontFamily = MaruBuri, letterSpacing = (-0.2).sp),
         titleLarge = titleLarge.copy(fontFamily = MaruBuri, letterSpacing = (-0.2).sp),
-        titleMedium = titleMedium.copy(fontFamily = MaruBuri),
-        titleSmall = titleSmall.copy(fontFamily = MaruBuri),
+        titleMedium = titleMedium.copy(fontFamily = Pretendard, fontWeight = FontWeight.SemiBold),
+        titleSmall = titleSmall.copy(fontFamily = Pretendard, fontWeight = FontWeight.SemiBold),
         bodyLarge = bodyLarge.copy(fontFamily = Pretendard, lineHeight = 24.sp),
         bodyMedium = bodyMedium.copy(fontFamily = Pretendard, lineHeight = 21.sp),
         bodySmall = bodySmall.copy(fontFamily = Pretendard, lineHeight = 18.sp),
         labelLarge = labelLarge.copy(fontFamily = Pretendard),
         labelMedium = labelMedium.copy(fontFamily = Pretendard),
-        labelSmall = labelSmall.copy(fontFamily = Pretendard),
+        labelSmall = labelSmall.copy(fontFamily = Pretendard, fontSize = 12.sp, lineHeight = 17.sp),
     )
 }

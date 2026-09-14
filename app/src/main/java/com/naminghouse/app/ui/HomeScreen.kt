@@ -46,19 +46,19 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = InkSpace.gutter),
-        verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
+        verticalArrangement = Arrangement.spacedBy(InkSpace.s20),
     ) {
         // ── 머리 — 브랜드
         Row(
             Modifier.padding(top = InkSpace.s20, bottom = InkSpace.s4),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BrandMark(size = 46.dp)
+            BrandMark(size = 40.dp)
             Spacer(Modifier.width(InkSpace.s12))
             Column {
                 Text(
                     "네이밍하우스",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
@@ -77,7 +77,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
             Text(lastInputSummary(vm), style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        SectionTitle("어디서부터 시작할까요?")
+        SectionTitle("이름을 만나는 다른 방법")
         Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
             NamingToolTile("字", "한자 찾기", "정해둔 이름에\n좋은 뜻을 더해요", {
                 vm.mode = AppMode.HANJA; nav.navigate(Routes.INPUT)
@@ -111,7 +111,7 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
                     InkArt(R.drawable.ink_plum, Modifier.size(72.dp), alpha = 0.4f)
                     Spacer(Modifier.width(InkSpace.s12))
                     Text(
-                        "추천 목록에서 별을 누르면\n여기 모입니다",
+                        "자꾸 불러보고 싶은 이름을\n별을 눌러 간직해보세요",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

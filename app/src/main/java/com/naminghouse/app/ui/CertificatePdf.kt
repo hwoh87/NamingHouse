@@ -148,7 +148,7 @@ private class CertWriter(
 
         // 바닥글 — 가운데 상호, 오른쪽 장 번호
         val foot = textPaint(7f, MUTED, fonts.body)
-        val label = "작명하우스 · 사주와 성명학 감명서"
+        val label = "네이밍하우스 · 사주와 성명학 감명서"
         canvas.drawText(label, (PAGE_W - foot.measureText(label)) / 2f, PAGE_H - 34f, foot)
         val no = "$pageNo"
         canvas.drawText(no, PAGE_W - MARGIN - foot.measureText(no), PAGE_H - 34f, foot)
@@ -362,7 +362,7 @@ private fun coverPage(
     w.y = 84f
     w.textCentered("감  명  서", PAGE_W / 2f, w.y, 24f, INK, fonts.maruBold)
     w.y += 16f
-    w.textCentered("鑑 名 書 · 작명하우스", PAGE_W / 2f, w.y, 8.5f, MUTED, fonts.hanja)
+    w.textCentered("鑑 名 書 · 네이밍하우스", PAGE_W / 2f, w.y, 8.5f, MUTED, fonts.hanja)
     w.y += 22f
 
     // 족자 — 표지의 주인공. 남는 폭을 종이 여백으로 남긴다.
@@ -383,7 +383,7 @@ private fun coverPage(
         birthLine?.let { add("사주 기준" to listOf(Run(it, INK))) }
             ?: add("사주 기준" to listOf(Run("출생 전 작명 — 사주 없이 성명학 축으로만 평가", MUTED)))
         add("종합 감명" to listOf(Run("${eval.score}점 · ${eval.grade}", GOLD, bold = true)))
-        add("발급" to listOf(Run("$issuedDate · 작명하우스", INK)))
+        add("발급" to listOf(Run("$issuedDate · 네이밍하우스", INK)))
     }
     val boxTop = w.y
     val boxH = rows.size * 17.5f + 22f
@@ -791,7 +791,7 @@ private fun closing(w: CertWriter, issuedDate: String) {
     w.divider(spacingAfter = 12f)
     val fonts = w.font()
     w.paragraph(
-        "이 감명서는 작명하우스가 사주와 성명학 여덟 축(수리사격·발음오행·수리오행·음양·자원오행·" +
+        "이 감명서는 네이밍하우스가 사주와 성명학 여덟 축(수리사격·발음오행·수리오행·음양·자원오행·" +
             "사주보완·불용한자·통계)으로 평가한 결과이며, 발급일 기준의 분석입니다.",
         size = 8f, color = MUTED, spacingAfter = 14f,
     )
@@ -803,7 +803,7 @@ private fun closing(w: CertWriter, issuedDate: String) {
     w.fillRounded(RectF(x, top, x + sealSize, top + sealSize), SEAL, 4f)
     w.textCentered("名", x + sealSize / 2f, top + sealSize / 2f + 6f, 17f, ON_SEAL, fonts.hanja)
     val lp = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8.5f; color = INK; typeface = fonts.maruBold }
-    w.canvas.drawText("작명하우스", x - 8f - lp.measureText("작명하우스"), top + sealSize / 2f + 3f, lp)
+    w.canvas.drawText("네이밍하우스", x - 8f - lp.measureText("네이밍하우스"), top + sealSize / 2f + 3f, lp)
     val dp = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 7.5f; color = MUTED; typeface = fonts.body }
     w.canvas.drawText(issuedDate, x - 8f - dp.measureText(issuedDate), top + sealSize / 2f + 14f, dp)
     w.y = top + sealSize + 8f

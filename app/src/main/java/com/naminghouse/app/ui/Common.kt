@@ -3,6 +3,8 @@ package com.naminghouse.app.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,20 +81,8 @@ fun SectionCard(title: String, help: String? = null, content: @Composable () -> 
     InkCard {
         SectionTitle(title) {
             if (help != null) {
-                Surface(
-                    shape = CircleShape,
-                    color = if (showHelp) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                    else Color.Transparent,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    modifier = Modifier.clip(CircleShape).clickable { showHelp = !showHelp },
-                ) {
-                    Text(
-                        "?",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = InkSpace.s8, vertical = InkSpace.s2),
-                    )
+                TextButton(onClick = { showHelp = !showHelp }) {
+                    Text(if (showHelp) "설명 닫기" else "용어 설명", style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -136,16 +126,14 @@ fun ElementBall(label: String, element: Element?, sub: String? = null) {
             Modifier
                 .size(40.dp)
                 .background(
-                    Brush.radialGradient(
-                        listOf(lerp(base, Color.White, 0.22f), base, lerp(base, Color.Black, 0.14f))
-                    ),
+                    base.copy(alpha = 0.14f),
                     CircleShape,
                 ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 label,
-                color = Color.White,
+                color = base,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium,
                 fontFamily = hanjaAwareFamily(label),
@@ -268,11 +256,11 @@ fun NameStatCard(stat: NameStat) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(InkSpace.s12),
             ) {
                 ranks.take(6).forEach { (year, rank) ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "$rank",
                             style = MaterialTheme.typography.titleLarge,
@@ -386,17 +374,17 @@ fun HanjaPickerDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = InkShape.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s20)) {
                 Text(
-                    "'$syllable' 인명용 한자",
+                    "'$syllable'에 담을 뜻",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "${candidates.size}자 · 이름에 흔히 쓰는 글자부터 보여 드립니다",
+                    "인명용 한자 ${candidates.size}자 · 뜻을 읽고 선택하세요",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -426,7 +414,7 @@ fun HanjaPickerDialog(
                                     Text(
                                         entry.meaning.ifEmpty { "-" },
                                         style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
@@ -442,10 +430,10 @@ fun HanjaPickerDialog(
                                     )
                                 }
                                 entry.element?.let { el ->
-                                    Surface(shape = CircleShape, color = InkTheme.colors.of(el)) {
+                                    Surface(shape = InkShape.small, color = InkTheme.colors.of(el).copy(alpha = 0.12f)) {
                                         Text(
                                             el.hanja,
-                                            color = Color.White,
+                                            color = InkTheme.colors.of(el),
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(InkSpace.s8),
@@ -496,10 +484,10 @@ fun HanjaSlotButton(
             )
             selected.element?.let { el ->
                 Spacer(Modifier.width(InkSpace.s8))
-                Surface(shape = CircleShape, color = InkTheme.colors.of(el)) {
+                Surface(shape = InkShape.small, color = InkTheme.colors.of(el).copy(alpha = 0.12f)) {
                     Text(
                         el.hanja,
-                        color = Color.White,
+                        color = InkTheme.colors.of(el),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(InkSpace.s4),
@@ -531,7 +519,7 @@ fun CityPickerDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = InkShape.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s20)) {

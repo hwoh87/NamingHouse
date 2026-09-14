@@ -1,6 +1,15 @@
 package com.naminghouse.app.ui
 
 import android.content.Intent
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,6 +86,7 @@ fun FavoritesAction(count: Int, onClick: () -> Unit) {
  * 추천 60개를 훑고 서너 개를 추려 배우자·부모님과 상의하는 게 실제 흐름이라,
  * 담아두기와 내보내기가 같이 있어야 쓸모가 있다.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
     val context = LocalContext.current
@@ -88,6 +98,33 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
         }
     }
     var notReady by remember { mutableStateOf(false) }
+    var selected by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var comparing by rememberSaveable { mutableStateOf(false) }
+    val compared = vm.favorites.filter { it.fullHangul + it.hanja in selected }
+    if (comparing) {
+        ModalBottomSheet(sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), onDismissRequest = { comparing = false }, containerColor = MaterialTheme.colorScheme.surfaceContainerLowest) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = InkSpace.s32)) {
+                SceneHeading("나란히 놓고 고르기", "우리 가족의 이름 후보", "저장 당시의 점수와 뜻을 비교해요.", Modifier.padding(horizontal = InkSpace.gutter))
+                Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = InkSpace.gutter),
+                    horizontalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
+                    compared.forEach { name ->
+                        InkCard(modifier = Modifier.width(220.dp), spacing = InkSpace.s16) {
+                            Text(name.fullHangul, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text(name.hanja, fontFamily = HanjaFamily, style = MaterialTheme.typography.titleLarge)
+                            SectionTitle("이름의 뜻")
+                            Text(name.meaning, style = MaterialTheme.typography.bodyMedium)
+                            SectionTitle("성명학 점수")
+                            Text("${name.score}점 · ${name.grade}", style = MaterialTheme.typography.titleMedium)
+                            TextButton(onClick = { comparing = false; notReady = !vm.openFavorite(name) }) { Text("상세 풀이 보기 →") }
+                        }
+                    }
+                }
+                Text("점수는 저장 당시 기준이에요. 출생 정보와 학파가 다르면 달라질 수 있어요.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(InkSpace.gutter))
+            }
+        }
+    }
 
     Column(
         Modifier
@@ -96,50 +133,26 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
             .padding(horizontal = InkSpace.gutter),
         verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
     ) {
-        Row(
-            Modifier.padding(top = InkSpace.s16),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "담아둔 이름",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    "${vm.favorites.size}개",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (vm.favorites.isNotEmpty()) {
-                Button(
-                    onClick = {
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareText(vm.favorites))
-                        }
-                        context.startActivity(Intent.createChooser(send, "이름 공유"))
-                    },
-                    shape = InkShape.medium,
-                ) {
-                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(InkSpace.s8))
-                    Text("공유")
+        SceneHeading("03  ·  가족의 이름책", "담아둔 이름", "마음에 남은 ${vm.favorites.size}개의 이름. 함께 비교하고 이야기해 보세요.")
+        if (vm.favorites.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
+                Button(onClick = { comparing = true }, enabled = compared.size >= 2,
+                    shape = InkShape.medium, modifier = Modifier.weight(1f).heightIn(min = 52.dp)) {
+                    Text("${compared.size}/3 이름 비교")
                 }
+                OutlinedButton(onClick = {
+                    val send = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, shareText(vm.favorites)) }
+                    context.startActivity(Intent.createChooser(send, "이름 공유"))
+                }, shape = InkShape.medium, modifier = Modifier.heightIn(min = 52.dp)) { Text("목록 공유") }
             }
+            Text("비교할 이름을 2~3개 선택해 주세요.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        InkStroke(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.primary, alpha = 0.22f)
 
         if (vm.favorites.isEmpty()) {
-            Box(Modifier.fillMaxWidth().height(240.dp), contentAlignment = Alignment.Center) {
-                InkArt(R.drawable.ink_plum, Modifier.size(190.dp), alpha = 0.45f)
-                Text(
-                    "추천 목록에서 별을 눌러\n마음에 드는 이름을 담아 보세요",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
+            EmptyNames("첫 번째 이름을 담아보세요", "추천 목록의 별을 누르면 이곳에 모여요. 가족과 나란히 비교하며 골라보세요.", "이름 찾으러 가기") {
+                vm.mode = com.naminghouse.app.AppMode.RECOMMEND
+                nav.navigate(com.naminghouse.app.Routes.INPUT)
             }
         } else {
             if (notReady) {
@@ -153,14 +166,19 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
                 InkCard(
                     onClick = { notReady = !vm.openFavorite(f) },
                     contentPadding = PaddingValues(InkSpace.s16),
-                    spacing = 4.dp,
+                    spacing = InkSpace.s12,
                 ) {
+                    val key = f.fullHangul + f.hanja
+                    FilterChip(selected = key in selected,
+                        enabled = key in selected || compared.size < 3,
+                        onClick = { selected = if (key in selected) selected - key else selected + key },
+                        label = { Text(if (key in selected) "비교 선택됨" else "비교에 추가") })
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.Bottom) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s4)) {
                                 Text(
                                     f.fullHangul,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 Spacer(Modifier.width(InkSpace.s8))

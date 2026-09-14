@@ -27,14 +27,15 @@ import org.junit.Test
  * "유료 감명서 PDF 의 색도 같이 바뀐다"는 알림이다. 의도한 변경이면 숫자를
  * 갱신하고, 인쇄 대비를 한 번 확인하고 넘어갈 것.
  */
+// 2026-09-14 전체 화면 개편: 본문·보조문·금색을 새 이름책 팔레트로 갱신.
 class CertificatePdfColorTest {
 
     @Test
     fun `인쇄용 색은 라이트 팔레트 값과 정확히 일치한다`() {
-        assertEquals(0xFF241F19.toInt(), INK)        // BrandLight.onSurface
-        assertEquals(0xFF67604F.toInt(), MUTED)      // BrandLight.onSurfaceVariant
-        assertEquals(0xFFD5CAB2.toInt(), RULE)       // BrandLight.outlineVariant
-        assertEquals(0xFFA5873F.toInt(), GOLD)       // LightInk.gold
+        assertEquals(0xFF252D28.toInt(), INK)        // BrandLight.onSurface
+        assertEquals(0xFF616A60.toInt(), MUTED)      // BrandLight.onSurfaceVariant
+        assertEquals(0xFFDEE2D7.toInt(), RULE)       // BrandLight.outlineVariant
+        assertEquals(0xFF806638.toInt(), GOLD)       // LightInk.gold
         assertEquals(0xFF9C3A2E.toInt(), SEAL)       // LightInk.seal
         assertEquals(0xFFFBF3E7.toInt(), ON_SEAL)    // LightInk.onSeal
         assertEquals(0xFF2F6B4A.toInt(), GIL)        // LightInk.gil

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,8 +60,9 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
     }
 
     ModalBottomSheet(
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(
@@ -70,44 +73,19 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
                 .padding(bottom = InkSpace.s28),
             verticalArrangement = Arrangement.spacedBy(InkSpace.s16),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "프리미엄 감명서",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        "지어 준 이름을 평생 소장품으로",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                SealBadge(main = "藏", sub = "소장")
+            SceneHeading("NAMING HOUSE  ·  PREMIUM", "이름에 담은 마음을,\n오래 간직하세요", "모든 이름의 깊은 풀이와 소장용 감명서. 한 번 결제로 이용해요.")
+            InkCard(spacing = InkSpace.s20) {
+                FeatureLine("모든 이름의 전체 풀이", "총평 · 수리사격 · 사주 보완 · 글자 풀이를 이름 수 제한 없이")
+                FeatureLine("나만의 감명서 소장", "고해상도 PDF 저장 · 이름 낙관 각인 · 감지금니와 다갈 표구")
+                FeatureLine("광고 없이, 다음 이름까지", "자동 광고 제거 포함 · 자동 갱신이나 재구매 없이")
             }
-
-            InkStroke(
-                Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                alpha = 0.25f,
-            )
-
-            FeatureLine(
-                "모든 이름의 감명서 전체 공개",
-                "총평 풀이 · 수리사격 4격 · 사주 보완 · 글자 풀이 · 불용한자까지, 이름 수 제한 없이",
-            )
-            FeatureLine("인쇄급 PDF 저장", "감명서 족자를 고해상도 PDF 로 — 인화·액자·출생 기록용")
-            FeatureLine("낙관에 이름 각인", "족자 낙관 자리에 아이 이름이 전각 도장으로 찍힙니다")
-            FeatureLine("표구 두 종 추가", "감지금니·다갈 — 족자의 종이와 먹빛을 바꿉니다")
-            FeatureLine("한 번으로 평생", "재구매 없음 · 광고 없음 — 둘째, 셋째 이름도 그대로 씁니다")
-
             Spacer(Modifier.height(InkSpace.s2))
 
             Button(
                 onClick = { activity?.let { vm.premium.launchPurchase(it) } },
                 enabled = price != null && !busy && activity != null,
                 shape = InkShape.medium,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             ) {
                 Text(
                     price?.let { "$it · 프리미엄 열기" } ?: "가격을 확인하고 있습니다",

@@ -13,6 +13,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,6 +68,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -183,30 +188,14 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    "이름 상세",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = { nav.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            // 상태바 인셋은 Scaffold 가 이미 콘텐츠에 주었다 — 기본값대로 두면 이중 공백.
-            windowInsets = WindowInsets(0, 0, 0, 0),
-        )
+        SceneTopBar("이름 이야기", { nav.popBackStack() })
 
         Column(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = InkSpace.gutter),
-            verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s20),
         ) {
             JokjaCard(
                 eval = eval,
@@ -216,7 +205,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                 } else {
                     null
                 },
-                modifier = Modifier.drawWithContent {
+                modifier = Modifier.testTag("name-cover").drawWithContent {
                     shareLayer.record { this@drawWithContent.drawContent() }
                     // PDF 용 3배 캡처 — 명령만 담아 두고 래스터화는 저장할 때 한다.
                     exportLayer.record(
@@ -244,7 +233,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                 },
             )
 
-            vm.saju?.let { SajuCard(it) }
+            FirstGreeting(eval.givenName)
 
             EvaluationDetail(
                 eval = eval,
@@ -274,7 +263,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                     onClick = { vm.toggleFavorite(eval) },
                     shape = InkShape.medium,
                     contentPadding = PaddingValues(horizontal = InkSpace.s8),
-                    modifier = Modifier.weight(1f).height(50.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
                 ) {
                     Icon(
                         if (isFav) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -297,12 +286,12 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                         }
                     },
                     shape = InkShape.medium,
-                    modifier = Modifier.weight(1.4f).height(50.dp),
+                    modifier = Modifier.weight(1.4f).heightIn(min = 56.dp),
                 ) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(InkSpace.s8))
                     Text(
-                        "감명서 공유",
+                        "공유",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
@@ -317,7 +306,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                                 }.onSuccess {
                                     pendingPdf = it
                                     pdfLauncher.launch(
-                                        "작명하우스_감명서_${eval.surname}${eval.givenName}.pdf"
+                                        "네이밍하우스_감명서_${eval.surname}${eval.givenName}.pdf"
                                     )
                                 }.onFailure {
                                     Toast.makeText(context, "감명서를 만들지 못했습니다", Toast.LENGTH_SHORT).show()
@@ -329,7 +318,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                     },
                     shape = InkShape.medium,
                     contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier.size(50.dp),
+                    modifier = Modifier.size(56.dp),
                 ) {
                     Icon(
                         Icons.Filled.PictureAsPdf,
@@ -378,7 +367,8 @@ private fun JokjaCard(
         color = colors.paper,
         contentColor = colors.ink,
     ) {
-        Box(Modifier.hanjiGrain(if (style == JokjaStyle.BAEKJI) 0.4f else 0.18f)) {
+        Box {
+            Box(Modifier.matchParentSize().hanjiGrain(if (style == JokjaStyle.BAEKJI) 0.4f else 0.18f))
             // 모서리 장식 — 표구의 귀. 금니 두 줄로 긋는다.
             CornerMarks(
                 color = colors.corner,
@@ -388,59 +378,22 @@ private fun JokjaCard(
                 Modifier.fillMaxWidth().padding(horizontal = InkSpace.s24, vertical = InkSpace.s16),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                JokjaRod(colors.rod)
-                Spacer(Modifier.height(InkSpace.s20))
-
-                Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.Top) {
-                    // 이름 — 세로 한 줄. 성명인은 서명 아래 찍는 것이 정석이라 이 열에 단다.
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        hanjaChars.forEach { ch ->
-                            Text(
-                                ch.toString(),
-                                fontFamily = HanjaFamily,
-                                fontSize = 44.sp,
-                                lineHeight = 54.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                        if (sealName != null) {
-                            Spacer(Modifier.height(InkSpace.s12))
-                            NameSeal(sealName)
-                        }
-                    }
-                    Spacer(Modifier.width(InkSpace.s16))
-                    // 독음과 낙관 — 족자의 방서(傍書) 자리
-                    Column(
-                        Modifier.fillMaxHeight(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        hangul.forEach { ch ->
-                            Text(
-                                ch.toString(),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = colors.subInk,
-                            )
-                        }
-                        Spacer(Modifier.weight(1f))
-                        StampedSeal(score = eval.score, grade = eval.grade)
-                    }
+                Text("NAMING HOUSE  /  이름 이야기", style = MaterialTheme.typography.labelSmall, color = colors.subInk)
+                Spacer(Modifier.height(InkSpace.s16))
+                Text(hangul, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center)
+                Spacer(Modifier.height(InkSpace.s8))
+                Text(hanjaChars.joinToString("  "), fontFamily = HanjaFamily,
+                    style = MaterialTheme.typography.headlineMedium, color = colors.subInk)
+                Spacer(Modifier.height(InkSpace.s12))
+                Text(meaningLine(eval), style = MaterialTheme.typography.bodyMedium,
+                    color = colors.subInk, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(InkSpace.s12))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
+                    Text("성명학 ${eval.score}점 · ${eval.grade}", style = MaterialTheme.typography.labelLarge, color = colors.subInk)
+                    if (sealName != null) NameSeal(sealName)
                 }
 
-                Spacer(Modifier.height(InkSpace.s16))
-                Text(
-                    meaningLine(eval),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.subInk,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(InkSpace.s12))
-                JokjaRod(colors.rod)
-                Spacer(Modifier.height(InkSpace.s8))
-                Text(
-                    "작명하우스 · 사주와 성명학으로 지은 이름",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.subInk.copy(alpha = 0.7f),
-                )
             }
         }
     }
@@ -523,44 +476,18 @@ private fun NameSeal(name: String) {
 }
 
 /** 표구 고르기 — 백지·감지금니·다갈. 프리미엄이 아니면 백지 밖 선택이 구매 시트를 연다. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun JokjaStyleRow(selected: JokjaStyle, onSelect: (JokjaStyle) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            "표구",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.weight(1f))
-        JokjaStyle.entries.forEach { s ->
-            val on = s == selected
-            Row(
-                Modifier
-                    .clip(InkShape.circle)
-                    .clickable { onSelect(s) }
-                    .padding(horizontal = InkSpace.s8, vertical = InkSpace.s4),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    Modifier
-                        .size(12.dp)
-                        .background(jokjaColors(s).paper, InkShape.circle)
-                        .border(
-                            1.dp,
-                            if (on) InkTheme.colors.gold
-                            else MaterialTheme.colorScheme.outlineVariant,
-                            InkShape.circle,
-                        )
-                )
-                Spacer(Modifier.width(InkSpace.s4))
-                Text(
-                    s.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (on) FontWeight.Bold else FontWeight.Medium,
-                    color = if (on) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
+        verticalArrangement = Arrangement.spacedBy(InkSpace.s4)) {
+        JokjaStyle.entries.forEach { style ->
+            FilterChip(selected = style == selected, onClick = { onSelect(style) },
+                label = { Text(style.label, style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = {
+                    Box(Modifier.size(12.dp).background(jokjaColors(style).paper, InkShape.circle)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, InkShape.circle))
+                })
         }
     }
 }

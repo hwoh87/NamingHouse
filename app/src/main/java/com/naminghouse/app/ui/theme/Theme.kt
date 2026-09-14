@@ -29,10 +29,10 @@ import com.samramanshang.manseryeok.orrery.model.Element
 // 삼라 패턴대로 브랜드 고정 스킴을 쓰고 다이나믹 컬러는 쓰지 않는다.
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val CheongMuk = Color(0xFF2C3640)   // 청묵(靑墨) — 주된 먹빛
-private val Hanji = Color(0xFFF5EFE2)       // 한지 바탕
+private val CheongMuk = Color(0xFF293F3B)   // 청묵(靑墨) — 주된 먹빛
+private val Hanji = Color(0xFFF7F6F0)       // 한지 바탕
 private val JuSa = Color(0xFF9C3A2E)        // 주사(朱砂) — 낙관
-private val GeumNi = Color(0xFFA5873F)      // 금니(金泥)
+private val GeumNi = Color(0xFF806638)      // 금니(金泥)
 
 /**
  * 라이트 스킴. 감명서 PDF([com.naminghouse.app.ui.writeCertificatePdf])가 인쇄용 색을
@@ -41,56 +41,56 @@ private val GeumNi = Color(0xFFA5873F)      // 금니(金泥)
  */
 internal val BrandLight = lightColorScheme(
     primary = CheongMuk,
-    onPrimary = Color(0xFFF8F3E8),
-    primaryContainer = Color(0xFFD5DCE2),
-    onPrimaryContainer = Color(0xFF16202A),
-    secondary = JuSa,
-    onSecondary = Color(0xFFFDF4EE),
-    secondaryContainer = Color(0xFFF0D9D2),
-    onSecondaryContainer = Color(0xFF561B12),
+    onPrimary = Color(0xFFF9FAF5),
+    primaryContainer = Color(0xFFDCE7DF),
+    onPrimaryContainer = Color(0xFF1C342E),
+    secondary = CheongMuk,
+    onSecondary = Color(0xFFF9FAF5),
+    secondaryContainer = Color(0xFFDCE7DF),
+    onSecondaryContainer = Color(0xFF1C342E),
     tertiary = GeumNi,
     onTertiary = Color(0xFFFFFBF2),
     background = Hanji,
-    onBackground = Color(0xFF241F19),
+    onBackground = Color(0xFF252D28),
     surface = Hanji,
-    onSurface = Color(0xFF241F19),
-    surfaceVariant = Color(0xFFE7DECB),
-    onSurfaceVariant = Color(0xFF67604F),
-    outline = Color(0xFFB2A78E),
-    outlineVariant = Color(0xFFD5CAB2),
-    surfaceContainerLowest = Color(0xFFFEFBF4),
-    surfaceContainerLow = Color(0xFFFAF5EA),
-    surfaceContainer = Color(0xFFF7F1E4),
-    surfaceContainerHigh = Color(0xFFF1EADB),
-    surfaceContainerHighest = Color(0xFFEAE1CE),
+    onSurface = Color(0xFF252D28),
+    surfaceVariant = Color(0xFFE7E9E0),
+    onSurfaceVariant = Color(0xFF616A60),
+    outline = Color(0xFF929C8E),
+    outlineVariant = Color(0xFFDEE2D7),
+    surfaceContainerLowest = Color(0xFFFEFEFA),
+    surfaceContainerLow = Color(0xFFFEFEFA),
+    surfaceContainer = Color(0xFFF0F2E9),
+    surfaceContainerHigh = Color(0xFFECEFE5),
+    surfaceContainerHighest = Color(0xFFE5EADF),
     error = Color(0xFFA03A2E),
     onError = Color(0xFFFFF5F2),
 )
 
 private val BrandDark = darkColorScheme(
-    primary = Color(0xFFA9BCC9),
-    onPrimary = Color(0xFF15222B),
-    primaryContainer = Color(0xFF2E3E49),
-    onPrimaryContainer = Color(0xFFD3E1EA),
-    secondary = Color(0xFFD9796A),
-    onSecondary = Color(0xFF47160E),
-    secondaryContainer = Color(0xFF6B291F),
-    onSecondaryContainer = Color(0xFFF5D6CE),
+    primary = Color(0xFFB6CBBF),
+    onPrimary = Color(0xFF18352A),
+    primaryContainer = Color(0xFF30473D),
+    onPrimaryContainer = Color(0xFFDEEEE0),
+    secondary = Color(0xFFB6CBBF),
+    onSecondary = Color(0xFF18352A),
+    secondaryContainer = Color(0xFF30473D),
+    onSecondaryContainer = Color(0xFFDEEEE0),
     tertiary = Color(0xFFD8B665),
     onTertiary = Color(0xFF3B2C07),
-    background = Color(0xFF141311),
-    onBackground = Color(0xFFE9E2D4),
-    surface = Color(0xFF141311),
-    onSurface = Color(0xFFE9E2D4),
-    surfaceVariant = Color(0xFF2B2925),
-    onSurfaceVariant = Color(0xFFBAB2A1),
-    outline = Color(0xFF8A8271),
-    outlineVariant = Color(0xFF3A3733),
-    surfaceContainerLowest = Color(0xFF0E0D0C),
-    surfaceContainerLow = Color(0xFF191815),
-    surfaceContainer = Color(0xFF1D1C19),
-    surfaceContainerHigh = Color(0xFF25231F),
-    surfaceContainerHighest = Color(0xFF2D2B26),
+    background = Color(0xFF151B17),
+    onBackground = Color(0xFFE8EEE5),
+    surface = Color(0xFF151B17),
+    onSurface = Color(0xFFE8EEE5),
+    surfaceVariant = Color(0xFF2B342D),
+    onSurfaceVariant = Color(0xFFB9C4B7),
+    outline = Color(0xFF899789),
+    outlineVariant = Color(0xFF39443B),
+    surfaceContainerLowest = Color(0xFF101611),
+    surfaceContainerLow = Color(0xFF1B231D),
+    surfaceContainer = Color(0xFF202A22),
+    surfaceContainerHigh = Color(0xFF273229),
+    surfaceContainerHighest = Color(0xFF2F3B31),
     error = Color(0xFFE0958A),
     onError = Color(0xFF44100A),
 )
@@ -106,13 +106,13 @@ private val BrandDark = darkColorScheme(
  */
 object InkShape {
     /** 칩·배지 — 작은 표식 */
-    val small = RoundedCornerShape(4.dp)
+    val small = RoundedCornerShape(8.dp)
 
     /** 기본 — 카드·입력·버튼 */
-    val medium = RoundedCornerShape(10.dp)
+    val medium = RoundedCornerShape(16.dp)
 
     /** 큰 면 — 족자·바텀시트·다이얼로그 */
-    val large = RoundedCornerShape(16.dp)
+    val large = RoundedCornerShape(24.dp)
 
     /** 아바타·토글처럼 완전히 둥근 것 */
     val circle = CircleShape
@@ -150,10 +150,10 @@ object InkSpace {
     val s48 = 48.dp
 
     /** 화면 좌우 거터. 11곳이 이미 이 값으로 서 있었다 — 규칙이었는데 이름이 없었다. */
-    val gutter = s20
+    val gutter = s24
 
     /** 카드 안쪽 여백 */
-    val card = s16
+    val card = s20
 
     /** 세로로 쌓을 때의 기본 간격 */
     val stack = s8
@@ -199,7 +199,7 @@ internal val LightInk = InkPalette(
     gold = GeumNi,
     // JP+UI Kit 의 금색 램프 200. 알파를 씌워 만들던 방식은 한지 바탕이 비쳐
     // 색상이 틀어졌다 — 값을 직접 둔다.
-    goldSoft = Color(0xFFFFEFAA),
+    goldSoft = Color(0xFFF0E7D4),
     gil = Color(0xFF2F6B4A),
     botong = Color(0xFF876A22),
     hyung = Color(0xFF9E3A2F),

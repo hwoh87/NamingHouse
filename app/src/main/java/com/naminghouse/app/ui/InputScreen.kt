@@ -1,5 +1,10 @@
 package com.naminghouse.app.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,64 +72,77 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
         }
     }
 
+    val steps = if (vm.mode == AppMode.RECOMMEND) listOf("성씨", "이름 취향", "출생 정보")
+        else listOf("이름 정보", "출생 정보")
+    var step by rememberSaveable(vm.mode) { mutableStateOf(0) }
+    var stepError by rememberSaveable { mutableStateOf<String?>(null) }
+    val scroll = rememberScrollState()
+    LaunchedEffect(step) { scroll.scrollTo(0); stepError = null; vm.errorMessage = null }
+    val goBack: () -> Unit = { if (step > 0) step-- else nav.popBackStack(); Unit }
+    BackHandler(enabled = step > 0, onBack = goBack)
+
     Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = InkSpace.s4, end = InkSpace.s20, top = InkSpace.s8, bottom = InkSpace.s2),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = { nav.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
-            }
-            Text(
-                vm.mode.label,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+        SceneTopBar(vm.mode.label, goBack)
+        Column(Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = InkSpace.gutter),
+            verticalArrangement = Arrangement.spacedBy(InkSpace.s16)) {
+            JourneySteps(step, steps)
+            val last = step == steps.lastIndex
+            SceneHeading(
+                "${step + 1} / ${steps.size}  ·  ${steps[step]}",
+                when { last -> "태어난 순간을 알려주세요"; step == 0 -> "어떤 이름을 찾고 있나요?"; else -> "어떤 마음을 담고 싶나요?" },
+                when { last -> "출생 전이라면 사주 없이도 이름을 고를 수 있어요."; step == 0 -> "성씨의 한자부터 정확히 골라주세요."; else -> "성별과 이름 취향에 맞춰 후보를 준비할게요." },
             )
-        }
-
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = InkSpace.gutter),
-            verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
-        ) {
-            Spacer(Modifier.height(InkSpace.s2))
-
-            vm.loadError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-            }
+            vm.loadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (vm.hanjaDb == null && vm.loadError == null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(InkSpace.s8),
-                ) {
-                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                    Text(
-                        "한자 데이터를 읽는 중입니다",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8), verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Text("한자 자료를 준비하고 있어요", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-
-            SurnameCard(vm)
-            if (vm.mode == AppMode.EVALUATE || vm.mode == AppMode.HANJA) GivenNameCard(vm)
-            if (vm.mode == AppMode.RECOMMEND) BabyCard(vm)
-            BirthCard(vm)
-
-            Spacer(Modifier.height(InkSpace.s4))
+            when {
+                last -> BirthCard(vm)
+                step == 0 -> {
+                    SurnameCard(vm)
+                    if (vm.mode != AppMode.RECOMMEND) GivenNameCard(vm)
+                }
+                else -> BabyCard(vm)
+            }
+            if (last) NamingTrustNote()
+            Spacer(Modifier.height(InkSpace.s16))
         }
-
-        SubmitBar(vm)
+        if (step == steps.lastIndex) SubmitBar(vm) else {
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Column(Modifier.padding(horizontal = InkSpace.gutter, vertical = InkSpace.s12)) {
+                    stepError?.let { Text(it, color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = InkSpace.s8)) }
+                    Button(onClick = {
+                        stepError = if (step == 0) inputNameError(vm) else null
+                        if (stepError == null) step++
+                    }, enabled = vm.hanjaDb != null, shape = InkShape.medium,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                        Text("다음 · ${steps[step + 1]}", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
+        }
     }
+}
+
+/** 첫 단계에서 누락을 발견해 마지막 단계까지 갔다가 되돌아오지 않게 한다. */
+private fun inputNameError(vm: NamingViewModel): String? = when {
+    vm.surnameSyllables.isEmpty() || vm.surnameHanja.value.filterNotNull().size != vm.surnameSyllables.length ->
+        "성씨를 입력하고 한자를 선택해 주세요."
+    vm.mode != AppMode.RECOMMEND && vm.givenNameSyllables.isEmpty() -> "이름을 입력해 주세요."
+    vm.mode == AppMode.EVALUATE && vm.givenHanja.value.filterNotNull().size != vm.givenNameSyllables.length ->
+        "이름의 한자를 모두 선택해 주세요."
+    else -> null
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SurnameCard(vm: NamingViewModel) {
     InkCard {
-        SectionTitle("성씨")
+        SectionTitle("가족에게서 이어받은 성")
         InkField(
             value = vm.surname,
             onValueChange = vm::onSurnameChanged,
@@ -173,7 +191,7 @@ private fun GivenNameCard(vm: NamingViewModel) {
 @Composable
 private fun BabyCard(vm: NamingViewModel) {
     InkCard {
-        SectionTitle("아기 정보")
+        SectionTitle("이름 취향")
         InkSegmented(
             options = listOf(Gender.M, Gender.F),
             selected = vm.gender,
@@ -363,9 +381,11 @@ private fun SubmitBar(vm: NamingViewModel) {
                 },
                 enabled = !vm.busy && vm.hanjaDb != null,
                 shape = InkShape.medium,
-                modifier = Modifier.fillMaxWidth().height(54.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             ) {
                 if (vm.busy) {
+                    Text("이름의 뜻과 조화를 살펴보고 있어요", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.width(InkSpace.s8))
                     CircularProgressIndicator(
                         Modifier.size(20.dp),
                         strokeWidth = 2.dp,
@@ -407,6 +427,11 @@ private fun InkField(
         shape = InkShape.medium,
         keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number)
         else KeyboardOptions.Default,
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+        ),
         modifier = modifier,
     )
 }
@@ -432,7 +457,7 @@ private fun SwitchRow(
             hint?.let {
                 Text(
                     it,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -460,7 +485,7 @@ private fun CheckRow(checked: Boolean, onChange: (Boolean) -> Unit, text: String
 private fun Hint(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }

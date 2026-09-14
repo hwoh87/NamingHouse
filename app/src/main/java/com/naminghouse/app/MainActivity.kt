@@ -1,6 +1,8 @@
 package com.naminghouse.app
 
 import android.os.Bundle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -83,8 +85,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AppNavigation(vm: NamingViewModel) {
-    val nav: NavHostController = rememberNavController()
+internal fun AppNavigation(vm: NamingViewModel, nav: NavHostController = rememberNavController()) {
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
 
@@ -93,8 +94,10 @@ private fun AppNavigation(vm: NamingViewModel) {
     LaunchedEffect(Unit) {
         vm.premium.message.collect { msg ->
             if (msg != null) {
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                vm.premium.message.value = null
+                withContext(Dispatchers.Main.immediate) {
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    vm.premium.message.value = null
+                }
             }
         }
     }

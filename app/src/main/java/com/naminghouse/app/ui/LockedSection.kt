@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -61,64 +62,16 @@ fun LockedBlock(
     lines: Int = 3,
     onUnlock: () -> Unit,
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            // 뼈대가 한 줄뿐이면 상자가 안내문보다 낮아져 글자가 잘린다 — 바닥을 깔아 둔다.
-            .heightIn(min = 44.dp)
-            .clip(InkShape.medium)
-            .clickable(onClick = onUnlock)
-    ) {
-        SkeletonLines(
-            count = lines.coerceAtLeast(2),
-            modifier = Modifier.blur(6.dp).padding(vertical = InkSpace.s8),
-        )
-        Row(
-            Modifier
-                .matchParentSize()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
-                .padding(horizontal = InkSpace.s12),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                Icons.Filled.Lock,
-                contentDescription = null,
-                tint = InkTheme.colors.gold,
-                modifier = Modifier.size(15.dp),
-            )
-            Spacer(Modifier.width(InkSpace.s8))
-            Text(
-                teaser,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(InkSpace.s8))
-            Text(
-                "열기",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
-}
-
-/** 글이 있던 자리 — 폭을 들쭉날쭉하게 두어야 문단으로 읽힌다. */
-@Composable
-private fun SkeletonLines(count: Int, modifier: Modifier) {
-    val widths = listOf(0.92f, 0.74f, 0.85f, 0.62f, 0.8f)
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
-        repeat(count) { i ->
-            Box(
-                Modifier
-                    .fillMaxWidth(widths[i % widths.size])
-                    .height(11.dp)
-                    .background(
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.13f),
-                        InkShape.small,
-                    )
-            )
+    androidx.compose.material3.Surface(onClick = onUnlock, shape = InkShape.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(InkSpace.s16), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
+            Icon(Icons.Filled.Lock, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(InkSpace.s4)) {
+                Text(teaser, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("전체 풀이 열기  →", style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 }
@@ -149,8 +102,9 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
     LaunchedEffect(adsReady, vm.isPremium) { if (!vm.isPremium) RewardedAds.preload(context) }
 
     ModalBottomSheet(
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(
@@ -161,33 +115,12 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
                 .padding(bottom = InkSpace.s28),
             verticalArrangement = Arrangement.spacedBy(InkSpace.s16),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "$name 감명서 전부 보기",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        "총평 풀이 · 수리사격 4격 · 사주 보완 · 글자 풀이 · 불용한자",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                SealBadge(main = "開", sub = "열람")
-            }
-
-            InkStroke(
-                Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                alpha = 0.25f,
-            )
-
+            SceneHeading("이 이름의 다음 이야기", "$name, 더 깊이 알아보기", "무료 열람 또는 프리미엄 중 원하는 방법을 선택하세요.")
             if (!vm.freeUnlockUsed) {
                 Button(
                     onClick = { vm.claimFreeUnlock(eval) },
                     shape = InkShape.medium,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 ) {
                     Text(
                         "이 이름 하나 무료로 열기",
@@ -216,7 +149,7 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
                         )
                     },
                     shape = InkShape.medium,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 ) {
                     Icon(
                         Icons.Filled.PlayCircleOutline,
@@ -256,7 +189,7 @@ fun UnlockSheet(vm: NamingViewModel, eval: NameEvaluation, onDismiss: () -> Unit
                 onClick = { activity?.let { vm.premium.launchPurchase(it) } },
                 enabled = price != null && !busy && activity != null,
                 shape = InkShape.medium,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             ) {
                 Text(
                     price?.let { "$it · 모든 이름 열기" } ?: "가격을 확인하고 있습니다",

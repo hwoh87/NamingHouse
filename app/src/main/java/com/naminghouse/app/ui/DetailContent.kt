@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -50,13 +54,15 @@ fun EvaluationDetail(
     locked: Boolean = false,
     onUnlock: () -> Unit = {},
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
-
+    var tab by rememberSaveable(eval.surname, eval.givenName, eval.givenHanja) { mutableStateOf(0) }
+    Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s16)) {
+        InkSegmented(listOf(0, 1, 2), tab, { listOf("한눈에", "한자 풀이", "성명 분석")[it] }, { tab = it })
         if (showHero) DetailHero(eval)
 
+        if (tab == 0) {
         // ── 총평 — 축별 결과를 읽어 만든 문장
         val summary = summarize(eval)
-        SectionCard("총평") {
+        SectionCard("이 이름을 한 문장으로") {
             Text(summary.verdict, style = MaterialTheme.typography.bodyLarge)
             val noteCount =
                 summary.strengths.size + summary.cautions.size + summary.suggestions.size
@@ -81,6 +87,11 @@ fun EvaluationDetail(
         // ── 띠·별자리 — 이름이 아니라 태어난 때의 정보
         saju?.let { BirthSignCard(it) }
 
+        NamingTrustNote()
+        }
+
+        if (tab == 2) {
+        saju?.let { SajuCard(it) }
         // ── 수리사격
         SectionCard(
             "수리사격 (원형이정)",
@@ -147,7 +158,7 @@ fun EvaluationDetail(
             }
             Text(
                 "글자 획수의 끝자리를 오행으로 환산해 배열을 봅니다 (1·2 木, 3·4 火, 5·6 土, 7·8 金, 9·0 水).",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -246,6 +257,9 @@ fun EvaluationDetail(
             }
         }
 
+        }
+
+        if (tab == 1) {
         // ── 불용한자 경고
         if (eval.bulyongWarnings.isNotEmpty()) {
             SectionCard("불용한자 참고") {
@@ -273,7 +287,7 @@ fun EvaluationDetail(
                     Text(
                         "'속설'은 학파에 따라 이견이 커 점수에 반영하지 않고 참고로만 보여 줍니다. " +
                             "뜻이 명백히 좋지 않은 '기피' 글자만 감점합니다.",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -301,7 +315,7 @@ fun EvaluationDetail(
                         Text(
                             "$role · 원획 ${h.wonhoek} · 필획 ${h.pilhoek}" +
                                 (h.element?.let { " · 자원오행 ${it.hanja}(${it.ko})" } ?: ""),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -315,6 +329,7 @@ fun EvaluationDetail(
                     onUnlock = onUnlock,
                 )
             }
+        }
         }
     }
 }

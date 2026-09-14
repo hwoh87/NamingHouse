@@ -1,5 +1,8 @@
 package com.naminghouse.app.ui
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,24 +61,7 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
     var year by remember(years) { mutableIntStateOf(years.firstOrNull() ?: 0) }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    "인기 이름 순위",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = { nav.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
-                }
-            },
-            // 앱바 뒤로 배경의 원산이 그대로 이어져야 해서 면을 깔지 않는다.
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            // 상태바 인셋은 Scaffold 가 이미 콘텐츠에 주었다 — 기본값대로 두면 이중 공백.
-            windowInsets = WindowInsets(0, 0, 0, 0),
-        )
+        SceneTopBar("인기 이름", { nav.popBackStack() })
 
         if (years.isEmpty()) {
             Text(
@@ -97,12 +83,12 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
                 label = { if (it == Gender.M) "남아" else "여아" },
                 onSelect = { gender = it },
             )
-            InkSegmented(
-                options = years,
-                selected = year,
-                label = { "$it" },
-                onSelect = { year = it },
-            )
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
+                years.forEach { option ->
+                    FilterChip(selected = option == year, onClick = { year = option }, label = { Text("${option}년") })
+                }
+            }
             Text(
                 "이름을 누르면 그 이름으로 한자 추천을 이어 갑니다.",
                 style = MaterialTheme.typography.labelSmall,
@@ -118,6 +104,7 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
             verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
             contentPadding = PaddingValues(top = InkSpace.s12, bottom = InkSpace.s16),
         ) {
+            item { SceneHeading("이름 트렌드", "많이 불리는 이름들", "${year}년 출생신고 기준 · 마음에 드는 이름을 눌러 한자를 찾아보세요.") }
             if (chart.isEmpty()) {
                 item {
                     Text(
@@ -172,7 +159,7 @@ private fun RankRow(rank: Int, stat: NameStat, prevRank: Int?, onClick: () -> Un
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = InkSpace.s12),
+            .padding(vertical = InkSpace.s20),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -185,7 +172,7 @@ private fun RankRow(rank: Int, stat: NameStat, prevRank: Int?, onClick: () -> Un
         )
         Text(
             stat.name,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f),
         )

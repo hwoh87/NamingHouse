@@ -91,63 +91,31 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
         if (entitlementLoaded && activity != null) com.naminghouse.app.ads.InterstitialAds.preload(activity, vm.isAdFree)
     }
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Text(
-                    when (vm.mode) {
-                        AppMode.RECOMMEND -> "추천 결과"
-                        AppMode.HANJA -> "한자 조합"
-                        AppMode.EVALUATE -> "감명 결과"
-                    },
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = { nav.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
-                }
-            },
-            actions = {
-                androidx.compose.material3.TextButton(onClick = {
-                    val next: () -> Unit = { nav.popBackStack(); Unit }
-                    if (activity != null && entitlementLoaded) com.naminghouse.app.ads.InterstitialAds.finishResults(activity, vm.isAdFree, next)
-                    else next()
-                }) { Text("조건 변경", style = MaterialTheme.typography.labelMedium) }
-                FavoritesAction(count = vm.favorites.size) {
-                    nav.navigate(Routes.FAVORITES) {
-                        popUpTo(Routes.HOME) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            },
-            // 앱바 뒤로 배경의 원산이 그대로 이어져야 해서 면을 깔지 않는다.
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-            // 상태바 인셋은 Scaffold 가 이미 콘텐츠에 주었다 — 기본값대로 두면 이중 공백.
-            windowInsets = WindowInsets(0, 0, 0, 0),
-        )
+        SceneTopBar(if (vm.mode == AppMode.HANJA) "한자 조합" else "추천 이름", { nav.popBackStack() }) {
+            androidx.compose.material3.TextButton(onClick = {
+                val next: () -> Unit = { nav.popBackStack(); Unit }
+                if (activity != null && entitlementLoaded) com.naminghouse.app.ads.InterstitialAds.finishResults(activity, vm.isAdFree, next)
+                else next()
+            }) { Text("조건 변경") }
+            FavoritesAction(vm.favorites.size) { nav.navigate(Routes.FAVORITES) }
+        }
 
         LazyColumn(
             Modifier.fillMaxSize().padding(horizontal = InkSpace.gutter),
             verticalArrangement = Arrangement.spacedBy(InkSpace.s12),
         ) {
-            vm.saju?.let { saju ->
-                item { SajuCard(saju) }
-                // 사주를 방금 본 자리 — 작명은 여기까지만 보여 주므로 더 깊은 풀이는 형제 앱으로.
-                item {
-                    SamraBanner(
-                        subtitle = "이 사주의 대운·세운·일진은 삼라만상 만세력에서 볼 수 있습니다.",
-                    )
+            item {
+                GentleArrival {
+                    SceneHeading("02  ·  이름 발견", "마음에 닿는 이름", "처음 부를 때의 마음을 떠올려보세요.\n뜻을 읽고, 소리 내어 불러보고, 마음에 담아두세요.")
                 }
             }
-
+            vm.saju?.let { saju -> item { SajuCard(saju) } }
             when (vm.mode) {
                 AppMode.RECOMMEND -> {
                     item {
                         ListCaption(
                             "추천 이름 ${vm.candidates.size}개",
-                            "수리사격 · 발음오행 · 수리오행 · 자원오행 · 음양을 종합해 점수순으로 놓았습니다",
+                            "성명학 종합 점수순 · 이름을 누르면 상세 풀이",
                         )
                     }
                     rowsWithAd(vm, vm.candidates) { rank, cand ->
@@ -224,18 +192,16 @@ private fun <T> LazyListScope.rowsWithAd(
     if (items.size > AD_SLOT_AFTER) item { ResultListAd(vm) }
     itemsIndexed(tail) { i, item -> row(AD_SLOT_AFTER + i + 1, item) }
 
+    if (items.isEmpty()) item { Text("추천할 이름이 없어요. 조건을 바꿔 다시 찾아보세요.", style = MaterialTheme.typography.bodyMedium) }
+    item { NamingTrustNote() }
     item { Spacer(Modifier.height(InkSpace.s28)) }
 }
 
 @Composable
 private fun ListCaption(title: String, hint: String) {
-    Column(Modifier.padding(top = InkSpace.s2, bottom = InkSpace.s2)) {
+    Column(Modifier.padding(top = InkSpace.s12, bottom = InkSpace.s4), verticalArrangement = Arrangement.spacedBy(InkSpace.s4)) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(
-            hint,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -254,139 +220,40 @@ private fun CandidateRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    InkCard(
-        onClick = onClick,
-        contentPadding = PaddingValues(start = InkSpace.s12, end = InkSpace.s4, top = InkSpace.s12, bottom = InkSpace.s12),
-        spacing = 0.dp,
-        modifier = modifier,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "$rank",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                modifier = Modifier.width(24.dp),
-            )
-            Column(Modifier.weight(1f)) {
-                val hangul = eval.surname + eval.givenName
-                val hanja = eval.givenHanja.joinToString("") { it.char.toString() }
-                Row(verticalAlignment = Alignment.Bottom) {
-                    if (emphasizeHanja) {
-                        Text(
-                            hanja,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = HanjaFamily,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    } else {
-                        Text(hangul, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.width(InkSpace.s8))
-                        Text(
-                            hanja,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontFamily = HanjaFamily,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+    InkCard(onClick = onClick, contentPadding = PaddingValues(InkSpace.s20), spacing = InkSpace.s12, modifier = modifier) {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
+                Text("${rank.toString().padStart(2, '0')}  /  ${if (emphasizeHanja) "한자 후보" else "추천 이름"}",
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (emphasizeHanja) eval.givenHanja.joinToString("") { it.char.toString() } else eval.surname + eval.givenName,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontFamily = if (emphasizeHanja) HanjaFamily else com.naminghouse.app.ui.theme.MaruBuri,
+                    fontWeight = FontWeight.Bold)
+                Text(if (emphasizeHanja) eval.surname + eval.givenName else (eval.surnameHanja + eval.givenHanja).joinToString("") { it.char.toString() },
+                    style = MaterialTheme.typography.bodyLarge, fontFamily = if (emphasizeHanja) null else HanjaFamily,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Surface(shape = InkShape.small, color = MaterialTheme.colorScheme.primaryContainer) {
+                    Text("${eval.score}점 · ${eval.grade}", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = InkSpace.s8, vertical = InkSpace.s4))
                 }
-                // 뜻이 없으면 후보끼리 비교가 안 된다 — 목록에서도 바로 보이게
-                Text(
-                    meaningLine(eval),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(InkSpace.s8))
-                AxisMarks(eval, stat)
-            }
-            Spacer(Modifier.width(InkSpace.s8))
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // 이름(titleLarge 22sp)보다 점수가 크면 상품인 이름이 숫자에 밀린다.
-                // 같은 크기로 내리고 강조는 색에 맡긴다.
-                Text(
-                    "${eval.score}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    eval.grade,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = onToggleFavorite) {
-                Icon(
-                    if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                    contentDescription = if (isFavorite) "담아둔 이름에서 빼기" else "이름 담아두기",
-                    tint = if (isFavorite) InkTheme.colors.gold else MaterialTheme.colorScheme.outline,
-                )
-            }
-        }
-    }
-}
-
-/**
- * 다섯 축의 길흉을 색으로만 압축한 줄.
- *
- * "수리 길 / 발음 보통 …" 을 다 적으면 칩 여섯 개가 두 줄을 먹어 이름이 묻힌다.
- * 축 이름만 남기고 길흉은 글자색으로 옮겨 한 줄에 담았다.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun AxisMarks(eval: NameEvaluation, stat: NameStat?) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(InkSpace.s4),
-        verticalArrangement = Arrangement.spacedBy(InkSpace.s4),
-    ) {
-        AxisMark("수리", eval.suriVerdict)
-        AxisMark("발음", eval.baleumVerdict)
-        AxisMark("오행", eval.suriOhengVerdict)
-        AxisMark("자원", eval.jawonVerdict)
-        AxisMark("음양", eval.eumyangVerdict)
-        stat?.latestRank?.let { (_, rank) ->
-            if (rank <= 200) {
-                Box(
-                    Modifier
-                        .background(InkTheme.colors.goldSoft, InkShape.small)
-                        .padding(horizontal = InkSpace.s4, vertical = InkSpace.s2)
-                ) {
-                    Text(
-                        "인기 ${rank}위",
-                        style = axisBadgeStyle,
-                        color = InkTheme.colors.gold,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                    )
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = if (isFavorite) "담아둔 이름에서 빼기" else "이름 담아두기",
+                        tint = if (isFavorite) InkTheme.colors.gold else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
-    }
-}
-
-/**
- * 축 배지 글씨 — 한 줄에 여섯 개가 서야 해서 labelSmall(11sp)보다 한 단계 작다.
- * 두 곳에서 같은 값을 쓰므로 여기 한 번만 적는다.
- */
-private val axisBadgeStyle: TextStyle
-    @Composable get() = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 13.sp)
-
-@Composable
-private fun AxisMark(label: String, verdict: AxisVerdict) {
-    val color = verdictColor(verdict)
-    Box(
-        Modifier
-            .background(color.copy(alpha = 0.13f), InkShape.small)
-            .padding(horizontal = InkSpace.s4, vertical = InkSpace.s2)
-    ) {
-        Text(
-            label,
-            style = axisBadgeStyle,
-            color = color,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-        )
+        Text(meaningLine(eval), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(stat?.latestRank?.let { (year, rank) -> "$year 인기 ${rank}위" } ?: "뜻과 조화 살펴보기",
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("이름 풀이  →", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 
@@ -400,8 +267,22 @@ private fun AxisMark(label: String, verdict: AxisVerdict) {
 fun SajuCard(saju: SajuSummary) {
     var open by remember { mutableStateOf(false) }
 
+        // 표준시 만세력과 시주가 달라 보일 수 있는 이유를 남긴다. 음력 입력이면 양력
+        // 환산 전 날짜로 균시차를 어림하지만, 오차는 경도항에 비해 몇 분 수준이라 '약'으로 표기.
+        fun solarNote(s: SajuSummary): String? {
+            val input = s.input
+            if (!input.useTrueSolarTime) return null
+            val delta = runCatching {
+                TimezoneUtils.trueSolarDeltaMinutes(input.year, input.month, input.day, input.longitude)
+            }.getOrNull() ?: return null
+            val sign = if (delta >= 0) "+" else "−"
+            return "출생지 경도 기준 진태양시 보정(약 $sign${abs(delta)}분)을 적용했습니다. " +
+                "표준시 만세력과 시주가 다를 수 있습니다."
+        }
+
+
     InkCard(onClick = { open = !open }) {
-        SectionTitle("사주") {
+        SectionTitle("이 이름을 고르는 기준") {
             Icon(
                 if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                 contentDescription = if (open) "접기" else "오행 분포 펼치기",
@@ -409,6 +290,8 @@ fun SajuCard(saju: SajuSummary) {
             )
         }
 
+        AnimatedVisibility(open) {
+        Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
         // 4주 표 — [년, 월, 일, 시]
         Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8), modifier = Modifier.fillMaxWidth()) {
             val labels = listOf("년주", "월주", "일주", "시주")
@@ -458,19 +341,6 @@ fun SajuCard(saju: SajuSummary) {
             }
         }
 
-        // 표준시 만세력과 시주가 달라 보일 수 있는 이유를 남긴다. 음력 입력이면 양력
-        // 환산 전 날짜로 균시차를 어림하지만, 오차는 경도항에 비해 몇 분 수준이라 '약'으로 표기.
-        fun solarNote(s: SajuSummary): String? {
-            val input = s.input
-            if (!input.useTrueSolarTime) return null
-            val delta = runCatching {
-                TimezoneUtils.trueSolarDeltaMinutes(input.year, input.month, input.day, input.longitude)
-            }.getOrNull() ?: return null
-            val sign = if (delta >= 0) "+" else "−"
-            return "출생지 경도 기준 진태양시 보정(약 $sign${abs(delta)}분)을 적용했습니다. " +
-                "표준시 만세력과 시주가 다를 수 있습니다."
-        }
-
         val strengthLabel = when {
             saju.isNeutral -> "중화"
             saju.isStrong -> "신강"
@@ -482,6 +352,8 @@ fun SajuCard(saju: SajuSummary) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        }
+        }
         Text(
             "이름으로 보완하면 좋은 오행  " +
                 saju.targetElements.joinToString(" · ") { "${it.hanja}(${it.ko})" },

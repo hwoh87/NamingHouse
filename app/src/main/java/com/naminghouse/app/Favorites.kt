@@ -75,7 +75,7 @@ class FavoritesStore(private val context: Context) {
 
 /** 공유용 텍스트 — 카톡·메모 어디에 붙여도 읽히도록 단순하게. */
 fun shareText(items: List<FavoriteName>): String = buildString {
-    appendLine("작명하우스에서 담아둔 이름")
+    appendLine("네이밍하우스에서 담아둔 이름")
     appendLine()
     items.forEachIndexed { i, f ->
         appendLine("${i + 1}. ${f.fullHangul} (${f.hanja})")
