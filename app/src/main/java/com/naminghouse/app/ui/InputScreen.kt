@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -41,9 +42,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -76,10 +82,40 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
         else listOf("이름 정보", "출생 정보")
     var step by rememberSaveable(vm.mode) { mutableStateOf(0) }
     var stepError by rememberSaveable { mutableStateOf<String?>(null) }
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    var choosingRequiredHanja by remember { mutableStateOf(false) }
+    val missingSurname = vm.surnameSyllables.indices.firstOrNull { vm.surnameHanja.value.getOrNull(it) == null }
+    val missingGiven = if (vm.mode == AppMode.EVALUATE)
+        vm.givenNameSyllables.indices.firstOrNull { vm.givenHanja.value.getOrNull(it) == null } else null
     val scroll = rememberScrollState()
     LaunchedEffect(step) { scroll.scrollTo(0); stepError = null; vm.errorMessage = null }
     val goBack: () -> Unit = { if (step > 0) step-- else nav.popBackStack(); Unit }
     BackHandler(enabled = step > 0, onBack = goBack)
+
+    if (choosingRequiredHanja && step == 0) {
+        val surname = missingSurname != null
+        val index = missingSurname ?: missingGiven
+        if (index != null) {
+            HanjaPickerDialog(
+                syllable = (if (surname) vm.surnameSyllables[index] else vm.givenNameSyllables[index]).toString(),
+                candidates = if (surname) vm.surnameCandidates(index) else vm.givenNameCandidates(index),
+                onSelect = { picked ->
+                    if (surname) vm.surnameHanja.value = pick(vm.surnameHanja.value, vm.surnameSyllables.length, index, picked)
+                    else vm.givenHanja.value = pick(vm.givenHanja.value, vm.givenNameSyllables.length, index, picked)
+                    if (inputNameError(vm) == null) {
+                        choosingRequiredHanja = false
+                        step++
+                    } else if (vm.surnameSyllables.isEmpty() ||
+                        (vm.mode != AppMode.RECOMMEND && vm.givenNameSyllables.isEmpty())) {
+                        choosingRequiredHanja = false
+                        stepError = inputNameError(vm)
+                    }
+                },
+                onDismiss = { choosingRequiredHanja = false },
+            )
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         SceneTopBar(vm.mode.label, goBack)
@@ -116,8 +152,14 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
                     stepError?.let { Text(it, color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = InkSpace.s8)) }
                     Button(onClick = {
+                        focus.clearFocus()
+                        keyboard?.hide()
                         stepError = if (step == 0) inputNameError(vm) else null
                         if (stepError == null) step++
+                        else if (missingSurname != null || missingGiven != null) {
+                            stepError = null
+                            choosingRequiredHanja = true
+                        }
                     }, enabled = vm.hanjaDb != null, shape = InkShape.medium,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                         Text("다음 · ${steps[step + 1]}", style = MaterialTheme.typography.titleMedium)
@@ -210,6 +252,11 @@ private fun BabyCard(vm: NamingViewModel) {
             text = "외자 이름",
             hint = "준·율·설처럼 한 글자 이름만 추천합니다",
         )
+        InkField(value = vm.excludedSyllables, onValueChange = { vm.excludedSyllables = it.take(30) },
+            label = "피하고 싶은 글자 (선택)")
+        Hint("예: 민, 준 — 성씨를 제외한 이름에서 해당 글자를 빼고 찾아요.")
+        SwitchRow(checked = vm.diverseHanja, onChange = { vm.diverseHanja = it },
+            text = "다양한 한자 먼저", hint = "같은 한자가 몰리면 뒤로 배치해요. 점수는 바꾸지 않아요.")
         // 외자에는 돌림자가 무의미하다 — 켜면 접는다
         AnimatedVisibility(!vm.singleName) {
             Column(verticalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
@@ -242,6 +289,14 @@ private fun BabyCard(vm: NamingViewModel) {
 
 @Composable
 private fun BirthCard(vm: NamingViewModel) {
+    val monthFocus = remember { FocusRequester() }
+    val dayFocus = remember { FocusRequester() }
+    val hourFocus = remember { FocusRequester() }
+    val minuteFocus = remember { FocusRequester() }
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val finish: () -> Unit = { focus.clearFocus(); keyboard?.hide() }
+    val afterDay: () -> Unit = { if (vm.unknownTime) finish() else hourFocus.requestFocus() }
     InkCard {
         SectionTitle(if (vm.mode == AppMode.RECOMMEND) "출생 정보" else "출생 정보 (사주)")
 
@@ -258,21 +313,13 @@ private fun BirthCard(vm: NamingViewModel) {
 
         if (!vm.preBirth) {
             Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
-                InkField(
-                    value = vm.year,
-                    onValueChange = { vm.year = it.filter(Char::isDigit).take(4) },
-                    label = "년", numeric = true, modifier = Modifier.weight(1.3f),
-                )
-                InkField(
-                    value = vm.month,
-                    onValueChange = { vm.month = it.filter(Char::isDigit).take(2) },
-                    label = "월", numeric = true, modifier = Modifier.weight(1f),
-                )
-                InkField(
-                    value = vm.day,
-                    onValueChange = { vm.day = it.filter(Char::isDigit).take(2) },
-                    label = "일", numeric = true, modifier = Modifier.weight(1f),
-                )
+                BirthNumberField(vm.year, { vm.year = it }, "년", 4, 1..9999,
+                    Modifier.weight(1.3f), onNext = { monthFocus.requestFocus() })
+                BirthNumberField(vm.month, { vm.month = it }, "월", 2, 1..12,
+                    Modifier.weight(1f).focusRequester(monthFocus), onNext = { dayFocus.requestFocus() })
+                BirthNumberField(vm.day, { vm.day = it }, "일", 2, 1..31,
+                    Modifier.weight(1f).focusRequester(dayFocus),
+                    done = vm.unknownTime, onNext = afterDay)
             }
 
             InkSegmented(
@@ -286,18 +333,12 @@ private fun BirthCard(vm: NamingViewModel) {
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
-                InkField(
-                    value = vm.hour,
-                    onValueChange = { vm.hour = it.filter(Char::isDigit).take(2) },
-                    label = "시 (0~23)", numeric = true, enabled = !vm.unknownTime,
-                    modifier = Modifier.weight(1f),
-                )
-                InkField(
-                    value = vm.minute,
-                    onValueChange = { vm.minute = it.filter(Char::isDigit).take(2) },
-                    label = "분", numeric = true, enabled = !vm.unknownTime,
-                    modifier = Modifier.weight(1f),
-                )
+                BirthNumberField(vm.hour, { vm.hour = it }, "시 (0~23)", 2, 0..23,
+                    Modifier.weight(1f).focusRequester(hourFocus), enabled = !vm.unknownTime,
+                    onNext = { minuteFocus.requestFocus() })
+                BirthNumberField(vm.minute, { vm.minute = it }, "분", 2, 0..59,
+                    Modifier.weight(1f).focusRequester(minuteFocus), enabled = !vm.unknownTime,
+                    done = true, onNext = finish)
             }
             CheckRow(vm.unknownTime, { vm.unknownTime = it }, "태어난 시간 모름")
 
@@ -409,6 +450,32 @@ private fun SubmitBar(vm: NamingViewModel) {
 
 // ── 작은 부품들 ──────────────────────────────────────────────────────────────
 
+/** 완성된 유효 숫자만 다음 칸으로 이동한다. 삭제·기존 값 수정은 포커스를 빼앗지 않는다. */
+@Composable
+private fun BirthNumberField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    digits: Int,
+    range: IntRange,
+    modifier: Modifier,
+    enabled: Boolean = true,
+    done: Boolean = false,
+    onNext: () -> Unit,
+) {
+    InkField(
+        value = value,
+        onValueChange = { raw ->
+            val next = raw.filter { it in '0'..'9' }.take(digits)
+            onValueChange(next)
+            if (value.length < digits && next.length == digits && (next.toIntOrNull() ?: -1) in range) onNext()
+        },
+        label = label, modifier = modifier, numeric = true, enabled = enabled,
+        imeAction = if (done) ImeAction.Done else ImeAction.Next,
+        keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onNext() }),
+    )
+}
+
 @Composable
 private fun InkField(
     value: String,
@@ -417,6 +484,8 @@ private fun InkField(
     modifier: Modifier = Modifier.fillMaxWidth(),
     numeric: Boolean = false,
     enabled: Boolean = true,
+    imeAction: ImeAction = ImeAction.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     OutlinedTextField(
         value = value,
@@ -425,8 +494,11 @@ private fun InkField(
         singleLine = true,
         enabled = enabled,
         shape = InkShape.medium,
-        keyboardOptions = if (numeric) KeyboardOptions(keyboardType = KeyboardType.Number)
-        else KeyboardOptions.Default,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (numeric) KeyboardType.Number else KeyboardType.Text,
+            imeAction = imeAction,
+        ),
+        keyboardActions = keyboardActions,
         colors = OutlinedTextFieldDefaults.colors(
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,

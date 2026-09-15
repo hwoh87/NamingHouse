@@ -50,6 +50,8 @@ data class GeneratorOptions(
     val fixedSyllable: Char? = null,
     /** 돌림자 위치 — false=첫 글자, true=끝 글자 */
     val fixedLast: Boolean = false,
+    val excludedSyllables: Set<Char> = emptySet(),
+    val diverseHanja: Boolean = true,
 )
 
 /**
@@ -91,6 +93,7 @@ class NameGenerator(
 
         for (pool in namePool.forGender(gender, tierCap)) {
             if (pool.name.length != wantLength) continue
+            if (pool.name.any { it in options.excludedSyllables }) continue
             if (wantLength == 2 && options.fixedSyllable != null) {
                 val at = if (options.fixedLast) 1 else 0
                 if (pool.name[at] != options.fixedSyllable) continue
@@ -137,7 +140,7 @@ class NameGenerator(
                 .thenByDescending { c -> c.hanja.sumOf { it.nameFit } }
                 .thenBy { it.givenName }
         )
-        return diversify(ranked, options.limit)
+        return diversify(ranked, options.limit, options.diverseHanja)
     }
 
     /**
@@ -232,11 +235,12 @@ class NameGenerator(
      * (김씨 남아 44건에서 서로 다른 첫 글자가 12개뿐이라 1차 통과분이 17건이었다).
      * 회차마다 글자당 하나씩만 더 얹으면 넘치는 몫도 고르게 퍼진다.
      */
-    private fun diversify(ranked: List<NameCandidate>, limit: Int): List<NameCandidate> {
+    private fun diversify(ranked: List<NameCandidate>, limit: Int, diverseHanja: Boolean): List<NameCandidate> {
         val target = minOf(limit, ranked.size)
         val picked = ArrayList<NameCandidate>(target)
         val taken = BooleanArray(ranked.size)
         val seen = HashMap<Char, Int>()
+        val seenHanja = HashMap<Char, Int>()
         var allowance = MAX_PER_SYLLABLE
 
         while (picked.size < target) {
@@ -246,6 +250,9 @@ class NameGenerator(
                 val first = ranked[i].givenName.first()
                 val n = seen.getOrDefault(first, 0)
                 if (n >= allowance) continue
+                val chars = ranked[i].hanja.map { it.char }.distinct()
+                if (diverseHanja && chars.any { seenHanja.getOrDefault(it, 0) >= allowance }) continue
+                chars.forEach { seenHanja[it] = seenHanja.getOrDefault(it, 0) + 1 }
                 seen[first] = n + 1
                 taken[i] = true
                 picked.add(ranked[i])

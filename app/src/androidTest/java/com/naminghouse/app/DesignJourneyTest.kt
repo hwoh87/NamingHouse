@@ -78,9 +78,11 @@ class DesignJourneyTest {
         // 누락은 첫 단계에서 발견하며, 뒤로 가도 입력은 유지된다.
         compose.runOnIdle { vm.surnameHanja.value = listOf(null) }
         compose.onNodeWithText("다음 · 이름 취향").performClick()
-        compose.onNodeWithText("성씨를 입력하고 한자를 선택해 주세요.").assertIsDisplayed()
+        compose.onNodeWithText("'김'에 담을 뜻").assertIsDisplayed()
+        compose.onNodeWithText("닫기").performClick()
         compose.runOnIdle { vm.surnameHanja.value = listOf(vm.surnameCandidates(0).first { it.char == '金' }) }
         compose.onNodeWithText("다음 · 이름 취향").performClick()
+        compose.onNodeWithText("피하고 싶은 글자 (선택)").performScrollTo().performTextInput("민, 준")
         capture("03-input-preferences")
         compose.onNodeWithContentDescription("뒤로").performClick()
         compose.onNodeWithText("가족에게서 이어받은 성").assertIsDisplayed()
@@ -93,6 +95,7 @@ class DesignJourneyTest {
         compose.waitUntil(30_000) { vm.candidates.isNotEmpty() && !vm.busy }
         compose.waitForIdle()
         assertNull(vm.errorMessage)
+        assertTrue(vm.candidates.none { it.givenName.any { ch -> ch == '민' || ch == '준' } })
         compose.onNodeWithText("마음에 닿는 이름").assertExists()
         capture("05-results")
         // 카드 안의 저장 버튼은 상세 이동을 일으키지 않는다.
@@ -106,6 +109,8 @@ class DesignJourneyTest {
         }
         compose.onNodeWithText("이름 이야기").assertIsDisplayed()
         capture("06-detail-overview")
+        compose.onNodeWithText("이 이름을 살펴볼 이유").performScrollTo().assertIsDisplayed()
+        capture("25-name-reasons")
         compose.onNodeWithText("이 이름으로 첫 인사 건네보기").performScrollTo().performClick()
         compose.onNodeWithText("우리 아이에게 건네는 첫 인사").performScrollTo().assertIsDisplayed()
         capture("23-first-greeting")
@@ -130,6 +135,29 @@ class DesignJourneyTest {
         }
         compose.waitUntil(5_000) { vm.favorites.size >= 3 }
         capture("09-favorites")
+        compose.onAllNodesWithText("가족 이름 카드").onFirst().performScrollTo().performClick()
+        compose.onNodeWithText("우리가 고른 이유").performScrollTo().performTextInput("다정하게 자라길 바라는 우리 마음")
+        compose.onNodeWithText("카드 미리보기").performScrollTo().performClick()
+        compose.onNodeWithTag("family-name-card").performScrollTo()
+        capture("24-family-card")
+        val sharedDir = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "shared")
+        val before = sharedDir.listFiles()?.map { it.name }?.toSet().orEmpty()
+        compose.onNodeWithText("저장하고 공유").performScrollTo().performClick()
+        compose.waitUntil(5_000) { sharedDir.listFiles()?.any { it.name !in before && it.length() > 1000 } == true }
+        compose.waitUntil(5_000) { vm.favorites.any { it.familyNote == "다정하게 자라길 바라는 우리 마음" } }
+        val shared = sharedDir.listFiles()!!.first { it.name !in before }
+        assertNotNull(android.graphics.BitmapFactory.decodeFile(shared.path))
+        shared.copyTo(File(InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null), "design-review/family-export.png"), overwrite = true)
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        compose.waitUntil(10_000) { automation.rootInActiveWindow?.packageName?.toString()?.contains("intentresolver") == true }
+        assertTrue(automation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK))
+        compose.waitUntil(10_000) {
+            runCatching { compose.onNodeWithText("이유 저장").isDisplayed() }.getOrDefault(false)
+        }
+        compose.onNodeWithText("이유 저장").performScrollTo().performClick()
+        compose.waitUntil(5_000) { vm.favorites.any { it.familyNote == "다정하게 자라길 바라는 우리 마음" } }
+        assertTrue(shareText(vm.favorites).contains("다정하게 자라길 바라는 우리 마음"))
+
         repeat(2) { compose.onAllNodesWithText("비교에 추가").onFirst().performScrollTo().performClick() }
         compose.onNodeWithText("2/3 이름 비교").performScrollTo().assertIsEnabled().performClick()
         compose.onNodeWithText("우리 가족의 이름 후보").assertExists()
@@ -160,18 +188,44 @@ class DesignJourneyTest {
         capture("17-dark-large-premium")
         compose.onNodeWithText("구매 복원").assertIsDisplayed()
     }
+    @Test fun birthDateAdvancesFocus() {
+        launch()
+        compose.runOnIdle {
+            vm.mode = AppMode.RECOMMEND
+            vm.preBirth = false; vm.unknownTime = false
+            vm.year = ""; vm.month = ""; vm.day = ""; vm.hour = ""; vm.minute = ""
+            nav.navigate(Routes.INPUT)
+        }
+        compose.onNodeWithText("다음 · 이름 취향").performClick()
+        compose.onNodeWithText("다음 · 출생 정보").performClick()
+        compose.onNodeWithText("년").performScrollTo().performClick().performTextInput("202")
+        compose.onNodeWithText("년").assertIsFocused().performTextInput("6")
+        compose.onNodeWithText("월").assertIsFocused().performTextInput("13")
+        compose.onNodeWithText("월").assertIsFocused().performTextClearance()
+        compose.onNodeWithText("월").performTextInput("09")
+        compose.onNodeWithText("일").assertIsFocused().performTextInput("15")
+        compose.onNodeWithText("시 (0~23)").assertIsFocused().performTextInput("08")
+        compose.onNodeWithText("분").assertIsFocused().performTextInput("30")
+        compose.onNodeWithText("분").assertIsNotFocused()
+        compose.runOnIdle { vm.unknownTime = true; vm.day = ""; vm.month = "" }
+        compose.onNodeWithText("월").performScrollTo().performClick().performTextInput("9")
+        compose.onNodeWithText("월").performImeAction()
+        compose.onNodeWithText("일").assertIsFocused().performTextInput("16")
+        compose.onNodeWithText("일").assertIsNotFocused()
+    }
+
     @Test fun evaluateModeAndSelectionDialogs() {
         launch()
         compose.runOnIdle { vm.mode = AppMode.EVALUATE; vm.onGivenNameChanged("서윤"); vm.givenHanja.value = listOf(null, null); nav.navigate(Routes.INPUT) }
+        compose.onNodeWithText("이름 (한글, 1~3자)").performScrollTo().performClick()
         capture("18-evaluate-input")
         compose.onNodeWithText("다음 · 출생 정보").performClick()
-        compose.onNodeWithText("이름의 한자를 모두 선택해 주세요.").assertIsDisplayed()
-        compose.onNodeWithText("서 · 한자 고르기").performScrollTo().performClick()
         compose.onNodeWithText("'서'에 담을 뜻").assertIsDisplayed()
         capture("19-hanja-picker")
-        compose.onNodeWithText("닫기").performClick()
-        compose.runOnIdle { vm.givenHanja.value = vm.givenNameSyllables.indices.map { vm.givenNameCandidates(it).first() } }
-        compose.onNodeWithText("다음 · 출생 정보").performClick()
+        compose.onNodeWithText(vm.givenNameCandidates(0).first().char.toString()).performClick()
+        compose.onNodeWithText("'윤'에 담을 뜻").assertIsDisplayed()
+        compose.onNodeWithText(vm.givenNameCandidates(1).first().char.toString()).performClick()
+        compose.onNodeWithText("태어난 순간을 알려주세요").assertExists()
         compose.runOnIdle { vm.preBirth = false }
         compose.onNodeWithText("서울").performScrollTo().performClick()
         compose.onAllNodesWithText("출생 지역").onLast().assertIsDisplayed()

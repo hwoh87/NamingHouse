@@ -99,6 +99,10 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
     }
     var notReady by remember { mutableStateOf(false) }
     var selected by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var familyName by remember { mutableStateOf<com.naminghouse.app.FavoriteName?>(null) }
+    familyName?.let { name ->
+        FamilyNameSheet(name, onSave = { vm.updateFavoriteNote(name, it) }, onDismiss = { familyName = null })
+    }
     var comparing by rememberSaveable { mutableStateOf(false) }
     val compared = vm.favorites.filter { it.fullHangul + it.hanja in selected }
     if (comparing) {
@@ -168,6 +172,8 @@ fun FavoritesScreen(vm: NamingViewModel, nav: NavHostController) {
                     contentPadding = PaddingValues(InkSpace.s16),
                     spacing = InkSpace.s12,
                 ) {
+                    TextButton(onClick = { familyName = f }) { Text("가족 이름 카드") }
+                    if (f.familyNote.isNotBlank()) Text(f.familyNote, style = MaterialTheme.typography.bodyMedium)
                     val key = f.fullHangul + f.hanja
                     FilterChip(selected = key in selected,
                         enabled = key in selected || compared.size < 3,

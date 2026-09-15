@@ -115,7 +115,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                     item {
                         ListCaption(
                             "추천 이름 ${vm.candidates.size}개",
-                            "성명학 종합 점수순 · 이름을 누르면 상세 풀이",
+                            "성명학·이름 통계·다양성을 함께 고려 · 상세에서 근거 확인",
                         )
                     }
                     rowsWithAd(vm, vm.candidates) { rank, cand ->

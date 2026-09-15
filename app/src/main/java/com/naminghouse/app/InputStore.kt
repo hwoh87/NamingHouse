@@ -37,6 +37,8 @@ data class SavedInput(
     val singleName: Boolean = false,
     val dolimja: String = "",
     val dolimjaLast: Boolean = false,
+    val excludedSyllables: String = "",
+    val diverseHanja: Boolean = true,
 )
 
 private val Context.inputStore by preferencesDataStore(name = "last-input")
@@ -59,6 +61,8 @@ private val CITY_REGION = stringPreferencesKey("cityRegion")
 private val SCHOOL = stringPreferencesKey("school")
 private val SINGLE_NAME = booleanPreferencesKey("singleName")
 private val DOLIMJA = stringPreferencesKey("dolimja")
+private val EXCLUDED = stringPreferencesKey("excludedSyllables")
+private val DIVERSE = booleanPreferencesKey("diverseHanja")
 private val DOLIMJA_LAST = booleanPreferencesKey("dolimjaLast")
 
 class InputStore(private val context: Context) {
@@ -87,6 +91,8 @@ class InputStore(private val context: Context) {
             singleName = p[SINGLE_NAME] ?: false,
             dolimja = p[DOLIMJA] ?: "",
             dolimjaLast = p[DOLIMJA_LAST] ?: false,
+            excludedSyllables = p[EXCLUDED] ?: "",
+            diverseHanja = p[DIVERSE] ?: true,
         )
     }
 
@@ -111,6 +117,8 @@ class InputStore(private val context: Context) {
             p[SINGLE_NAME] = s.singleName
             p[DOLIMJA] = s.dolimja
             p[DOLIMJA_LAST] = s.dolimjaLast
+            p[EXCLUDED] = s.excludedSyllables
+            p[DIVERSE] = s.diverseHanja
         }
     }
 }

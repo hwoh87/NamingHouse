@@ -178,3 +178,20 @@ fun FirstGreeting(givenName: String) {
         }
     }
 }
+
+
+@Composable
+fun NameReasons(eval: com.naminghouse.engine.eval.NameEvaluation) {
+    val fit = eval.sajuFit
+    InkCard(spacing = InkSpace.s12) {
+        SectionTitle("이 이름을 살펴볼 이유")
+        Text("뜻 · ${com.naminghouse.engine.eval.meaningLine(eval)}", style = MaterialTheme.typography.bodyMedium)
+        Text("조화 · 전통 성명학 기준 수리 ${eval.suriVerdict.label}, 발음오행 ${eval.baleumVerdict.label}",
+            style = MaterialTheme.typography.bodyMedium)
+        Text(if (fit == null) "기준 · 출생 사주를 포함하지 않은 이름 풀이예요."
+            else "기준 · 입력한 출생 사주를 포함해 계산했어요. 사주보완 판정은 ${fit.verdict.label}이에요.",
+            style = MaterialTheme.typography.bodyMedium)
+        Text("판정은 전통 성명학의 참고 정보예요. 뜻과 실제로 부르는 느낌도 함께 살펴보세요.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}

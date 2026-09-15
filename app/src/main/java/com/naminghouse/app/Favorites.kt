@@ -16,18 +16,20 @@ data class FavoriteName(
     val score: Int,
     val grade: String,
     val meaning: String,
+    val familyNote: String = "",
 ) {
     val fullHangul: String get() = surname + givenName
 
     /** 저장용 한 줄. 탭은 값에 나올 수 없으니 구분자로 안전하다. */
     fun serialize(): String =
-        listOf(surname, givenName, hanja, score.toString(), grade, meaning).joinToString("\t")
+        listOf(surname, givenName, hanja, score.toString(), grade, meaning, java.net.URLEncoder.encode(familyNote, "UTF-8")).joinToString("\t")
 
     companion object {
         fun parse(line: String): FavoriteName? {
             val c = line.split('\t')
             if (c.size < 6) return null
-            return FavoriteName(c[0], c[1], c[2], c[3].toIntOrNull() ?: 0, c[4], c[5])
+            return FavoriteName(c[0], c[1], c[2], c[3].toIntOrNull() ?: 0, c[4], c[5],
+                runCatching { java.net.URLDecoder.decode(c.getOrNull(6).orEmpty(), "UTF-8") }.getOrDefault(""))
         }
     }
 }
@@ -59,6 +61,15 @@ class FavoritesStore(private val context: Context) {
         }
     }
 
+    suspend fun updateNote(item: FavoriteName, note: String) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[FAVORITES] ?: emptySet()
+            val old = current.firstOrNull { sameName(it, item.serialize()) } ?: return@edit
+            val stored = FavoriteName.parse(old) ?: return@edit
+            prefs[FAVORITES] = current - old + stored.copy(familyNote = note.take(160)).serialize()
+        }
+    }
+
     suspend fun remove(item: FavoriteName) {
         context.dataStore.edit { prefs ->
             val current = prefs[FAVORITES] ?: emptySet()
@@ -81,6 +92,7 @@ fun shareText(items: List<FavoriteName>): String = buildString {
         appendLine("${i + 1}. ${f.fullHangul} (${f.hanja})")
         appendLine("   ${f.meaning}")
         appendLine("   종합 ${f.score}점 · ${f.grade}")
+        if (f.familyNote.isNotBlank()) appendLine("   우리가 고른 이유: ${f.familyNote}")
         if (i < items.lastIndex) appendLine()
     }
 }

@@ -146,6 +146,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     /** 출생 지역 — 경도로 진태양시를 보정한다(국내 도시만, 해외 출생은 시간대 정보가 없어 미지원). */
     var city by mutableStateOf<City>(CityRepository.SEOUL)
     var school by mutableStateOf(BaleumSchool.UNHAE)
+    var excludedSyllables by mutableStateOf("")
+    var diverseHanja by mutableStateOf(true)
     var popularOnly by mutableStateOf(false) // tier 1 이름만
     var singleName by mutableStateOf(false) // 외자(한 글자) 이름만 추천
     var dolimja by mutableStateOf("") // 돌림자 (빈 문자열 = 사용 안 함)
@@ -198,6 +200,10 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             meaning = meaningLine(eval),
         )
         viewModelScope.launch { favoritesStore.toggle(item) }
+    }
+
+    fun updateFavoriteNote(item: FavoriteName, note: String) {
+        viewModelScope.launch { favoritesStore.updateNote(item, note.take(160)) }
     }
 
     fun removeFavorite(item: FavoriteName) {
@@ -273,6 +279,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                 gender = runCatching { Gender.valueOf(s.gender) }.getOrDefault(Gender.M)
                 preBirth = s.preBirth
                 popularOnly = s.popularOnly
+                excludedSyllables = s.excludedSyllables
+                diverseHanja = s.diverseHanja
                 if (s.year.isNotBlank()) { year = s.year; month = s.month; day = s.day }
                 if (s.hour.isNotBlank()) { hour = s.hour; minute = s.minute }
                 isLunar = s.isLunar
@@ -335,6 +343,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             gender = gender.name,
             preBirth = preBirth,
             popularOnly = popularOnly,
+            excludedSyllables = excludedSyllables,
+            diverseHanja = diverseHanja,
             year = year, month = month, day = day,
             hour = hour, minute = minute,
             isLunar = isLunar, isLeapMonth = isLeapMonth, unknownTime = unknownTime,
@@ -415,6 +425,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     singleSyllable = singleName,
                     fixedSyllable = if (singleName) null else dolimja.filter(::isHangulSyllable).firstOrNull(),
                     fixedLast = dolimjaLast,
+                    excludedSyllables = excludedSyllables.filter(::isHangulSyllable).toSet(),
+                    diverseHanja = diverseHanja,
                 )
                 val list = generator.generate(surnameSyllables, sHanja, gender, sajuResult, options)
                 withContext(Dispatchers.Main) {
@@ -425,7 +437,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
                     // 외자·돌림자·인기 필터가 겹치면 빈 결과가 나올 수 있다 —
                     // 빈 화면으로 넘기지 말고 입력 화면에서 조건을 풀게 안내한다.
                     errorMessage = if (list.isEmpty()) {
-                        "조건에 맞는 이름을 찾지 못했습니다 — 돌림자·외자·인기 이름 조건을 조정해 보세요"
+                        "조건에 맞는 이름을 찾지 못했습니다 — 제외할 글자·돌림자·외자·인기 이름 조건을 조정해 보세요"
                     } else null
                     if (list.isNotEmpty()) {
                         pendingRoute = "result"

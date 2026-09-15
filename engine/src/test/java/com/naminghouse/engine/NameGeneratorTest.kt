@@ -64,4 +64,23 @@ class NameGeneratorTest {
         assertTrue(list.isNotEmpty())
         assertTrue(list.all { it.givenName.length == 1 })
     }
+
+    @Test fun `제외 음절은 돌림자와 충돌해도 결과에 남지 않는다`() {
+        val gen = NameGenerator(db, pool)
+        val filtered = gen.generate("김", kim, Gender.M, null,
+            GeneratorOptions(excludedSyllables = setOf('민', '준')))
+        assertTrue(filtered.isNotEmpty())
+        assertTrue(filtered.none { it.givenName.any { ch -> ch in setOf('민', '준') } })
+        val conflict = gen.generate("김", kim, Gender.M, null,
+            GeneratorOptions(fixedSyllable = '준', excludedSyllables = setOf('준')))
+        assertTrue(conflict.isEmpty())
+    }
+
+    @Test fun `한자 다양성은 후보와 점수를 보존하며 순서만 바꾼다`() {
+        val gen = NameGenerator(db, pool)
+        val base = gen.generate("김", kim, Gender.M, null, GeneratorOptions(limit = 2000, diverseHanja = false))
+        val diverse = gen.generate("김", kim, Gender.M, null, GeneratorOptions(limit = 2000, diverseHanja = true))
+        org.junit.Assert.assertEquals(base.toSet(), diverse.toSet())
+        org.junit.Assert.assertEquals(diverse.size, diverse.map { it.givenName }.distinct().size)
+    }
 }

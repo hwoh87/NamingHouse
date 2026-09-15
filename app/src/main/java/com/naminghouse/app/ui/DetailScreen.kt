@@ -233,6 +233,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                 },
             )
 
+            NameReasons(eval)
             FirstGreeting(eval.givenName)
 
             EvaluationDetail(
