@@ -1,8 +1,12 @@
 package com.naminghouse.app
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
@@ -39,6 +43,11 @@ data class SavedInput(
     val dolimjaLast: Boolean = false,
     val excludedSyllables: String = "",
     val diverseHanja: Boolean = true,
+    val mode: String = AppMode.RECOMMEND.name,
+    val givenName: String = "",
+    /** Empty slots remain empty, rather than shifting the following Hanja into the wrong syllable. */
+    val givenHanja: String = "",
+    val savedAtEpochMillis: Long = 0,
 )
 
 private val Context.inputStore by preferencesDataStore(name = "last-input")
@@ -64,13 +73,20 @@ private val DOLIMJA = stringPreferencesKey("dolimja")
 private val EXCLUDED = stringPreferencesKey("excludedSyllables")
 private val DIVERSE = booleanPreferencesKey("diverseHanja")
 private val DOLIMJA_LAST = booleanPreferencesKey("dolimjaLast")
+private val FORMAT_VERSION = intPreferencesKey("formatVersion")
+private val MODE = stringPreferencesKey("mode")
+private val GIVEN_NAME = stringPreferencesKey("givenName")
+private val GIVEN_HANJA = stringPreferencesKey("givenHanja")
+private val SAVED_AT = longPreferencesKey("savedAtEpochMillis")
 
-class InputStore(private val context: Context) {
+class InputStore internal constructor(private val dataStore: DataStore<Preferences>) {
+    constructor(context: Context) : this(context.applicationContext.inputStore)
 
     /** 저장된 입력. 한 번도 제출한 적 없으면 null. */
     suspend fun load(): SavedInput? {
-        val p = context.inputStore.data.first()
+        val p = dataStore.data.first()
         val surname = p[SURNAME] ?: return null
+        require((p[FORMAT_VERSION] ?: 1) in 1..2) { "지원하지 않는 입력 기록 형식입니다" }
         return SavedInput(
             surname = surname,
             surnameHanja = p[SURNAME_HANJA] ?: "",
@@ -93,11 +109,16 @@ class InputStore(private val context: Context) {
             dolimjaLast = p[DOLIMJA_LAST] ?: false,
             excludedSyllables = p[EXCLUDED] ?: "",
             diverseHanja = p[DIVERSE] ?: true,
+            mode = p[MODE] ?: AppMode.RECOMMEND.name,
+            givenName = p[GIVEN_NAME] ?: "",
+            givenHanja = p[GIVEN_HANJA] ?: "",
+            savedAtEpochMillis = p[SAVED_AT] ?: 0,
         )
     }
 
     suspend fun save(s: SavedInput) {
-        context.inputStore.edit { p ->
+        dataStore.edit { p ->
+            p[FORMAT_VERSION] = 2
             p[SURNAME] = s.surname
             p[SURNAME_HANJA] = s.surnameHanja
             p[GENDER] = s.gender
@@ -119,6 +140,10 @@ class InputStore(private val context: Context) {
             p[DOLIMJA_LAST] = s.dolimjaLast
             p[EXCLUDED] = s.excludedSyllables
             p[DIVERSE] = s.diverseHanja
+            p[MODE] = s.mode
+            p[GIVEN_NAME] = s.givenName
+            p[GIVEN_HANJA] = s.givenHanja
+            p[SAVED_AT] = s.savedAtEpochMillis
         }
     }
 }

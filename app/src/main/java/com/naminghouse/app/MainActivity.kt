@@ -31,6 +31,7 @@ import com.naminghouse.app.ui.DetailScreen
 import com.naminghouse.app.ui.FavoritesScreen
 import com.naminghouse.app.ui.HanjiBackdrop
 import com.naminghouse.app.ui.HomeScreen
+import com.naminghouse.app.ui.NameExplorerScreen
 import com.naminghouse.app.ui.InkNavBar
 import com.naminghouse.app.ui.InputScreen
 import com.naminghouse.app.ui.LegalScreen
@@ -46,6 +47,7 @@ object Routes {
     const val RESULT = "result"
     const val DETAIL = "detail"
     const val RANKING = "ranking"
+    const val EXPLORE = "explore"
     const val FAVORITES = "favorites"
     const val SETTINGS = "settings"
     const val TERMS = "legal_terms"
@@ -135,6 +137,7 @@ internal fun AppNavigation(vm: NamingViewModel, nav: NavHostController = remembe
             composable(Routes.RESULT) { ResultScreen(vm, nav) }
             composable(Routes.DETAIL) { DetailScreen(vm, nav) }
             composable(Routes.RANKING) { RankingScreen(vm, nav) }
+            composable(Routes.EXPLORE) { NameExplorerScreen(vm, nav) }
             composable(Routes.FAVORITES) { FavoritesScreen(vm, nav) }
             composable(Routes.SETTINGS) { SettingsScreen(vm, nav) }
             composable(Routes.TERMS) {

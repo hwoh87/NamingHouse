@@ -72,7 +72,8 @@ jobs:
       - name: Verify release code
         run: |
           python3 tools/design-guard.py
-          ./gradlew :app:testDebugUnitTest :app:lintDebug
+          python3 -m unittest discover -s tools/name-stats -p 'test_*.py' -v
+          ./gradlew :app:testDebugUnitTest :engine:testDebugUnitTest :app:lintDebug
 
       - name: Decode Android Keystore
         shell: bash

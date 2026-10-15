@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import java.io.OutputStream
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -294,12 +295,7 @@ private class CertWriter(
     fun font(): CertFonts = fonts
 }
 
-/**
- * 감명서 PDF 본체 — 표지(족자·기본 정보) + 풀이 본문을 그려 [uri] 로 쓴다.
- *
- * @param jokja 화면에서 3배로 캡처한 족자 (GPU 비트맵일 수 있어 여기서 소프트웨어로 복사)
- * @param birthLine "남아 · 양력 2026년 8월 11일 12시 00분 · 부산" — 출생 전 작명이면 null
- */
+/** URI adapter kept for callers that already own a destination. */
 fun writeCertificatePdf(
     context: Context,
     uri: Uri,
@@ -309,9 +305,27 @@ fun writeCertificatePdf(
     stat: NameStat?,
     birthLine: String?,
     issuedDate: String,
+    provenanceLabel: String? = null,
+) {
+    context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
+        writeCertificatePdf(context, output, jokja, eval, saju, stat, birthLine, issuedDate, provenanceLabel)
+    } ?: error("출력 스트림을 열지 못했습니다")
+}
+
+/** Render the complete PDF before launching the document picker. The caller owns [output] and [jokja]. */
+fun writeCertificatePdf(
+    context: Context,
+    output: OutputStream,
+    jokja: Bitmap,
+    eval: NameEvaluation,
+    saju: SajuSummary?,
+    stat: NameStat?,
+    birthLine: String?,
+    issuedDate: String,
+    provenanceLabel: String? = null,
 ) {
     val soft = if (android.os.Build.VERSION.SDK_INT >= 26 && jokja.config == Bitmap.Config.HARDWARE) {
-        jokja.copy(Bitmap.Config.ARGB_8888, false)
+        checkNotNull(jokja.copy(Bitmap.Config.ARGB_8888, false)) { "표지 이미지를 복사하지 못했습니다" }
     } else {
         jokja
     }
@@ -325,6 +339,8 @@ fun writeCertificatePdf(
         coverPage(w, soft, eval, fullHangul, fullHanja, birthLine, issuedDate)
 
         w.newPage()
+        w.sectionTitle("평가 기준")
+        w.paragraph(provenanceLabel ?: "평가 조건 기록 없음", size = 8f, color = MUTED)
         summarySection(w, eval)
         saju?.let { sajuSection(w, it) }
         birthSignSection(w, saju)
@@ -339,11 +355,11 @@ fun writeCertificatePdf(
         closing(w, issuedDate)
 
         w.finish()
-        context.contentResolver.openOutputStream(uri)?.use { doc.writeTo(it) }
-            ?: error("출력 스트림을 열지 못했습니다")
+        doc.writeTo(output)
     } finally {
         // close 가 던지면 원래 예외를 가린다 — 정리 실패는 삼킨다.
         runCatching { doc.close() }
+        if (soft !== jokja) soft.recycle()
     }
 }
 
@@ -381,7 +397,7 @@ private fun coverPage(
         add("이름" to listOf(Run(fullHangul, INK, bold = true), Run("  $fullHanja", MUTED)))
         add("뜻" to listOf(Run(meaningLine(eval), INK)))
         birthLine?.let { add("사주 기준" to listOf(Run(it, INK))) }
-            ?: add("사주 기준" to listOf(Run("출생 전 작명 — 사주 없이 성명학 축으로만 평가", MUTED)))
+            ?: add("사주 기준" to listOf(Run("사주 없이 성명학 기준으로 평가", MUTED)))
         add("종합 감명" to listOf(Run("${eval.score}점 · ${eval.grade}", GOLD, bold = true)))
         add("발급" to listOf(Run("$issuedDate · 네이밍하우스", INK)))
     }
@@ -536,9 +552,9 @@ private fun birthSignSection(w: CertWriter, saju: SajuSummary?) {
 }
 
 private fun statSection(w: CertWriter, stat: NameStat) {
-    w.sectionTitle("이름 통계 — 대법원 출생신고", minBlock = 70f)
+    w.sectionTitle("이름 통계 — 지역 상위 표본", minBlock = 70f)
     if (stat.ranks.isNotEmpty()) {
-        val runs = mutableListOf<Run>(Run("최근 순위  ", MUTED))
+        val runs = mutableListOf<Run>(Run("표본 내 참고 순위  ", MUTED))
         stat.ranks.take(6).forEachIndexed { i, (year, rank) ->
             if (i > 0) runs.add(Run("  ·  ", RULE))
             runs.add(Run("${year}년 ", MUTED))
@@ -546,32 +562,32 @@ private fun statSection(w: CertWriter, stat: NameStat) {
         }
         w.runsLine(runs, 9f, spacingAfter = 6f)
     } else {
-        w.paragraph("최근 상위권에 든 기록이 없는, 흔하지 않은 이름입니다.", size = 9f)
+        w.paragraph("수집된 자료에 최근 순위가 없습니다. 이름의 희소성을 뜻하지는 않습니다.", size = 9f)
     }
 
-    // 남녀 비율 — 한 줄 막대
-    val barH = 13f
-    w.ensure(barH + 22f)
-    val malePct = stat.malePercent
-    val top = w.y
-    val maleW = CONTENT_W * malePct / 100f
-    if (malePct > 0) w.fillRounded(RectF(MARGIN, top, MARGIN + maleW, top + barH), MALE, 6.5f)
-    if (malePct < 100) w.fillRounded(RectF(MARGIN + maleW, top, MARGIN + CONTENT_W, top + barH), FEMALE, 6.5f)
-    // 이음새를 직각으로 — 둥근 끝은 양 바깥만 남긴다.
-    if (malePct in 1..99) {
-        w.fillRounded(RectF(MARGIN + maleW - 6f, top, MARGIN + maleW, top + barH), MALE, 0f)
-        w.fillRounded(RectF(MARGIN + maleW, top, MARGIN + maleW + 6f, top + barH), FEMALE, 0f)
+    if (hasComparableGenderCounts(stat)) {
+        w.paragraph("집계된 상위 자료의 성별 비율", size = 8f, color = MUTED)
+        val barH = 13f
+        w.ensure(barH + 22f)
+        val top = w.y
+        val maleFraction = stat.maleCount.toFloat() / stat.total
+        val maleW = CONTENT_W * maleFraction
+        // Exact proportions determine the bar. Labels avoid rounding a nonzero share to 0 or 100%.
+        w.fillRounded(RectF(MARGIN, top, MARGIN + maleW, top + barH), MALE, 0f)
+        w.fillRounded(RectF(MARGIN + maleW, top, MARGIN + CONTENT_W, top + barH), FEMALE, 0f)
+        val fonts = w.font()
+        if (maleFraction >= 0.15f) w.textCentered("남 ${sampleShareLabel(stat.maleCount, stat.total)}",
+            MARGIN + maleW / 2f, top + 9.5f, 7f, ON_SEAL, fonts.bodyMedium)
+        if (maleFraction <= 0.85f) w.textCentered("여 ${sampleShareLabel(stat.femaleCount, stat.total)}",
+            MARGIN + maleW + (CONTENT_W - maleW) / 2f, top + 9.5f, 7f, ON_SEAL, fonts.bodyMedium)
+        w.y = top + barH + 6f
+    } else {
+        w.paragraph(MISSING_GENDER_SAMPLE, size = 8f, color = MUTED)
     }
-    val fonts = w.font()
-    if (malePct >= 12) w.textCentered("남 $malePct%", MARGIN + maleW / 2f, top + 9.5f, 7f, ON_SEAL, fonts.bodyMedium)
-    if (100 - malePct >= 12) {
-        w.textCentered("여 ${100 - malePct}%", MARGIN + maleW + (CONTENT_W - maleW) / 2f, top + 9.5f, 7f, ON_SEAL, fonts.bodyMedium)
-    }
-    w.y = top + barH + 6f
-    w.paragraph(
-        "2008년 이후 출생신고 ${stat.total}건 기준 · 대법원 전자가족관계등록시스템 통계",
-        size = 7.5f, color = MUTED,
-    )
+    w.paragraph(sampleCountLabel(stat), size = 7.5f, color = MUTED)
+    w.paragraph(NAME_STAT_SOURCE, size = 7.5f, color = MUTED)
+    w.paragraph(com.naminghouse.engine.gen.NameStatsMetadata.SCOPE_DESCRIPTION, size = 7.5f, color = MUTED)
+    w.paragraph("${stat.metadata.collectionLabel} · ${stat.metadata.periodLabel}", size = 7.5f, color = MUTED)
     w.space(2f)
 }
 
@@ -791,8 +807,8 @@ private fun closing(w: CertWriter, issuedDate: String) {
     w.divider(spacingAfter = 12f)
     val fonts = w.font()
     w.paragraph(
-        "이 감명서는 네이밍하우스가 사주와 성명학 여덟 축(수리사격·발음오행·수리오행·음양·자원오행·" +
-            "사주보완·불용한자·통계)으로 평가한 결과이며, 발급일 기준의 분석입니다.",
+        "이 감명서는 수리사격·발음오행·수리오행·자원오행과 사주보완·음양·불용한자를 기준으로 평가한 결과입니다. " +
+            "이름 통계는 참고 자료이며 성명학 점수에 포함되지 않습니다. 성명학 풀이는 전통적 해석으로, 미래를 보장하지 않습니다.",
         size = 8f, color = MUTED, spacingAfter = 14f,
     )
     // 맺음 낙관 — 붉은 인장 하나로 끝을 맺는다.

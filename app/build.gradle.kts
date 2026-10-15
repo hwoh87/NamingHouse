@@ -42,7 +42,8 @@ android {
             // 축소·난독화 켬. 에셋이 20MB 라 리소스 축소까지 해야 체감이 있다.
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            // 서명 키가 없는 검토 환경에서도 unsigned 릴리스 빌드를 만들 수 있다.
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

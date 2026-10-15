@@ -2,10 +2,7 @@ package com.naminghouse.app.ui
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.provider.DocumentsContract
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -87,10 +84,9 @@ import com.naminghouse.app.ui.theme.InkTheme
 import com.naminghouse.engine.eval.NameEvaluation
 import com.naminghouse.engine.eval.meaningLine
 import com.samramanshang.manseryeok.orrery.model.Gender
-import java.io.File
-import java.io.FileOutputStream
 import java.time.LocalDate
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -104,10 +100,16 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
+    // ActivityResult must remain registered even when a process restart loses vm.selected.
+    val pdfExport = rememberCertificateExport()
     val sel = vm.selected
     if (sel == null) {
-        // 프로세스 복원 등으로 선택이 사라진 채 들어오면 조용히 물러난다.
-        LaunchedEffect(Unit) { nav.popBackStack() }
+        LaunchedEffect(pdfExport.state.busy) {
+            if (!pdfExport.state.busy) nav.popBackStack()
+        }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("PDF 저장을 마무리하고 있어요", modifier = Modifier.padding(InkSpace.gutter))
+        }
         return
     }
     val (eval, stat) = sel
@@ -117,6 +119,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
     val exportLayer = rememberGraphicsLayer()
     var showPremium by remember { mutableStateOf(false) }
     var showUnlock by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
 
     // 감명서 풀이를 다 볼 수 있는가 — 프리미엄이거나, 이 이름을 따로 열어 두었거나.
     val unlocked = vm.isUnlocked(eval)
@@ -129,63 +132,12 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
     val style = if (vm.isPremium) vm.jokjaStyle else JokjaStyle.BAEKJI
 
     // 표지 신원 칸 — 사주가 있을 때만 생년월일 줄을 싣는다.
-    val birthLine = if (vm.preBirth || vm.saju == null) null else buildString {
-        append(if (vm.gender == Gender.M) "남아" else "여아")
-        append(" · ")
-        append(
-            when {
-                !vm.isLunar -> "양력"
-                vm.isLeapMonth -> "음력(윤달)"
-                else -> "음력"
-            }
-        )
-        append(" ${vm.year}년 ${vm.month}월 ${vm.day}일 ")
-        append(
-            if (vm.unknownTime) "시간 모름"
-            else "%d시 %02d분".format(vm.hour.toIntOrNull() ?: 0, vm.minute.toIntOrNull() ?: 0)
-        )
-        append(" · ${vm.city.name}")
-    }
+    val birthLine = vm.selectedBirthLine
     val issued = remember {
         val d = LocalDate.now()
         "${d.year}년 ${d.monthValue}월 ${d.dayOfMonth}일"
     }
 
-    // 파일 선택기가 떠 있는 동안 액티비티가 멈춰 레이어 기록이 무효화된다 —
-    // 캡처는 선택기를 열기 전에 해 두고, 돌아오면 쓰기만 한다.
-    var pendingPdf by remember { mutableStateOf<Bitmap?>(null) }
-    val pdfLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/pdf")
-    ) { uri ->
-        val bitmap = pendingPdf
-        pendingPdf = null
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            runCatching {
-                checkNotNull(bitmap) { "캡처가 사라졌습니다" }
-                withContext(Dispatchers.IO) {
-                    writeCertificatePdf(
-                        context = context,
-                        uri = uri,
-                        jokja = bitmap,
-                        eval = eval,
-                        saju = vm.saju,
-                        stat = stat,
-                        birthLine = birthLine,
-                        issuedDate = issued,
-                    )
-                }
-            }.onSuccess {
-                Toast.makeText(context, "감명서 PDF 를 저장했습니다", Toast.LENGTH_SHORT).show()
-            }.onFailure {
-                // 실패하면 빈 파일을 남기지 않는다.
-                withContext(Dispatchers.IO) {
-                    runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
-                }
-                Toast.makeText(context, "PDF 저장에 실패했습니다 — 다시 시도해 주세요", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     Column(Modifier.fillMaxSize()) {
         SceneTopBar("이름 이야기", { nav.popBackStack() })
@@ -238,7 +190,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
 
             EvaluationDetail(
                 eval = eval,
-                saju = vm.saju,
+                saju = vm.selectedSaju,
                 stat = stat,
                 showHero = false,
                 locked = !unlocked,
@@ -277,15 +229,25 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
                 Button(
                     onClick = {
-                        scope.launch {
-                            runCatching {
-                                val bitmap = shareLayer.toImageBitmap().asAndroidBitmap()
-                                shareBitmap(context, bitmap, eval)
-                            }.onFailure {
-                                Toast.makeText(context, "이미지를 만들지 못했습니다", Toast.LENGTH_SHORT).show()
+                        if (!sharing) {
+                            sharing = true
+                            scope.launch {
+                                try {
+                                    // Compose owns the capture; only our independent copy is recycled.
+                                    val bitmap = checkNotNull(shareLayer.toImageBitmap().asAndroidBitmap()
+                                        .copy(Bitmap.Config.ARGB_8888, false))
+                                    try { shareBitmap(context, bitmap) } finally { bitmap.recycle() }
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, "이미지를 만들지 못했습니다", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    sharing = false
+                                }
                             }
                         }
                     },
+                    enabled = !sharing && !pdfExport.state.busy,
                     shape = InkShape.medium,
                     modifier = Modifier.weight(1.4f).heightIn(min = 56.dp),
                 ) {
@@ -301,17 +263,20 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                 OutlinedButton(
                     onClick = {
                         if (vm.isPremium) {
-                            scope.launch {
-                                runCatching {
-                                    exportLayer.toImageBitmap().asAndroidBitmap()
-                                }.onSuccess {
-                                    pendingPdf = it
-                                    pdfLauncher.launch(
-                                        "네이밍하우스_감명서_${eval.surname}${eval.givenName}.pdf"
-                                    )
-                                }.onFailure {
-                                    Toast.makeText(context, "감명서를 만들지 못했습니다", Toast.LENGTH_SHORT).show()
-                                }
+                            // Freeze the complete evaluation before any suspension or picker launch.
+                            val exportSaju = vm.selectedSaju
+                            val provenance = vm.selectedEvaluationRecord?.provenanceLabel
+                            pdfExport.begin("네이밍하우스_감명서_${eval.surname}${eval.givenName}.pdf") { file ->
+                                val bitmap = checkNotNull(exportLayer.toImageBitmap().asAndroidBitmap()
+                                    .copy(Bitmap.Config.ARGB_8888, false))
+                                try {
+                                    withContext(Dispatchers.IO) {
+                                        file.outputStream().use { output ->
+                                            writeCertificatePdf(context, output, bitmap, eval, exportSaju, stat,
+                                                birthLine, issued, provenance)
+                                        }
+                                    }
+                                } finally { bitmap.recycle() }
                             }
                         } else {
                             showPremium = true
@@ -319,6 +284,7 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                     },
                     shape = InkShape.medium,
                     contentPadding = PaddingValues(0.dp),
+                    enabled = !pdfExport.state.busy && !sharing,
                     modifier = Modifier.size(56.dp),
                 ) {
                     Icon(
@@ -332,6 +298,19 @@ fun DetailScreen(vm: NamingViewModel, nav: NavHostController) {
                         },
                     )
                 }
+            }
+            if (vm.isPremium) {
+                Text(
+                    when {
+                        pdfExport.state.preparing -> "감명서 PDF를 준비하고 있어요"
+                        pdfExport.state.destinationUri != null -> "선택한 위치에 PDF를 저장하고 있어요"
+                        birthLine != null -> "PDF에는 이름·한자·출생정보·평가 기준이 담겨요"
+                        else -> "PDF에는 이름·한자·평가 기준이 담겨요"
+                    },
+                    modifier = Modifier.padding(horizontal = InkSpace.gutter).padding(bottom = InkSpace.s12),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -530,16 +509,27 @@ private fun CornerMarks(color: Color, modifier: Modifier = Modifier) {
 /** PDF 캡처 배율 — 화면 폭의 3배면 A4 기준 대략 300dpi 급 인쇄 품질이 된다. */
 private const val ExportScale = 3f
 
-/** 캡처한 감명서를 캐시에 쓰고 공유 시트를 연다. */
-private fun shareBitmap(context: android.content.Context, bitmap: Bitmap, eval: NameEvaluation) {
-    val dir = File(context.cacheDir, "shared").apply { mkdirs() }
-    val file = File(dir, "gammyeong_${eval.surname}${eval.givenName}.png")
-    FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    val uri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "image/png"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+/** Each completed image gets a unique URI. Keep it available for delayed receivers. */
+private suspend fun shareBitmap(context: android.content.Context, bitmap: Bitmap) {
+    var file: java.io.File? = null
+    var launched = false
+    try {
+        withContext(Dispatchers.IO) {
+            file = createSharedImageFile(context.cacheDir)
+            file!!.outputStream().use {
+                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) { "이미지를 저장하지 못했습니다" }
+            }
+        }
+        val uri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", checkNotNull(file))
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = android.content.ClipData.newRawUri("감명서", uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(send, "감명서 공유"))
+        launched = true
+    } finally {
+        if (!launched) file?.delete()
     }
-    context.startActivity(Intent.createChooser(send, "감명서 공유"))
 }

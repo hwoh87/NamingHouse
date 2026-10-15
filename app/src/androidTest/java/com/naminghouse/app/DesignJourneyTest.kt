@@ -43,7 +43,7 @@ class DesignJourneyTest {
                 }
             }
         }
-        compose.waitUntil(20_000) { vm.hanjaDb != null && vm.namePool != null }
+        compose.waitUntil(20_000) { vm.hanjaDb != null && vm.namePool != null && vm.inputsLoaded && vm.favoritesLoaded }
         compose.runOnIdle {
             vm.favorites.toList().forEach(vm::removeFavorite)
             vm.onSurnameChanged("김")
@@ -55,6 +55,7 @@ class DesignJourneyTest {
             vm.year = "2026"; vm.month = "8"; vm.day = "11"
         }
         compose.waitUntil(5_000) { vm.favorites.isEmpty() }
+        compose.runOnIdle { vm.recentlyRemoved?.let(vm::dismissRemovedFavorite) }
         android.os.SystemClock.sleep(2500) // Let the emulator's Play connection notice dismiss.
     }
 
@@ -104,7 +105,7 @@ class DesignJourneyTest {
         assertEquals(Routes.RESULT, nav.currentDestination?.route)
         compose.runOnIdle {
             val c = vm.candidates.first()
-            vm.selected = c.evaluation to c.stat
+            vm.selectResult(c.evaluation, c.stat)
             nav.navigate(Routes.DETAIL)
         }
         compose.onNodeWithText("이름 이야기").assertIsDisplayed()
@@ -120,8 +121,8 @@ class DesignJourneyTest {
         val pdf = File(context.getExternalFilesDir(null), "design-review/sample-certificate.pdf")
         val cover = compose.onNodeWithTag("name-cover").captureToImage().asAndroidBitmap()
         val selected = requireNotNull(vm.selected)
-        writeCertificatePdf(context, Uri.fromFile(pdf), cover, selected.first, vm.saju, selected.second,
-            birthLine = null, issuedDate = "2026년 9월 14일")
+        writeCertificatePdf(context, Uri.fromFile(pdf), cover, selected.first, vm.selectedSaju, selected.second,
+            birthLine = null, issuedDate = "2026년 10월 16일", provenanceLabel = vm.selectedEvaluationRecord?.provenanceLabel)
         assertTrue(pdf.length() > 1000)
         compose.onNodeWithText("한자 풀이", useUnmergedTree = true).performScrollTo().performClick()
         compose.onNodeWithText("글자 풀이").assertExists()
@@ -156,10 +157,12 @@ class DesignJourneyTest {
         }
         compose.onNodeWithText("이유 저장").performScrollTo().performClick()
         compose.waitUntil(5_000) { vm.favorites.any { it.familyNote == "다정하게 자라길 바라는 우리 마음" } }
-        assertTrue(shareText(vm.favorites).contains("다정하게 자라길 바라는 우리 마음"))
+        assertFalse(shareText(vm.favorites).contains("다정하게 자라길 바라는 우리 마음"))
+        assertTrue(shareText(vm.favorites, includeNotes = true).contains("다정하게 자라길 바라는 우리 마음"))
 
         repeat(2) { compose.onAllNodesWithText("비교에 추가").onFirst().performScrollTo().performClick() }
         compose.onNodeWithText("2/3 이름 비교").performScrollTo().assertIsEnabled().performClick()
+        compose.waitUntil(5_000) { vm.comparison != null }
         compose.onNodeWithText("우리 가족의 이름 후보").assertExists()
         capture("10-comparison")
         compose.runOnIdle { nav.navigate(Routes.RANKING) }
@@ -178,7 +181,7 @@ class DesignJourneyTest {
         compose.waitUntil(30_000) { vm.hanjaCombos.isNotEmpty() && !vm.busy }
         assertNull(vm.errorMessage)
         capture("14-dark-large-results")
-        compose.runOnIdle { vm.selected = vm.hanjaCombos.first() to null; nav.navigate(Routes.DETAIL) }
+        compose.runOnIdle { vm.selectResult(vm.hanjaCombos.first(), null); nav.navigate(Routes.DETAIL) }
         capture("15-dark-large-detail")
         compose.onNodeWithText("한자 풀이", useUnmergedTree = true).performScrollTo().performClick()
         compose.onNodeWithText("글자 풀이").performScrollTo().assertIsDisplayed()

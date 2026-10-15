@@ -246,12 +246,12 @@ fun NameStatCard(stat: NameStat) {
         val ranks = stat.ranks
         if (ranks.isEmpty()) {
             Text(
-                "최근 상위권에 든 기록이 없는 이름입니다.",
+                "수집된 자료에 최근 순위가 없어요. 이름의 희소성을 뜻하지는 않아요.",
                 style = MaterialTheme.typography.bodyMedium,
             )
         } else {
             Text(
-                "출생신고 이름 순위",
+                "지역 상위 표본의 참고 순위",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -277,57 +277,44 @@ fun NameStatCard(stat: NameStat) {
             }
         }
 
-        // 남녀비율 — 한 줄 막대
-        val malePct = stat.malePercent
-        Text(
-            "남녀 비율",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            Modifier.fillMaxWidth().height(24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (malePct > 0) {
+        if (hasComparableGenderCounts(stat)) {
+            Text(
+                "집계된 상위 자료의 성별 비율",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val maleFraction = stat.maleCount.toFloat() / stat.total
+            Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier
-                        .weight(malePct.coerceAtLeast(1).toFloat())
-                        .height(24.dp)
-                        .background(
-                            InkTheme.colors.male,
-                            // 막대 높이(24dp)의 절반 — 끝이 정확한 반원이 된다.
-                            RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp),
-                        ),
+                    Modifier.weight(stat.maleCount.toFloat()).height(24.dp)
+                        .background(InkTheme.colors.male, RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (malePct >= 15) {
-                        Text("남 $malePct%", color = Color.White, style = MaterialTheme.typography.labelMedium)
-                    }
+                    if (maleFraction >= 0.25f) Text("남", color = Color.White, style = MaterialTheme.typography.labelMedium)
                 }
-            }
-            val femalePct = 100 - malePct
-            if (femalePct > 0) {
                 Box(
-                    Modifier
-                        .weight(femalePct.coerceAtLeast(1).toFloat())
-                        .height(24.dp)
-                        .background(
-                            InkTheme.colors.female,
-                            RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp),
-                        ),
+                    Modifier.weight(stat.femaleCount.toFloat()).height(24.dp)
+                        .background(InkTheme.colors.female, RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (femalePct >= 15) {
-                        Text("여 $femalePct%", color = Color.White, style = MaterialTheme.typography.labelMedium)
-                    }
+                    if (maleFraction <= 0.75f) Text("여", color = Color.White, style = MaterialTheme.typography.labelMedium)
                 }
             }
+            // Keep numbers outside the fixed-height bar so large fonts remain readable.
+            Text("남 ${sampleShareLabel(stat.maleCount, stat.total)} · 여 ${sampleShareLabel(stat.femaleCount, stat.total)}",
+                style = MaterialTheme.typography.bodyMedium)
+        } else {
+            Text(MISSING_GENDER_SAMPLE, style = MaterialTheme.typography.bodyMedium)
         }
-        Text(
-            "2008년 이후 출생신고 ${stat.total}건 기준 · 대법원 전자가족관계등록시스템 통계",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(sampleCountLabel(stat), style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(NAME_STAT_SOURCE, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(com.naminghouse.engine.gen.NameStatsMetadata.SCOPE_DESCRIPTION,
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("${stat.metadata.collectionLabel} · ${stat.metadata.periodLabel}",
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
     }
 }
 

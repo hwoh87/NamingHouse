@@ -15,6 +15,7 @@ import com.naminghouse.engine.gen.NameGenerator
 import com.naminghouse.engine.gen.NamePool
 import com.naminghouse.engine.gen.NameStat
 import com.naminghouse.engine.gen.NameStats
+import com.naminghouse.engine.gen.NameStatsMetadata
 import com.naminghouse.engine.hanja.HanjaDb
 import com.naminghouse.engine.hanja.HanjaEntry
 import com.naminghouse.engine.oheng.BaleumSchool
@@ -25,8 +26,12 @@ import com.samramanshang.manseryeok.orrery.model.City
 import com.samramanshang.manseryeok.orrery.model.Gender
 import com.samramanshang.manseryeok.orrery.repository.CityRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.security.MessageDigest
 
 enum class AppMode(val label: String) {
     RECOMMEND("이름 추천"),
@@ -45,6 +50,11 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var loadError by mutableStateOf<String?>(null)
         private set
+    var statsLoaded by mutableStateOf(false)
+        private set
+    var statsError by mutableStateOf<String?>(null)
+        private set
+    private var hanjaDataVersion = "unknown"
 
     // ── 화면 상태
     var mode by mutableStateOf(AppMode.RECOMMEND)
@@ -57,8 +67,41 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     /** 상세 화면이 보고 있는 이름 — 라우트로 직렬화하기엔 무거워 여기 든다. */
     var selected by mutableStateOf<Pair<NameEvaluation, NameStat?>?>(null)
 
+    var selectedSaju by mutableStateOf<SajuSummary?>(null)
+        private set
+    var selectedBirthLine by mutableStateOf<String?>(null)
+        private set
+    var selectedEvaluationRecord by mutableStateOf<EvaluationRecord?>(null)
+        private set
+    private var resultEvaluationRecord: EvaluationRecord? = null
+    private var resultBirthLine: String? = null
+    private var calculationJob: Job? = null
+    private var calculationVersion = 0L
+
+    var comparison by mutableStateOf<FavoriteComparison?>(null)
+        private set
+    var comparisonBusy by mutableStateOf(false)
+        private set
+    var comparisonError by mutableStateOf<String?>(null)
+        private set
+    private var comparisonJob: Job? = null
+    private var comparisonVersion = 0L
+
     /** 저장된 입력이 있는가 — 홈의 '이어서 이름 짓기' 노출 기준. */
     var hasSavedInput by mutableStateOf(false)
+        private set
+    var inputsLoaded by mutableStateOf(false)
+        private set
+    var lastSavedInput by mutableStateOf<SavedInput?>(null)
+        private set
+    var inputRestoreNotice by mutableStateOf<String?>(null)
+        private set
+    private val recentNamesStore = RecentNamesStore(app)
+    var recentNames by mutableStateOf<List<String>>(emptyList())
+        private set
+    var recentNamesLoaded by mutableStateOf(false)
+        private set
+    var explorationError by mutableStateOf<String?>(null)
         private set
 
     // ── 설정
@@ -162,6 +205,8 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     var givenHanja = mutableStateOf<List<HanjaEntry?>>(emptyList())
 
     // ── 결과
+    var resultMode by mutableStateOf(AppMode.RECOMMEND)
+        private set
     var saju by mutableStateOf<SajuSummary?>(null)
         private set
     var candidates by mutableStateOf<List<NameCandidate>>(emptyList())
@@ -176,10 +221,17 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     private val inputStore = InputStore(app)
     /** 저장돼 있던 성씨 한자 — DB 로딩이 끝나야 실제 항목으로 되살릴 수 있다 */
     private var savedSurnameHanja: String? = null
+    private var savedGivenHanja: String? = null
 
     // ── 즐겨찾기
     private val favoritesStore = FavoritesStore(app)
     var favorites by mutableStateOf<List<FavoriteName>>(emptyList())
+        private set
+    var favoritesLoaded by mutableStateOf(false)
+        private set
+    var favoriteError by mutableStateOf<String?>(null)
+        private set
+    var recentlyRemoved by mutableStateOf<FavoriteName?>(null)
         private set
 
     /** 이 이름이 담겨 있는가 — 이름+한자로 판별(점수는 사주에 따라 달라진다) */
@@ -187,6 +239,19 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         val hanja = (eval.surnameHanja + eval.givenHanja).joinToString("") { it.char.toString() }
         return favorites.any {
             it.surname == eval.surname && it.givenName == eval.givenName && it.hanja == hanja
+        }
+    }
+
+    private fun changeFavorites(action: suspend () -> Unit) {
+        favoriteError = null
+        viewModelScope.launch {
+            try {
+                action()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                favoriteError = "이름을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요"
+            }
         }
     }
 
@@ -198,62 +263,141 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             score = eval.score,
             grade = eval.grade,
             meaning = meaningLine(eval),
+            evaluationRecord = when {
+                selected?.first === eval -> selectedEvaluationRecord
+                candidates.any { it.evaluation === eval } || hanjaCombos.any { it === eval } -> resultEvaluationRecord
+                else -> null
+            },
         )
-        viewModelScope.launch { favoritesStore.toggle(item) }
+        changeFavorites { favoritesStore.toggle(item) }
     }
 
     fun updateFavoriteNote(item: FavoriteName, note: String) {
-        viewModelScope.launch { favoritesStore.updateNote(item, note.take(160)) }
+        changeFavorites { favoritesStore.updateNote(item, note.take(160)) }
+    }
+
+    suspend fun importFavorites(items: List<FavoriteName>): FavoriteImportResult = favoritesStore.importNames(items)
+
+    fun setFavoriteFinalist(item: FavoriteName, value: Boolean) {
+        changeFavorites { favoritesStore.setFinalist(item, value) }
     }
 
     fun removeFavorite(item: FavoriteName) {
-        viewModelScope.launch { favoritesStore.remove(item) }
+        changeFavorites { favoritesStore.remove(item)?.let { recentlyRemoved = it } }
     }
 
-    /**
-     * 담아둔 이름을 다시 평가해 상세로 보낸다.
-     *
-     * 즐겨찾기에는 요약(점수·등급·뜻)만 저장돼 있어 수리·오행 풀이는 그때그때 새로 계산한다.
-     * 사주는 **지금 저장된 생년월일시** 기준이라, 담아둔 뒤 입력을 바꿨으면 점수가 달라질 수 있다.
-     *
-     * @return 계산을 시작했으면 true, 데이터가 아직 준비되지 않았으면 false
-     */
-    fun openFavorite(item: FavoriteName): Boolean {
-        val db = hanjaDb ?: return false
-        val entries = item.hanja.map { db.byChar[it] ?: return false }
-        if (entries.size != item.surname.length + item.givenName.length) return false
-        val sHanja = entries.take(item.surname.length)
-        val gHanja = entries.drop(item.surname.length)
-        if (sHanja.isEmpty() || gHanja.isEmpty()) return false
-        // 생년월일시가 비어 있거나 어긋나면 사주 없이 수리·오행만 보여 준다.
-        val input = if (preBirth) null else birthInput()
+    fun restoreFavorite(item: FavoriteName) {
+        changeFavorites {
+            favoritesStore.restore(item)
+            dismissRemovedFavorite(item)
+        }
+    }
 
-        errorMessage = null
-        busy = true
-        viewModelScope.launch(Dispatchers.Default) {
-            try {
-                val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val eval = NameEvaluator.evaluate(
-                    item.surname, item.givenName, sHanja, gHanja, sajuResult, school
-                )
-                withContext(Dispatchers.Main) {
-                    saju = sajuResult
-                    selected = eval to nameStats[item.givenName]
-                    pendingRoute = Routes.DETAIL
-                    busy = false
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    errorMessage = "계산 오류: ${e.message}"
-                    busy = false
-                }
-            }
+    fun dismissRemovedFavorite(item: FavoriteName) {
+        if (recentlyRemoved == item) recentlyRemoved = null
+    }
+
+    /** The result list keeps its own context when a saved name is opened elsewhere. */
+    fun selectResult(eval: NameEvaluation, stat: NameStat?) {
+        cancelCalculation()
+        selected = eval to stat
+        selectedSaju = saju
+        selectedBirthLine = resultBirthLine
+        selectedEvaluationRecord = resultEvaluationRecord
+    }
+
+    fun openFavorite(item: FavoriteName): Boolean {
+        cancelCalculation()
+        val db = hanjaDb ?: run {
+            errorMessage = loadError ?: "한자 자료를 불러오는 중입니다. 잠시 후 다시 시도해 주세요"
+            return false
+        }
+        val condition = captureConditionOrError() ?: return false
+        launchCalculation(calculate = {
+            val analyzed = condition.birth?.let(SajuNamingService::analyze)
+            analyzed to evaluateFavorite(item, db, analyzed, condition.school)
+        }) { (analyzed, eval) ->
+            selected = eval to nameStats[item.givenName]
+            selectedSaju = analyzed
+            selectedBirthLine = condition.birthLine
+            selectedEvaluationRecord = condition.record
+            pendingRoute = Routes.DETAIL
         }
         return true
     }
 
+    fun compareFavorites(items: List<FavoriteName>) {
+        cancelCalculation()
+        clearComparison()
+        errorMessage = null
+        val db = hanjaDb ?: run {
+            comparisonError = loadError ?: "한자 자료를 불러오는 중입니다. 잠시 후 다시 시도해 주세요"
+            return
+        }
+        val snapshot = items.toList()
+        val condition = try {
+            captureCondition()
+        } catch (error: IllegalArgumentException) {
+            comparisonError = error.message
+            return
+        }
+        val version = ++comparisonVersion
+        comparisonBusy = true
+        comparisonJob = viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.Default) {
+                    compareFavoriteNames(snapshot, db, condition.birth, condition.school,
+                        condition.label, condition.birthLine)
+                }
+                if (version == comparisonVersion) comparison = result.copy(evaluationRecord = condition.record)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (version == comparisonVersion) {
+                    comparisonError = error.message ?: "비교 결과를 준비하지 못했습니다. 다시 시도해 주세요"
+                }
+            } finally {
+                if (version == comparisonVersion) comparisonBusy = false
+            }
+        }
+    }
+
+    fun clearComparison() {
+        comparisonVersion++
+        comparisonJob?.cancel()
+        comparisonJob = null
+        comparison = null
+        comparisonError = null
+        comparisonBusy = false
+    }
+
+    fun openComparedFavorite(entry: ComparedFavorite) {
+        val result = comparison ?: return
+        if (entry !in result.entries) return
+        // A previously requested favorite must not replace the name the user just chose.
+        calculationVersion++
+        calculationJob?.cancel()
+        busy = false
+        errorMessage = null
+        selected = entry.evaluation to nameStats[entry.favorite.givenName]
+        selectedSaju = result.saju
+        selectedBirthLine = result.birthLine
+        selectedEvaluationRecord = result.evaluationRecord
+        pendingRoute = Routes.DETAIL
+    }
+
     init {
         premium.start()
+        viewModelScope.launch {
+            recentNamesStore.flow.catch { error ->
+                if (error is CancellationException) throw error
+                explorationError = "최근 본 이름을 불러오지 못했어요. 이름 검색은 계속 사용할 수 있어요."
+                recentNamesLoaded = true
+            }.collect {
+                recentNames = it
+                recentNamesLoaded = true
+            }
+        }
         viewModelScope.launch {
             premium.isPremium.collect { isPremium = it }
         }
@@ -261,7 +405,14 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
             premium.isAdFree.collect { isAdFree = it }
         }
         viewModelScope.launch {
-            favoritesStore.flow.collect { favorites = it }
+            favoritesStore.flow.catch { error ->
+                if (error is CancellationException) throw error
+                favoriteError = "담아둔 이름을 불러오지 못했습니다. 앱을 다시 열어 주세요"
+                favoritesLoaded = true
+            }.collect {
+                favorites = it
+                favoritesLoaded = true
+            }
         }
         viewModelScope.launch {
             unlockStore.flow.collect {
@@ -272,56 +423,59 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         // 저장된 입력 복원. 성씨 한자만은 DB가 있어야 하므로 문자열로 들고 있다가
         // 아래 로딩 완료 쪽과 늦게 끝나는 쪽이 되살린다(둘 다 메인 스레드라 경합 없음).
         viewModelScope.launch {
-            inputStore.load()?.let { s ->
-                hasSavedInput = true
-                surname = s.surname
-                savedSurnameHanja = s.surnameHanja
-                gender = runCatching { Gender.valueOf(s.gender) }.getOrDefault(Gender.M)
-                preBirth = s.preBirth
-                popularOnly = s.popularOnly
-                excludedSyllables = s.excludedSyllables
-                diverseHanja = s.diverseHanja
-                if (s.year.isNotBlank()) { year = s.year; month = s.month; day = s.day }
-                if (s.hour.isNotBlank()) { hour = s.hour; minute = s.minute }
-                isLunar = s.isLunar
-                isLeapMonth = s.isLeapMonth
-                unknownTime = s.unknownTime
-                city = CityRepository.KOREAN_CITIES.firstOrNull {
-                    it.name == s.cityName && (it.region ?: "") == s.cityRegion
-                } ?: CityRepository.SEOUL
-                school = runCatching { BaleumSchool.valueOf(s.school) }
-                    .getOrDefault(BaleumSchool.UNHAE)
-                singleName = s.singleName
-                dolimja = s.dolimja
-                dolimjaLast = s.dolimjaLast
-                if (hanjaDb != null) restoreSurnameHanja()
+            try {
+                inputStore.load()?.let { s ->
+                    hasSavedInput = true
+                    lastSavedInput = s
+                    applySavedInput(s)
+                }
+                // 학파는 설정으로 옮겨졌다 — 설정 값이 있으면 그쪽이 우선한다.
+                val settings = settingsStore.load()
+                themeMode = settings.themeMode
+                jokjaStyle = settings.jokjaStyle
+                settings.school?.let { school = it }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                errorMessage = "저장된 입력을 불러오지 못했습니다. 출생 정보를 다시 확인해 주세요"
+            } finally {
+                inputsLoaded = true
             }
-            // 학파는 설정으로 옮겨졌다 — 설정 값이 있으면 그쪽이 우선한다.
-            val settings = settingsStore.load()
-            themeMode = settings.themeMode
-            jokjaStyle = settings.jokjaStyle
-            settings.school?.let { school = it }
         }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val assets = getApplication<Application>().assets
-                val db = assets.open("hanja.tsv").bufferedReader().useLines { HanjaDb.parse(it) }
+                val hanjaBytes = assets.open("hanja.tsv").use { it.readBytes() }
+                val db = HanjaDb.parse(hanjaBytes.toString(Charsets.UTF_8).lineSequence())
+                val hanjaVersion = MessageDigest.getInstance("SHA-256").digest(hanjaBytes)
+                    .joinToString("") { "%02x".format(it) }
                 val pool = assets.open("names.tsv").bufferedReader().useLines { NamePool.parse(it) }
-                // 통계는 없어도 앱이 동작해야 하므로 실패해도 무시한다
-                val stats = runCatching {
-                    assets.open("name-stats.tsv").bufferedReader().useLines { NameStats.parse(it) }
-                }.getOrDefault(NameStats.EMPTY)
+                // Optional statistics must not block naming, but their screen must stop loading on failure.
+                val statsResult = runCatching {
+                    val metadata = assets.open("name-stats-metadata.properties").bufferedReader().useLines {
+                        NameStatsMetadata.parse(it)
+                    }
+                    NameStats.parse(assets.open("name-stats.tsv").use { it.readBytes() }, metadata)
+                }
                 withContext(Dispatchers.Main) {
                     hanjaDb = db
+                    hanjaDataVersion = hanjaVersion
                     namePool = pool
-                    nameStats = stats
+                    nameStats = statsResult.getOrDefault(NameStats.EMPTY)
+                    statsLoaded = true
+                    statsError = if (statsResult.isFailure) "통계 자료를 불러오지 못했어요. 이름 추천과 한자 찾기는 계속 사용할 수 있어요." else null
                     // DB 로딩 전에는 후보를 못 봐서 기본 성씨가 비어 있다 — 로딩 직후 채운다
                     if (surnameHanja.value.all { it == null }) {
                         restoreSurnameHanja()
                     }
+                    restoreGivenHanja()
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { loadError = "데이터 로딩 실패: ${e.message}" }
+                withContext(Dispatchers.Main) {
+                    loadError = "데이터 로딩 실패: ${e.message}"
+                    statsLoaded = true
+                    statsError = "이름 자료를 불러오지 못했어요. 앱을 다시 열어 주세요."
+                }
             }
         }
     }
@@ -330,32 +484,207 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     private fun restoreSurnameHanja() {
         val saved = savedSurnameHanja
         surnameHanja.value = List(surnameSyllables.length) { i ->
-            saved?.getOrNull(i)?.let { ch -> surnameCandidates(i).firstOrNull { it.char == ch } }
-                ?: soleSurnameHanja(i)
+            val char = saved?.getOrNull(i)
+            if (char == null || char == '_') soleSurnameHanja(i)
+            else surnameCandidates(i).firstOrNull { it.char == char }.also {
+                if (it == null) inputRestoreNotice = "예전에 선택한 한자를 현재 자료에서 찾지 못했어요. 빈 한자 칸을 다시 확인해 주세요."
+            }
         }
     }
 
-    /** 제출에 성공한 입력을 저장한다 — 다음 실행 때 그대로 복원된다. */
-    private fun persistInputs() {
-        val snapshot = SavedInput(
-            surname = surnameSyllables,
-            surnameHanja = surnameHanja.value.joinToString("") { it?.char?.toString() ?: "" },
-            gender = gender.name,
-            preBirth = preBirth,
-            popularOnly = popularOnly,
-            excludedSyllables = excludedSyllables,
-            diverseHanja = diverseHanja,
-            year = year, month = month, day = day,
-            hour = hour, minute = minute,
-            isLunar = isLunar, isLeapMonth = isLeapMonth, unknownTime = unknownTime,
-            cityName = city.name, cityRegion = city.region ?: "",
-            school = school.name,
-            singleName = singleName,
-            dolimja = dolimja,
-            dolimjaLast = dolimjaLast,
-        )
-        hasSavedInput = true
-        viewModelScope.launch { inputStore.save(snapshot) }
+    private fun restoreGivenHanja() {
+        if (hanjaDb == null) return
+        val saved = savedGivenHanja
+        givenHanja.value = List(givenNameSyllables.length) { i ->
+            val char = saved?.getOrNull(i)
+            if (char == null || char == '_') null
+            else givenNameCandidates(i).firstOrNull { it.char == char }.also {
+                if (it == null) inputRestoreNotice = "예전에 선택한 한자를 현재 자료에서 찾지 못했어요. 빈 한자 칸을 다시 확인해 주세요."
+            }
+        }
+        savedGivenHanja = null
+    }
+
+    private fun applySavedInput(s: SavedInput) {
+        inputRestoreNotice = null
+        surname = acceptHangul(s.surname, 2)
+        savedSurnameHanja = s.surnameHanja
+        gender = runCatching { Gender.valueOf(s.gender) }.getOrDefault(Gender.M)
+        mode = runCatching { AppMode.valueOf(s.mode) }.getOrDefault(AppMode.RECOMMEND)
+        givenName = acceptHangul(s.givenName, 3)
+        savedGivenHanja = s.givenHanja
+        preBirth = s.preBirth
+        popularOnly = s.popularOnly
+        excludedSyllables = s.excludedSyllables
+        diverseHanja = s.diverseHanja
+        year = s.year; month = s.month; day = s.day
+        hour = s.hour; minute = s.minute
+        isLunar = s.isLunar; isLeapMonth = s.isLeapMonth; unknownTime = s.unknownTime
+        val savedCity = CityRepository.KOREAN_CITIES.firstOrNull {
+            it.name == s.cityName && (it.region ?: "") == s.cityRegion
+        }
+        city = savedCity ?: CityRepository.SEOUL
+        if (savedCity == null && s.cityName.isNotEmpty()) inputRestoreNotice = "저장했던 출생 지역을 찾지 못해 서울로 표시했어요. 계산 전에 지역을 확인해 주세요."
+        school = runCatching { BaleumSchool.valueOf(s.school) }.getOrDefault(BaleumSchool.UNHAE)
+        singleName = s.singleName; dolimja = s.dolimja; dolimjaLast = s.dolimjaLast
+        surnameHanja.value = List(surnameSyllables.length) { null }
+        givenHanja.value = List(givenNameSyllables.length) { null }
+        if (hanjaDb != null) {
+            restoreSurnameHanja()
+            restoreGivenHanja()
+        }
+    }
+
+    /** The home action deliberately restores the last completed job, including its name and school. */
+    fun resumeLastInput() {
+        if (!inputsLoaded) return
+        cancelCalculation()
+        clearComparison()
+        lastSavedInput?.let(::applySavedInput) ?: run { mode = AppMode.RECOMMEND }
+    }
+
+    fun startHanjaFor(name: String): Boolean {
+        if (!inputsLoaded || hanjaDb == null) {
+            explorationError = loadError ?: "이름 자료를 준비하고 있어요. 잠시 후 다시 선택해 주세요."
+            return false
+        }
+        if (name.length !in 1..3 || !name.all(::isHangulSyllable)) {
+            explorationError = "완성된 한글 이름을 1~3글자로 입력해 주세요."
+            return false
+        }
+        cancelCalculation()
+        clearComparison()
+        mode = AppMode.HANJA
+        onGivenNameChanged(name)
+        givenHanja.value = List(name.length) { null }
+        errorMessage = null
+        inputRestoreNotice = null
+        explorationError = null
+        viewModelScope.launch {
+            try {
+                recentNamesStore.rememberName(name)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                explorationError = "최근 본 이름을 저장하지 못했어요. 이름 검색은 계속 사용할 수 있어요."
+            }
+        }
+        return true
+    }
+
+    fun clearRecentNames() {
+        explorationError = null
+        viewModelScope.launch {
+            try {
+                recentNamesStore.clear()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                explorationError = "최근 본 이름을 지우지 못했어요. 다시 시도해 주세요."
+            }
+        }
+    }
+
+    private fun inputSnapshot() = SavedInput(
+        surname = surnameSyllables,
+        surnameHanja = surnameHanja.value.joinToString("") { it?.char?.toString() ?: "_" },
+        gender = gender.name,
+        preBirth = preBirth,
+        popularOnly = popularOnly,
+        excludedSyllables = excludedSyllables,
+        diverseHanja = diverseHanja,
+        year = year, month = month, day = day,
+        hour = hour, minute = minute,
+        isLunar = isLunar, isLeapMonth = isLeapMonth, unknownTime = unknownTime,
+        cityName = city.name, cityRegion = city.region ?: "",
+        school = school.name,
+        singleName = singleName,
+        dolimja = dolimja,
+        dolimjaLast = dolimjaLast,
+        mode = mode.name,
+        givenName = givenNameSyllables,
+        givenHanja = givenHanja.value.joinToString("") { it?.char?.toString() ?: "_" },
+        savedAtEpochMillis = System.currentTimeMillis(),
+    )
+
+    /** Save the input that actually produced this result, only after successful calculation. */
+    private fun persistInputs(snapshot: SavedInput) {
+        viewModelScope.launch {
+            try {
+                inputStore.save(snapshot)
+                hasSavedInput = true
+                lastSavedInput = snapshot
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                errorMessage = "계산은 완료했지만 입력을 저장하지 못했습니다"
+            }
+        }
+    }
+
+    private data class EvaluationCondition(
+        val birth: BirthInput?,
+        val school: BaleumSchool,
+        val birthLine: String?,
+        val label: String,
+        val record: EvaluationRecord,
+    )
+
+    private fun captureCondition(): EvaluationCondition {
+        require(inputsLoaded) { "저장된 입력을 불러오는 중입니다. 잠시 후 다시 시도해 주세요" }
+        val birth = if (preBirth) null else requireNotNull(birthInput()) {
+            "출생 정보를 확인해 주세요. 실제 날짜·윤달과 시간을 입력하거나 사주 없이 보기를 선택해 주세요"
+        }
+        val birthLine = birth?.let {
+            val calendar = when {
+                !it.isLunar -> "양력"
+                it.isLeapMonth -> "음력(윤달)"
+                else -> "음력"
+            }
+            val time = if (it.unknownTime) "시간 모름" else "%d시 %02d분".format(it.hour, it.minute)
+            val genderLabel = if (it.gender == Gender.M) "남아" else "여아"
+            "$genderLabel · $calendar ${it.year}년 ${it.month}월 ${it.day}일 $time · ${city.namingLabel}"
+        }
+        val record = EvaluationRecord(school, System.currentTimeMillis(), EvaluationVersions.RULES,
+            hanjaDataVersion, birth, if (birth != null) city.namingLabel else "")
+        return EvaluationCondition(birth, school, birthLine,
+            "${birthLine ?: "사주 없이 · 성명학 기준"} · ${school.label}", record)
+    }
+
+    private fun captureConditionOrError(): EvaluationCondition? = try {
+        captureCondition()
+    } catch (error: IllegalArgumentException) {
+        errorMessage = error.message
+        null
+    }
+
+    private fun cancelCalculation() {
+        calculationVersion++
+        calculationJob?.cancel()
+        calculationJob = null
+        busy = false
+        pendingRoute = null
+    }
+
+    /** Capture on main, calculate off main, publish only the newest completed request. */
+    private fun <T> launchCalculation(calculate: () -> T, publish: (T) -> Unit) {
+        calculationJob?.cancel()
+        val version = ++calculationVersion
+        errorMessage = null
+        pendingRoute = null
+        busy = true
+        calculationJob = viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.Default) { calculate() }
+                if (version == calculationVersion) publish(result)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (version == calculationVersion) errorMessage = "계산 오류: ${error.message ?: "다시 시도해 주세요"}"
+            } finally {
+                if (version == calculationVersion) busy = false
+            }
+        }
     }
 
     /**
@@ -383,7 +712,7 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
         val d = day.toIntOrNull() ?: return null
         val h = if (unknownTime) 12 else hour.toIntOrNull() ?: return null
         val mi = if (unknownTime) 0 else minute.toIntOrNull() ?: return null
-        if (y !in 1900..2050 || mo !in 1..12 || d !in 1..31) return null
+        if (!isValidBirthDate(y, mo, d, isLunar, isLunar && isLeapMonth)) return null
         if (h !in 0..23 || mi !in 0..59) return null
         return BirthInput(
             year = y, month = mo, day = d, hour = h, minute = mi,
@@ -405,138 +734,105 @@ class NamingViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun runRecommend() {
+        cancelCalculation()
         val db = hanjaDb ?: return
         val pool = namePool ?: return
         val sHanja = pickedSurnameHanja()
             ?: run { errorMessage = "성씨 한자를 선택해 주세요"; return }
-        val input = if (preBirth) null else birthInput()
-            ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
-
-        errorMessage = null
-        persistInputs()
-        busy = true
-        viewModelScope.launch(Dispatchers.Default) {
-            try {
-                val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val generator = NameGenerator(db, pool, nameStats)
-                val options = GeneratorOptions(
-                    school = school,
-                    maxTier = if (popularOnly) 1 else 3,
-                    singleSyllable = singleName,
-                    fixedSyllable = if (singleName) null else dolimja.filter(::isHangulSyllable).firstOrNull(),
-                    fixedLast = dolimjaLast,
-                    excludedSyllables = excludedSyllables.filter(::isHangulSyllable).toSet(),
-                    diverseHanja = diverseHanja,
-                )
-                val list = generator.generate(surnameSyllables, sHanja, gender, sajuResult, options)
-                withContext(Dispatchers.Main) {
-                    saju = sajuResult
-                    candidates = list
-                    hanjaCombos = emptyList()
-                    evaluation = null
-                    // 외자·돌림자·인기 필터가 겹치면 빈 결과가 나올 수 있다 —
-                    // 빈 화면으로 넘기지 말고 입력 화면에서 조건을 풀게 안내한다.
-                    errorMessage = if (list.isEmpty()) {
-                        "조건에 맞는 이름을 찾지 못했습니다 — 제외할 글자·돌림자·외자·인기 이름 조건을 조정해 보세요"
-                    } else null
-                    if (list.isNotEmpty()) {
-                        pendingRoute = "result"
-                    }
-                    busy = false
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    errorMessage = "계산 오류: ${e.message}"
-                    busy = false
-                }
+        val condition = captureConditionOrError() ?: return
+        val snapshot = inputSnapshot().copy(mode = AppMode.RECOMMEND.name)
+        val requestGender = gender
+        val stats = nameStats
+        val options = GeneratorOptions(
+            school = condition.school,
+            maxTier = if (popularOnly) 1 else 3,
+            singleSyllable = singleName,
+            fixedSyllable = if (singleName) null else dolimja.filter(::isHangulSyllable).firstOrNull(),
+            fixedLast = dolimjaLast,
+            excludedSyllables = excludedSyllables.filter(::isHangulSyllable).toSet(),
+            diverseHanja = diverseHanja,
+        )
+        launchCalculation(calculate = {
+            val analyzed = condition.birth?.let(SajuNamingService::analyze)
+            analyzed to NameGenerator(db, pool, stats).generate(snapshot.surname, sHanja, requestGender, analyzed, options)
+        }) { (analyzed, list) ->
+            saju = analyzed
+            resultBirthLine = condition.birthLine
+            resultEvaluationRecord = condition.record
+            resultMode = AppMode.RECOMMEND
+            candidates = list
+            hanjaCombos = emptyList()
+            evaluation = null
+            if (list.isEmpty()) {
+                errorMessage = "조건에 맞는 이름을 찾지 못했습니다 — 제외할 글자·돌림자·외자·인기 이름 조건을 조정해 보세요"
+            } else {
+                persistInputs(snapshot)
+                pendingRoute = Routes.RESULT
             }
         }
     }
 
-    /** 한글 이름은 정해져 있고 한자 조합만 추천받는 모드. */
     fun runHanjaRecommend() {
+        cancelCalculation()
         val db = hanjaDb ?: return
         val pool = namePool ?: return
         val sHanja = pickedSurnameHanja()
             ?: run { errorMessage = "성씨 한자를 선택해 주세요"; return }
-        if (givenNameSyllables.isEmpty()) {
+        val requestName = givenNameSyllables
+        if (requestName.isEmpty()) {
             errorMessage = "한자를 붙일 이름을 입력해 주세요"
             return
         }
-        val input = if (preBirth) null else birthInput()
-            ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
-
-        errorMessage = null
-        persistInputs()
-        busy = true
-        viewModelScope.launch(Dispatchers.Default) {
-            try {
-                val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val combos = NameGenerator(db, pool, nameStats).hanjaCombosFor(
-                    surname = surnameSyllables,
-                    surnameHanja = sHanja,
-                    givenName = givenNameSyllables,
-                    saju = sajuResult,
-                    options = GeneratorOptions(school = school, requireAllGoodSuri = false),
-                )
-                withContext(Dispatchers.Main) {
-                    saju = sajuResult
-                    hanjaCombos = combos
-                    candidates = emptyList()
-                    evaluation = null
-                    errorMessage = if (combos.isEmpty()) {
-                        "'$givenNameSyllables' 에 쓸 수 있는 인명용 한자를 찾지 못했습니다"
-                    } else null
-                    if (combos.isNotEmpty()) {
-                        pendingRoute = "result"
-                    }
-                    busy = false
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    errorMessage = "계산 오류: ${e.message}"
-                    busy = false
-                }
+        val condition = captureConditionOrError() ?: return
+        val snapshot = inputSnapshot().copy(mode = AppMode.HANJA.name)
+        val stats = nameStats
+        launchCalculation(calculate = {
+            val analyzed = condition.birth?.let(SajuNamingService::analyze)
+            analyzed to NameGenerator(db, pool, stats).hanjaCombosFor(
+                surname = snapshot.surname, surnameHanja = sHanja, givenName = requestName,
+                saju = analyzed, options = GeneratorOptions(school = condition.school, requireAllGoodSuri = false),
+            )
+        }) { (analyzed, combos) ->
+            saju = analyzed
+            resultBirthLine = condition.birthLine
+            resultEvaluationRecord = condition.record
+            resultMode = AppMode.HANJA
+            hanjaCombos = combos
+            candidates = emptyList()
+            evaluation = null
+            if (combos.isEmpty()) {
+                errorMessage = "'$requestName'에 추천할 한자 조합이 없습니다. 이름 감명에서 한자를 직접 선택할 수 있어요"
+            } else {
+                persistInputs(snapshot)
+                pendingRoute = Routes.RESULT
             }
         }
     }
 
     fun runEvaluate() {
+        cancelCalculation()
         val sHanja = pickedSurnameHanja()
             ?: run { errorMessage = "성씨 한자를 선택해 주세요"; return }
         val gHanja = givenHanja.value.filterNotNull()
-        if (givenNameSyllables.isEmpty() || gHanja.size != givenNameSyllables.length) {
+        val requestName = givenNameSyllables
+        if (requestName.isEmpty() || gHanja.size != requestName.length) {
             errorMessage = "이름과 이름 한자를 모두 선택해 주세요"
             return
         }
-        val input = if (preBirth) null else birthInput()
-            ?: run { errorMessage = "생년월일시를 확인해 주세요"; return }
-
-        errorMessage = null
-        persistInputs()
-        busy = true
-        viewModelScope.launch(Dispatchers.Default) {
-            try {
-                val sajuResult = input?.let { SajuNamingService.analyze(it) }
-                val eval = NameEvaluator.evaluate(
-                    surnameSyllables, givenNameSyllables, sHanja, gHanja, sajuResult, school
-                )
-                withContext(Dispatchers.Main) {
-                    saju = sajuResult
-                    evaluation = eval
-                    candidates = emptyList()
-                    hanjaCombos = emptyList()
-                    // 감명은 이름이 하나라 목록을 거치지 않고 바로 상세로 간다
-                    selected = eval to nameStats[eval.givenName]
-                    pendingRoute = "detail"
-                    busy = false
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    errorMessage = "계산 오류: ${e.message}"
-                    busy = false
-                }
-            }
+        val condition = captureConditionOrError() ?: return
+        val snapshot = inputSnapshot().copy(mode = AppMode.EVALUATE.name)
+        launchCalculation(calculate = {
+            val analyzed = condition.birth?.let(SajuNamingService::analyze)
+            analyzed to NameEvaluator.evaluate(snapshot.surname, requestName, sHanja, gHanja, analyzed, condition.school)
+        }) { (analyzed, eval) ->
+            // The existing recommendation list and its context can still be reached with Back.
+            evaluation = eval
+            selected = eval to nameStats[eval.givenName]
+            selectedSaju = analyzed
+            selectedBirthLine = condition.birthLine
+            selectedEvaluationRecord = condition.record
+            persistInputs(snapshot)
+            pendingRoute = Routes.DETAIL
         }
     }
 

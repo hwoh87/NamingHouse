@@ -24,7 +24,8 @@ import com.naminghouse.app.ui.theme.*
 
 /** 네이밍하우스의 주요 행동. 상태와 이동을 외부에서 받아 다른 화면에도 그대로 붙인다. */
 @Composable
-fun NamingHero(hasSavedInput: Boolean, onStart: () -> Unit, modifier: Modifier = Modifier) {
+fun NamingHero(hasSavedInput: Boolean, onStart: () -> Unit, modifier: Modifier = Modifier,
+    resumeLabel: String = "이어서 이름 찾기  →") {
     Surface(modifier.fillMaxWidth(), shape = InkShape.large,
         color = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
         Column(Modifier.padding(InkSpace.s24), verticalArrangement = Arrangement.spacedBy(InkSpace.s16)) {
@@ -43,7 +44,7 @@ fun NamingHero(hasSavedInput: Boolean, onStart: () -> Unit, modifier: Modifier =
                 shape = InkShape.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface)) {
-                Text(if (hasSavedInput) "이어서 이름 찾기  →" else "무료로 이름 찾기  →",
+                Text(if (hasSavedInput) resumeLabel else "무료로 이름 찾기  →",
                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
             Text("이름 추천·점수 무료 · 감명서 한 편 무료 공개",

@@ -84,6 +84,22 @@ private fun ganziHangul(ganzi: String): String = buildString {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
+    if (vm.candidates.isEmpty() && vm.hanjaCombos.isEmpty()) {
+        Column(Modifier.fillMaxSize()) {
+            SceneTopBar("추천 이름", { nav.popBackStack() })
+            Column(Modifier.padding(InkSpace.gutter)) {
+                if (!vm.inputsLoaded) {
+                    Text("지난 입력을 불러오고 있어요")
+                    return@Column
+                }
+                EmptyNames("추천을 다시 준비해 주세요", "앱을 다시 시작하면 추천 결과를 새로 계산해요. 담아둔 이름은 이름책에 남아 있어요.", "조건 확인하고 다시 찾기") {
+                    vm.resumeLastInput()
+                    nav.navigate(Routes.INPUT) { popUpTo(Routes.RESULT) { inclusive = true } }
+                }
+            }
+        }
+        return
+    }
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
     val adsReady by com.naminghouse.app.ads.AdsInit.adsReady.collectAsState()
     val entitlementLoaded by vm.premium.entitlementLoaded.collectAsState()
@@ -91,7 +107,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
         if (entitlementLoaded && activity != null) com.naminghouse.app.ads.InterstitialAds.preload(activity, vm.isAdFree)
     }
     Column(Modifier.fillMaxSize()) {
-        SceneTopBar(if (vm.mode == AppMode.HANJA) "한자 조합" else "추천 이름", { nav.popBackStack() }) {
+        SceneTopBar(if (vm.resultMode == AppMode.HANJA) "한자 조합" else "추천 이름", { nav.popBackStack() }) {
             androidx.compose.material3.TextButton(onClick = {
                 val next: () -> Unit = { nav.popBackStack(); Unit }
                 if (activity != null && entitlementLoaded) com.naminghouse.app.ads.InterstitialAds.finishResults(activity, vm.isAdFree, next)
@@ -110,7 +126,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                 }
             }
             vm.saju?.let { saju -> item { SajuCard(saju) } }
-            when (vm.mode) {
+            when (vm.resultMode) {
                 AppMode.RECOMMEND -> {
                     item {
                         ListCaption(
@@ -126,7 +142,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             isFavorite = vm.isFavorite(cand.evaluation),
                             onToggleFavorite = { vm.toggleFavorite(cand.evaluation) },
                             onClick = {
-                                vm.selected = cand.evaluation to cand.stat
+                                vm.selectResult(cand.evaluation, cand.stat)
                                 nav.navigate(Routes.DETAIL)
                             },
                         )
@@ -136,7 +152,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                 AppMode.HANJA -> {
                     item {
                         ListCaption(
-                            "'${vm.surnameSyllables}${vm.givenNameSyllables}' 한자 조합 ${vm.hanjaCombos.size}개",
+                            "'${vm.hanjaCombos.firstOrNull()?.let { it.surname + it.givenName }.orEmpty()}' 한자 조합 ${vm.hanjaCombos.size}개",
                             "같은 소리에 붙일 수 있는 인명용 한자를 점수순으로 놓았습니다",
                         )
                     }
@@ -149,7 +165,7 @@ fun ResultScreen(vm: NamingViewModel, nav: NavHostController) {
                             isFavorite = vm.isFavorite(eval),
                             onToggleFavorite = { vm.toggleFavorite(eval) },
                             onClick = {
-                                vm.selected = eval to vm.nameStats[eval.givenName]
+                                vm.selectResult(eval, vm.nameStats[eval.givenName])
                                 nav.navigate(Routes.DETAIL)
                             },
                         )

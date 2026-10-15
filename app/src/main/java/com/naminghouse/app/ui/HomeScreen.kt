@@ -41,6 +41,13 @@ import com.samramanshang.manseryeok.orrery.model.Gender
  */
 @Composable
 fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
+    if (!vm.inputsLoaded) {
+        Column(Modifier.padding(InkSpace.gutter), verticalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
+            androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
+            Text("지난 작업을 불러오고 있어요", style = MaterialTheme.typography.bodyMedium)
+        }
+        return
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -70,14 +77,26 @@ fun HomeScreen(vm: NamingViewModel, nav: NavHostController) {
         }
 
         NamingHero(vm.hasSavedInput, onStart = {
-            vm.mode = AppMode.RECOMMEND
+            vm.resumeLastInput()
             nav.navigate(Routes.INPUT)
+        }, resumeLabel = when (vm.lastSavedInput?.mode) {
+            AppMode.HANJA.name -> "한자 찾기 이어서  →"
+            AppMode.EVALUATE.name -> "이름 풀이 이어서  →"
+            else -> "이어서 이름 찾기  →"
         })
         if (vm.hasSavedInput) {
             Text(lastInputSummary(vm), style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            androidx.compose.material3.TextButton(onClick = {
+                vm.mode = AppMode.RECOMMEND
+                nav.navigate(Routes.INPUT)
+            }) { Text("이름 추천 열기") }
         }
         SectionTitle("이름을 만나는 다른 방법")
+        ModeCard(
+            glyph = "音", title = "소리와 뜻으로 이름 찾기",
+            desc = "초성·끝 글자·한자의 뜻으로 후보를 둘러봐요",
+        ) { nav.navigate(Routes.EXPLORE) }
         Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s12)) {
             NamingToolTile("字", "한자 찾기", "정해둔 이름에\n좋은 뜻을 더해요", {
                 vm.mode = AppMode.HANJA; nav.navigate(Routes.INPUT)
@@ -189,16 +208,15 @@ private fun ModeCard(glyph: String, title: String, desc: String, onClick: () -> 
 
 /** 저장된 입력 요약 한 줄 — "김(金) · 남아 · 양력 2026년 8월 11일 12:00 · 서울" */
 private fun lastInputSummary(vm: NamingViewModel): String {
-    val hanja = vm.surnameHanja.value.filterNotNull().joinToString("") { it.char.toString() }
-    val surname = vm.surnameSyllables + if (hanja.isNotEmpty()) "($hanja)" else ""
-    val gender = if (vm.gender == Gender.M) "남아" else "여아"
-    val birth = if (vm.preBirth) {
-        "출생 전 작명"
+    val saved = vm.lastSavedInput ?: return ""
+    val name = saved.surname + if (saved.mode == AppMode.RECOMMEND.name) "씨" else saved.givenName
+    val gender = if (saved.gender == Gender.M.name) "남아" else "여아"
+    val birth = if (saved.preBirth) {
+        "사주 없이"
     } else {
-        val cal = if (vm.isLunar) "음력" else "양력"
-        val time = if (vm.unknownTime) "시간 모름"
-        else "${vm.hour}:${vm.minute.padStart(2, '0')}"
-        "$cal ${vm.year}년 ${vm.month}월 ${vm.day}일 $time · ${vm.city.name}"
+        val cal = if (saved.isLunar) "음력" else "양력"
+        val time = if (saved.unknownTime) "시간 모름" else "${saved.hour}:${saved.minute.padStart(2, '0')}"
+        "$cal ${saved.year}.${saved.month}.${saved.day} $time · ${saved.cityName}"
     }
-    return "$surname · $gender · $birth"
+    return "마지막 완료 · $name · $gender · $birth\n이름과 한자, 당시 입력 조건을 다시 불러와요."
 }

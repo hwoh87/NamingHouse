@@ -2,6 +2,7 @@ package com.naminghouse.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.naminghouse.app.AppMode
 import com.naminghouse.app.NamingViewModel
+import com.naminghouse.app.namingLabel
 import com.naminghouse.app.ui.theme.InkShape
 import com.naminghouse.app.ui.theme.InkSpace
 import com.samramanshang.manseryeok.orrery.model.Gender
@@ -78,9 +80,32 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
         }
     }
 
+    if (!vm.inputsLoaded || (vm.hanjaDb == null && vm.loadError == null)) {
+        Column(Modifier.fillMaxSize()) {
+            SceneTopBar("이름 짓기", { nav.popBackStack() })
+            Column(Modifier.padding(InkSpace.gutter), verticalArrangement = Arrangement.spacedBy(InkSpace.s16)) {
+                CircularProgressIndicator()
+                Text(if (!vm.inputsLoaded) "지난 입력을 불러오고 있어요" else "이름과 한자 자료를 준비하고 있어요", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        return
+    }
+
     val steps = if (vm.mode == AppMode.RECOMMEND) listOf("성씨", "이름 취향", "출생 정보")
         else listOf("이름 정보", "출생 정보")
-    var step by rememberSaveable(vm.mode) { mutableStateOf(0) }
+    // Saved-state restoration does not validate rememberSaveable inputs. Keep the mode
+    // beside the step so a restored, shorter journey never receives an old step index.
+    val modeKey = vm.mode.name
+    val stepSaver = remember(modeKey) {
+        Saver<Int, List<String>>(
+            save = { listOf(modeKey, it.toString()) },
+            restore = { saved ->
+                if (saved.getOrNull(0) == modeKey) saved.getOrNull(1)?.toIntOrNull()
+                    ?.takeIf { it in steps.indices } ?: 0 else 0
+            },
+        )
+    }
+    var step by rememberSaveable(modeKey, stateSaver = stepSaver) { mutableStateOf(0) }
     var stepError by rememberSaveable { mutableStateOf<String?>(null) }
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -129,6 +154,8 @@ fun InputScreen(vm: NamingViewModel, nav: NavHostController) {
                 when { last -> "출생 전이라면 사주 없이도 이름을 고를 수 있어요."; step == 0 -> "성씨의 한자부터 정확히 골라주세요."; else -> "성별과 이름 취향에 맞춰 후보를 준비할게요." },
             )
             vm.loadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            vm.inputRestoreNotice?.let { Text(it, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant) }
             if (vm.hanjaDb == null && vm.loadError == null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -243,8 +270,9 @@ private fun BabyCard(vm: NamingViewModel) {
         SwitchRow(
             checked = vm.popularOnly,
             onChange = { vm.popularOnly = it },
-            text = "최근 인기 이름 위주로 추천",
-            hint = "대법원 출생신고 상위권에 든 이름만 후보로 씁니다",
+            text = "대중적인 이름 위주로 추천",
+            hint = if (vm.singleName) "외자는 후보가 적어 이 옵션과 관계없이 전체 외자 목록에서 찾아요"
+                else "앱이 분류한 대중적인 이름 목록에서 찾아요. 출생신고 순위만으로 제한하지 않아요",
         )
         SwitchRow(
             checked = vm.singleName,
@@ -312,6 +340,13 @@ private fun BirthCard(vm: NamingViewModel) {
         )
 
         if (!vm.preBirth) {
+            Text("출생 성별", style = MaterialTheme.typography.labelLarge)
+            InkSegmented(
+                options = listOf(Gender.M, Gender.F),
+                selected = vm.gender,
+                label = { if (it == Gender.M) "남아" else "여아" },
+                onSelect = { vm.gender = it },
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(InkSpace.s8)) {
                 BirthNumberField(vm.year, { vm.year = it }, "년", 4, 1..9999,
                     Modifier.weight(1.3f), onNext = { monthFocus.requestFocus() })
@@ -367,7 +402,7 @@ private fun RegionRow(vm: NamingViewModel) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text("출생 지역", style = MaterialTheme.typography.bodyMedium)
-            Hint(regionHint(vm))
+            Hint("${vm.city.namingLabel}\n${regionHint(vm)}")
         }
         Spacer(Modifier.width(InkSpace.s8))
         OutlinedButton(onClick = { open = true }, shape = InkShape.medium) {
@@ -579,7 +614,7 @@ private fun birthSummary(vm: NamingViewModel): String? {
     val y = vm.year.toIntOrNull() ?: return null
     val mo = vm.month.toIntOrNull() ?: return null
     val d = vm.day.toIntOrNull() ?: return null
-    if (y !in 1900..2050 || mo !in 1..12 || d !in 1..31) return null
+    if (!com.naminghouse.app.isValidBirthDate(y, mo, d, vm.isLunar, vm.isLeapMonth)) return null
 
     val calendar = when {
         vm.isLunar && vm.isLeapMonth -> "음력 윤달"

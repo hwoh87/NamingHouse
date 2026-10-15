@@ -52,7 +52,7 @@ fun PremiumSheet(vm: NamingViewModel, onDismiss: () -> Unit) {
     val activity = LocalContext.current as? Activity
     val price by vm.premium.priceText.collectAsState()
     val busy by vm.premium.purchaseBusy.collectAsState()
-    LaunchedEffect(Unit) { vm.premium.refreshProducts() }
+    LaunchedEffect(Unit) { vm.premium.refreshProducts(reportFailure = false) }
 
     // 결제가 끝나 소유가 켜지면 시트는 스스로 닫힌다.
     LaunchedEffect(vm.isPremium) {

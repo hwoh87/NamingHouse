@@ -48,6 +48,13 @@ import com.naminghouse.engine.oheng.BaleumSchool
  */
 @Composable
 fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
+    if (!vm.inputsLoaded) {
+        Column(Modifier.padding(InkSpace.gutter), verticalArrangement = Arrangement.spacedBy(InkSpace.s16)) {
+            androidx.compose.material3.CircularProgressIndicator()
+            Text("설정을 불러오고 있어요", style = MaterialTheme.typography.bodyMedium)
+        }
+        return
+    }
     val context = LocalContext.current
     var showLicenses by remember { mutableStateOf(false) }
     var showPremium by remember { mutableStateOf(false) }
@@ -94,6 +101,17 @@ fun SettingsScreen(vm: NamingViewModel, nav: NavHostController) {
                 label = { it.label },
                 onSelect = { vm.onThemeModeChanged(it) },
             )
+        }
+
+        InkCard {
+            SectionTitle("이름책 보관")
+            Text("자동 백업은 사용하지 않아요. 기기를 바꾸거나 앱을 삭제하기 전에 이름책을 파일로 보관해 주세요.",
+                style = MaterialTheme.typography.bodyMedium)
+            SettingsRow("이름책 백업·가져오기", onClick = {
+                nav.navigate(Routes.FAVORITES) { launchSingleTop = true }
+            })
+            Text("메모와 출생 정보는 포함 여부를 직접 고를 수 있어요. 결제 혜택은 구매 복원으로 확인해요.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         InkCard {

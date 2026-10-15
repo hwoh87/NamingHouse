@@ -76,7 +76,7 @@ class PremiumManager(
     val purchaseBusy = MutableStateFlow(false)
     private var cacheJob: Job? = null
     private val purchaseQueries = PurchaseQueryGuard()
-    private val connectionWaiters = mutableListOf<() -> Unit>()
+    private val connectionWaiters = BillingConnectionQueue()
 
     private val productDetailsById = mutableMapOf<String, ProductDetails>()
 
@@ -95,8 +95,8 @@ class PremiumManager(
             hasAdFreeProduct.value = cached[AD_FREE] == true
             syncAdFree()
             entitlementLoaded.value = true
-            connect {
-                queryProducts()
+            connect(reportFailure = false) {
+                queryProducts(reportFailure = false)
                 refreshEntitlement()
             }
         }
@@ -111,28 +111,27 @@ class PremiumManager(
         runCatching { client.endConnection() }
     }
 
-    /** 연결돼 있으면 즉시, 아니면 연결 후 실행. 실패는 조용히 둔다 — 다음 시도가 다시 잇는다. */
-    private fun connect(onReady: () -> Unit) {
+    /** 자동 조회 실패는 조용히 두고, 사용자가 요청한 구매·복원·재조회 실패만 알린다. */
+    private fun connect(reportFailure: Boolean, onReady: () -> Unit) {
         when (client.connectionState) {
             BillingClient.ConnectionState.CONNECTED -> {
                 onReady()
                 return
             }
             BillingClient.ConnectionState.CONNECTING -> {
-                connectionWaiters.add(onReady)
+                connectionWaiters.add(reportFailure, onReady)
                 return
             }
             else -> Unit
         }
-        connectionWaiters.add(onReady)
+        connectionWaiters.add(reportFailure, onReady)
         client.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
-                val waiting = connectionWaiters.toList()
-                connectionWaiters.clear()
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) waiting.forEach { it() }
+                if (result.responseCode == BillingClient.BillingResponseCode.OK) connectionWaiters.succeed()
                 else {
+                    val shouldReport = connectionWaiters.fail()
                     purchaseBusy.value = false
-                    message.value = "Google Play에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."
+                    if (shouldReport) message.value = "Google Play에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."
                 }
             }
 
@@ -144,7 +143,7 @@ class PremiumManager(
     fun refreshEntitlement() {
         scope.launch {
             cacheJob?.join()
-            connect {
+            connect(reportFailure = false) {
                 val ticket = purchaseQueries.begin()
                 client.queryPurchasesAsync(
                     QueryPurchasesParams.newBuilder()
@@ -160,9 +159,9 @@ class PremiumManager(
         }
     }
 
-    fun refreshProducts() = connect { queryProducts() }
+    fun refreshProducts(reportFailure: Boolean = true) = connect(reportFailure) { queryProducts(reportFailure) }
 
-    private fun queryProducts(after: (() -> Unit)? = null) {
+    private fun queryProducts(reportFailure: Boolean, after: (() -> Unit)? = null) {
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(
                 ALL_PRODUCTS.map { id ->
@@ -176,7 +175,7 @@ class PremiumManager(
         client.queryProductDetailsAsync(params) { result, detailsResult ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
                 purchaseBusy.value = false
-                message.value = "상품 정보를 가져오지 못했습니다. 네트워크를 확인해 주세요."
+                if (reportFailure) message.value = "상품 정보를 가져오지 못했습니다. 네트워크를 확인해 주세요."
                 return@queryProductDetailsAsync
             }
             productDetailsById.clear()
@@ -204,8 +203,8 @@ class PremiumManager(
         }
         purchaseBusy.value = true
         com.naminghouse.app.ads.AdFrequency(app).suppressFullScreen()
-        connect {
-            queryProducts {
+        connect(reportFailure = true) {
+            queryProducts(reportFailure = true) {
                 val details = productDetailsById[productId]
                 val offer = details?.oneTimePurchaseOfferDetailsList?.firstOrNull()
                 if (details == null || offer == null || activity.isFinishing || activity.isDestroyed) {
@@ -306,7 +305,7 @@ class PremiumManager(
     fun restore() {
         scope.launch {
             cacheJob?.join()
-            connect { doRestore() }
+            connect(reportFailure = true) { doRestore() }
         }
     }
 

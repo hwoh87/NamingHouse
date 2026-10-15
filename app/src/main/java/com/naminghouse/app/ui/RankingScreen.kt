@@ -65,7 +65,8 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
 
         if (years.isEmpty()) {
             Text(
-                vm.loadError ?: "통계를 불러오는 중…",
+                vm.statsError ?: vm.loadError ?: if (!vm.statsLoaded) "통계를 불러오는 중…"
+                    else "현재 표시할 순위 자료가 없어요. 이름 추천과 한자 찾기는 계속 사용할 수 있어요.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(InkSpace.s20),
@@ -121,11 +122,8 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
                     ) {
                         chart.forEachIndexed { i, (rank, stat) ->
                             RankRow(rank, stat, prevRank = stat.rankIn(year - 1)) {
-                                vm.mode = AppMode.HANJA
                                 vm.gender = gender
-                                vm.givenName = stat.name
-                                vm.givenHanja.value = emptyList()
-                                nav.navigate(Routes.INPUT)
+                                if (vm.startHanjaFor(stat.name)) nav.navigate(Routes.INPUT)
                             }
                             if (i < chart.lastIndex) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -142,6 +140,7 @@ fun RankingScreen(vm: NamingViewModel, nav: NavHostController) {
                                 "전국 합산한 참고용 순위입니다. 남녀가 함께 쓰는 이름은 " +
                                 "더 많이 쓰인 성별의 순위에만 나타납니다."
                         )
+                        append("\n${stats.metadata.collectionLabel} · ${stats.metadata.periodLabel}")
                         if (year == thisYear) append("\n${year}년은 연중 집계 중인 잠정치입니다.")
                     },
                     style = MaterialTheme.typography.labelSmall,
