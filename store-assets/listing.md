@@ -134,11 +134,12 @@
 
 ## AdMob
 
-- 게시자 ID: `ca-app-pub-1799447209671601` (AdMob 계정 ohy8504@gmail.com — Play Console 과 같은 계정)
-- 앱 ID: `ca-app-pub-1799447209671601~1608111589` (AndroidManifest 의 `APPLICATION_ID` meta-data)
-- 배너 광고 단위: `ca-app-pub-1799447209671601/7459204066` ('결과목록 하단 배너', `AdIds.PROD_BANNER`)
+- 게시자 ID: `ca-app-pub-4926699975521373` (AdMob 계정 ohy9475@gmail.com — Play Console 과 같은 계정. 2026-10-17 구 조직 계정 pub-1799447209671601 에서 이전)
+- 앱 ID: `ca-app-pub-4926699975521373~9867871793` (AndroidManifest 의 `APPLICATION_ID` meta-data)
+- 배너 광고 단위: `ca-app-pub-4926699975521373/3289276145` (result_list_banner, `AdIds.PROD_BANNER`)
+- 보상형 광고 단위: `ca-app-pub-4926699975521373/3345116464` (report_rewarded, `AdIds.PROD_REWARDED`)
 - 디버그 빌드는 Google 테스트 단위 ID 를 쓴다 — 개발 중 실 단위 노출·클릭은 계정 정지 사유다.
-- **스토어 링크**: 연결 완료(2026-08-18). AdMob 콘솔 → 앱 목록 → '스토어 추가' 에서 앱 URL
+- **스토어 링크**: 연결 완료(2026-08-18, 새 계정은 2026-10-17 재연결). AdMob 콘솔 → 앱 목록 → '스토어 추가' 에서 앱 URL
   (`https://play.google.com/store/apps/details?id=com.naminghouse.app`)로 검색해 연결했다.
   패키지 이름으로는 검색되지 않으니 앱 URL 을 쓸 것. 연결 직후 상태는 '준비 중 / 검토 중' 이고,
   Google 의 앱 검토(2~3일)가 끝나야 광고 게재 제한이 풀린다.

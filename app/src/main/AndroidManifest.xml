@@ -34,7 +34,7 @@
         -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-1799447209671601~1608111589" />
+            android:value="ca-app-pub-4926699975521373~9867871793" />
 
         <!-- 감명서 이미지 공유 — 캐시의 shared/ 만 내보낸다 -->
         <provider

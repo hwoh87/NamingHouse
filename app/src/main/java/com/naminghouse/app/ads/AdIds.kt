@@ -16,11 +16,11 @@ object AdIds {
     private const val TEST_BANNER = "ca-app-pub-3940256099942544/9214589741"
     private const val TEST_REWARDED = "ca-app-pub-3940256099942544/5224354917"
 
-    /** AdMob 콘솔의 '결과목록 하단 배너' (pub-1799447209671601). */
-    private const val PROD_BANNER = "ca-app-pub-1799447209671601/7459204066"
+    /** AdMob 콘솔의 '결과목록 하단 배너' (pub-4926699975521373). */
+    private const val PROD_BANNER = "ca-app-pub-4926699975521373/3289276145"
 
-    /** AdMob 콘솔의 '감명서 열람 보상형' (pub-1799447209671601). */
-    private const val PROD_REWARDED = "ca-app-pub-1799447209671601/1685865142"
+    /** AdMob 콘솔의 '감명서 열람 보상형' (pub-4926699975521373). */
+    private const val PROD_REWARDED = "ca-app-pub-4926699975521373/3345116464"
 
     fun bannerUnitId(context: Context): String =
         if (isDebuggable(context)) TEST_BANNER else PROD_BANNER
